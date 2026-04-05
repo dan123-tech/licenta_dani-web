@@ -235,11 +235,15 @@ export async function getSession() {
     } else {
       const headerSid = (await headers()).get("x-web-session-id")?.trim() || "";
       const cookieSid = typeof payload.sid === "string" ? payload.sid.trim() : "";
-      const sidToValidate = headerSid || cookieSid;
-      if (!sidToValidate) return null;
-      const ok = await validateUserSessionToken(payload.userId, "web", sidToValidate);
-      if (!ok) return null;
-      return { ...payload, sid: sidToValidate };
+      /** Prefer header (tab isolation), then cookie — stale sessionStorage must not block a valid cookie. */
+      const candidates = [...new Set([headerSid, cookieSid].filter(Boolean))];
+      if (candidates.length === 0) return null;
+      for (const sid of candidates) {
+        if (await validateUserSessionToken(payload.userId, "web", sid)) {
+          return { ...payload, sid };
+        }
+      }
+      return null;
     }
   } else if (await userHasAnySessionToken(payload.userId)) {
     return null;
