@@ -31,6 +31,7 @@
     "@neondatabase/serverless": "^0.10.4",
     "@opennextjs/cloudflare": "^1.18.0",
     "@prisma/adapter-neon": "^6.19.3",
+    "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.0",
@@ -51,7 +52,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@prisma/client": "^6.19.3",
     "@tailwindcss/postcss": "^4",
     "concurrently": "^9.2.1",
     "eslint": "^9",
