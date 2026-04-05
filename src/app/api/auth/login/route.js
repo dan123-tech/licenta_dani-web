@@ -126,6 +126,28 @@ export async function POST(request) {
         503
       );
     }
+    // Neon / serverless: pool timeouts, connection closed
+    if (
+      code === "P2024" ||
+      code === "P1017" ||
+      code === "P2037" ||
+      msg.includes("Timed out fetching a new connection") ||
+      msg.includes("Server has closed the connection")
+    ) {
+      return errorResponse(
+        "Database connection timed out or pool exhausted. On Vercel + Neon: use Neon’s pooled DATABASE_URL, add ?sslmode=require if missing, redeploy; check Neon project is not paused.",
+        503,
+        { prismaCode: code }
+      );
+    }
+    // Table/column missing — migrations not applied on this database
+    if (code === "P2021" || code === "P2022") {
+      return errorResponse(
+        "Database schema is out of date. Run: npx prisma migrate deploy (against the same DATABASE_URL as production), then redeploy.",
+        503,
+        { prismaCode: code }
+      );
+    }
     if (
       msg.includes("Unknown argument") &&
       (msg.includes("activeWebSessionToken") || msg.includes("activeMobileSessionToken"))
@@ -139,9 +161,16 @@ export async function POST(request) {
     // (AUTH_SECRET, DB, Prisma, etc.). Production stays generic.
     const isDev = process.env.NODE_ENV !== "production";
     const suffix = isDev && msg ? ` — ${msg.slice(0, 400)}` : "";
-    if (code && String(code).startsWith("P")) {
-      return errorResponse(`Login failed${suffix}`, 500, { prismaCode: code });
+    const prismaExtra =
+      code && String(code).startsWith("P") ? { prismaCode: code } : {};
+    // Help debug non-Prisma 500s on Vercel (e.g. unexpected throws) without exposing full stack
+    const nameExtra =
+      !prismaExtra.prismaCode && e?.name && e.name !== "Error"
+        ? { errorName: e.name }
+        : {};
+    if (prismaExtra.prismaCode) {
+      return errorResponse(`Login failed${suffix}`, 500, prismaExtra);
     }
-    return errorResponse(`Login failed${suffix}`, 500);
+    return errorResponse(`Login failed${suffix}`, 500, nameExtra);
   }
 }
