@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="260dp"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/sidebar_bg">
+
+    <!-- Navigation items (header included) -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_gravity="start"
+        android:background="@color/sidebar_bg"
+        app:itemBackground="@drawable/nav_drawer_item_background"
+        app:itemIconTint="@color/nav_drawer_item_color"
+        app:itemTextColor="@color/nav_drawer_item_color"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/drawer_menu"
+        app:itemIconPadding="8dp" />
+
+    <!-- Thin divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#0FFFFFFF" />
+
+    <!-- Log out button — matches web sidebar footer -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/drawer_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/log_out"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:textColor="#7AFFFFFF"
+        android:textSize="13sp"
+        app:iconGravity="start" />
+
+</LinearLayout>

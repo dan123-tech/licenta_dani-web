@@ -1,0 +1,261 @@
+// Company Car Sharing – Prisma schema
+// PostgreSQL database for users, companies, cars, and reservations.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum MemberStatus {
+  ENROLLED
+  PENDING_INVITE
+}
+
+enum CarStatus {
+  AVAILABLE
+  RESERVED
+  IN_MAINTENANCE
+}
+
+enum ReservationStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum DrivingLicenceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ExceededApprovalStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum FuelType {
+  Benzine
+  Diesel
+  Electric
+  Hybrid
+}
+
+// ---------------------------------------------------------------------------
+// User – global account (email, password, name)
+// ---------------------------------------------------------------------------
+
+model User {
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  password              String               // hashed (bcrypt)
+  name                 String
+  avatarUrl            String?
+  drivingLicenceUrl         String?              // photo of driving licence
+  drivingLicenceStatus      DrivingLicenceStatus? // PENDING | APPROVED | REJECTED; null = not uploaded
+  drivingLicenceVerifiedBy  String?              // "AI" | "ADMIN" – who set the status
+  fcmToken                  String?              // FCM device token for booking reminders (mobile)
+  fcmTokenUpdatedAt         DateTime?
+  /** Random id for cookie session; new web login replaces → other browser tabs log out */
+  activeWebSessionToken     String?
+  /** Random id for mobile cookie session; independent from web */
+  activeMobileSessionToken  String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  companyMembers CompanyMember[]
+  reservations   Reservation[]
+  auditLogs      AuditLog[]
+
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Company – one per tenant/organization
+// ---------------------------------------------------------------------------
+
+model Company {
+  id                        String   @id @default(cuid())
+  name                      String
+  domain                    String?  // e.g. "company.com" for display
+  joinCode                  String?  @unique // shareable code for users to join (e.g. "ABC12XYZ")
+  defaultKmUsage            Int      @default(100) // default allowed km per reservation; admin can change
+  averageFuelPricePerLiter  Float?   // legacy: price per liter (used if per-fuel prices not set)
+  defaultConsumptionL100km  Float?   @default(7.5) // default L/100km when car has no consumption set
+  priceBenzinePerLiter      Float?   // global pricing: Benzine (currency/L)
+  priceDieselPerLiter       Float?   // global pricing: Diesel (currency/L)
+  priceHybridPerLiter       Float?   // ICE part of Hybrid (currency/L); falls back to Benzine/Diesel if unset
+  priceElectricityPerKwh    Float?   // global pricing: Electricity (currency/kWh)
+  dataSourceConfig          Json?    // { users, cars, reservations, usersTable?, carsTable?, reservationsTable? }
+  dataSourceCredentials     Json?    // encrypted { "users:SQL_SERVER": { tableName, ...credentials } } per layer:provider
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  members      CompanyMember[]
+  invites      Invite[]
+  cars         Car[]
+}
+
+// ---------------------------------------------------------------------------
+// CompanyMember – links User to Company with role and enrollment status
+// ---------------------------------------------------------------------------
+
+model CompanyMember {
+  id        String       @id @default(cuid())
+  userId    String
+  companyId String
+  role      Role         @default(USER)
+  status    MemberStatus @default(PENDING_INVITE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Invite – token for inviting a user by email to a company
+// ---------------------------------------------------------------------------
+
+model Invite {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  companyId String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Car – company-owned vehicle
+// ---------------------------------------------------------------------------
+
+model Car {
+  id                         String     @id @default(cuid())
+  companyId                  String
+  brand                      String
+  model                      String?
+  registrationNumber         String
+  km                         Int        @default(0)
+  status                     CarStatus  @default(AVAILABLE)
+  fuelType                   FuelType   @default(Benzine) // Benzine | Diesel | Electric | Hybrid
+  averageConsumptionL100km   Float?     // L/100km for fuel cars; used for cost/CO2
+  averageConsumptionKwh100km Float?     // kWh/100km for EV/Hybrid (range calculation)
+  batteryLevel               Int?       // 0-100 for EV/Hybrid
+  batteryCapacityKwh         Float?     // total battery capacity (kWh) for EV/Hybrid range
+  lastServiceMileage         Int?       // odometer at last service (maintenance forecast)
+  lastServiceYearMonth       String?    @db.VarChar(7) // "YYYY-MM" when last service was done (optional)
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Reservation – user rents a car for a time range
+// ---------------------------------------------------------------------------
+
+model Reservation {
+  id          String            @id @default(cuid())
+  userId      String
+  carId       String
+  startDate   DateTime
+  endDate     DateTime
+  purpose     String?
+  status                  ReservationStatus    @default(ACTIVE)
+  pickup_code             String?              // 6-digit code for pickup verification
+  code_valid_from         DateTime?            // when set (e.g. admin refresh), 30-min pickup window starts here
+  release_code            String?              // 6-digit code for release verification
+  releasedKmUsed             Int?                 // km driven when released
+  releasedExceededReason      String?              // reason when km exceeded company default
+  releasedExceededStatus      ExceededApprovalStatus? // PENDING_APPROVAL | APPROVED | REJECTED
+  releasedExceededAdminComment String?             // admin observations (visible to user)
+  pushReminderBeforeStartSentAt DateTime?           // server FCM: ~15 min before start reminder sent
+  pushReminderStartSentAt      DateTime?            // server FCM: start-of-booking reminder sent (incl. pickup code)
+  pushReminderEndSentAt        DateTime?            // server FCM: end-of-booking reminder sent
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car  Car  @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([carId])
+  @@index([userId])
+  @@index([startDate, endDate])
+}
+
+// ---------------------------------------------------------------------------
+// AuditLog – append-only record of every significant action in the company.
+// No updatedAt field – rows must never be modified after creation.
+// ---------------------------------------------------------------------------
+
+enum AuditAction {
+  // Car lifecycle
+  CAR_ADDED
+  CAR_UPDATED
+  CAR_STATUS_CHANGED
+  CAR_DELETED
+
+  // Reservation lifecycle
+  RESERVATION_CREATED
+  RESERVATION_CANCELLED
+  RESERVATION_COMPLETED
+  RESERVATION_EXTENDED
+  KM_EXCEEDED_APPROVED
+  KM_EXCEEDED_REJECTED
+
+  // Pricing / company settings
+  PRICING_CHANGED
+  COMPANY_SETTINGS_CHANGED
+
+  // User management
+  USER_INVITED
+  USER_ROLE_CHANGED
+  USER_REMOVED
+  DRIVING_LICENCE_STATUS_CHANGED
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  companyId  String
+  actorId    String?     // null for system/automated actions
+  action     AuditAction
+  entityType String      // "CAR" | "RESERVATION" | "COMPANY" | "USER"
+  entityId   String?     // id of the affected entity
+  meta       Json?       // structured context: { before, after, reason, … }
+  createdAt  DateTime    @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, action])
+  @@index([companyId, entityType, entityId])
+}

@@ -1,0 +1,21 @@
+# HTTPS reverse proxy → Next.js `app` service (port 3000 inside the compose network).
+#
+# Host maps 8443 → container 443. Open:
+#   https://localhost:8443
+#   https://<your-LAN-IP>:8443
+#
+# TLS uses PEM files mounted at /certs (see docker-compose). Generate them once:
+#   npm run certs:local
+#
+# Production on a real domain: map 80:80 and 443:443, set global email in { }, and use:
+#   yourdomain.com { reverse_proxy app:3000 }
+
+{
+	# email you@example.com
+}
+
+# Container listens on 443; host publishes it as :8443 (avoids reserved Windows :80).
+:443 {
+	tls /certs/cert.pem /certs/key.pem
+	reverse_proxy app:3000
+}

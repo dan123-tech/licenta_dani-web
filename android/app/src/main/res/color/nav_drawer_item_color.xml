@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Active drawer item text #93c5fd -->
+    <item android:color="#93C5FD" android:state_checked="true" />
+    <!-- Inactive drawer item text (muted white) -->
+    <item android:color="#7AFFFFFF" />
+</selector>
