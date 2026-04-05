@@ -14,6 +14,7 @@ import { errorResponse } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -138,6 +139,9 @@ export async function POST(request) {
     // (AUTH_SECRET, DB, Prisma, etc.). Production stays generic.
     const isDev = process.env.NODE_ENV !== "production";
     const suffix = isDev && msg ? ` — ${msg.slice(0, 400)}` : "";
+    if (code && String(code).startsWith("P")) {
+      return errorResponse(`Login failed${suffix}`, 500, { prismaCode: code });
+    }
     return errorResponse(`Login failed${suffix}`, 500);
   }
 }

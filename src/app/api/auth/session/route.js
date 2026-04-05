@@ -10,6 +10,7 @@ import { getUserById } from "@/lib/users";
 import { jsonResponse, errorResponse } from "@/lib/api-helpers";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function noStore(res) {
   res.headers.set("Cache-Control", "private, no-store, must-revalidate");

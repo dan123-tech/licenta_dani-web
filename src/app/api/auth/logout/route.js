@@ -6,6 +6,8 @@
 import { clearSession } from "@/lib/auth";
 import { jsonResponse } from "@/lib/api-helpers";
 
+export const runtime = "nodejs";
+
 export async function POST() {
   await clearSession();
   return jsonResponse({ ok: true });

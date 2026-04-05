@@ -2,7 +2,7 @@
  * Signed session cookie + server-side channel tokens (web vs mobile).
  * Payload: { userId, email, name, companyId, role, client, sid }
  *
- * HTTPS production: __Host- prefix, Secure, SameSite=strict.
+ * HTTPS production: Secure session cookie, SameSite=lax (Strict/__Host- caused drops behind some proxies).
  * HTTP (dev / LAN): legacy name, no Secure, SameSite=lax.
  */
 
@@ -54,18 +54,18 @@ function resolveCookieBinding(request) {
   }
   const https = isRequestHttps(request);
   if (https) {
-    return { name: HOST_COOKIE_NAME, secure: true, sameSite: "strict" };
+    return { name: LEGACY_COOKIE_NAME, secure: true, sameSite: "lax" };
   }
   return { name: LEGACY_COOKIE_NAME, secure: false, sameSite: "lax" };
 }
 
-/** Primary cookie name for tooling (HTTPS prod → __Host-, else legacy). */
+/** Primary cookie name for tooling (session cookie name in production HTTPS matches legacy constant). */
 export function getSessionCookieName(request) {
   return resolveCookieBinding(request).name;
 }
 
 function getSecret() {
-  const secret = process.env.AUTH_SECRET;
+  const secret = process.env.AUTH_SECRET?.trim();
   if (!secret || secret.length < 32) {
     throw new Error("AUTH_SECRET must be set and at least 32 characters");
   }
