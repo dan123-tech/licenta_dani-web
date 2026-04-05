@@ -1,25 +1,46 @@
 /**
  * Prisma client for the app.
  *
- * Cloudflare Workers (OpenNext): `process.env` is filled from Worker `env` inside
- * `runWithCloudflareRequestContext` → `populateProcessEnv`, which runs when a request
- * starts — not necessarily before this module is first imported. Instantiating Prisma at
- * import time can run with an empty `DATABASE_URL`, skip the Neon adapter, and use the
- * default TCP engine (fails on Workers → 500 on `/api/auth/login`).
+ * OpenNext on Cloudflare fills `process.env` from Worker `env` at request start, but some
+ * code paths can still see an empty `DATABASE_URL` first. We resolve the URL from Worker
+ * `env` via `getCloudflareContext()` when needed, then create the client lazily on first use.
  *
- * So we lazily create the client on first property access.
- *
- * Neon + Workers: use `@prisma/adapter-neon` when `DATABASE_URL` contains `neon.tech`
- * (or `PRISMA_NEON_ADAPTER=1`). Optional: strip `channel_binding=require` — some stacks
- * choke on it with the serverless driver.
+ * Neon on Workers: `@prisma/adapter-neon` when the URL looks like Neon (or PRISMA_NEON_ADAPTER=1).
  */
 
 import { createRequire } from "node:module";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { PrismaClient } from "@prisma/client";
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
 const globalForPrisma = globalThis;
+
+/**
+ * Pooled Neon URL from process.env or, on Workers, from the current request `env` binding.
+ */
+function resolveDatabaseUrl() {
+  const fromProcess = process.env.DATABASE_URL?.trim();
+  if (fromProcess) return fromProcess;
+  try {
+    const workerEnv = getCloudflareContext().env;
+    const raw = workerEnv?.DATABASE_URL;
+    if (typeof raw === "string" && raw.trim()) {
+      const v = raw.trim();
+      process.env.DATABASE_URL = v;
+      return v;
+    }
+    const hyper = workerEnv?.HYPERDRIVE;
+    if (hyper && typeof hyper.connectionString === "string" && hyper.connectionString.trim()) {
+      const v = hyper.connectionString.trim();
+      process.env.DATABASE_URL = v;
+      return v;
+    }
+  } catch {
+    /* Not inside a Cloudflare request (e.g. next build, plain Node). */
+  }
+  return "";
+}
 
 /** @param {string} url */
 function normalizeNeonConnectionString(url) {
@@ -46,18 +67,28 @@ function configureNeonDriver() {
     const ws = require("ws");
     neonConfig.webSocketConstructor = ws;
   } catch {
-    /* Workerd provides WebSocket; some bundles omit import.meta */
+    /* Workerd provides WebSocket. */
   }
 }
 
 function createPrismaClient() {
   const log = process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"];
-  let url = process.env.DATABASE_URL || "";
+  const url = resolveDatabaseUrl();
 
-  if (shouldUseNeonAdapter(url) && url) {
-    url = normalizeNeonConnectionString(url);
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL is not set. For Cloudflare Workers: Workers & Pages → your worker → Settings → Variables and secrets → add DATABASE_URL (Neon pooled string), or run: npx wrangler secret put DATABASE_URL"
+    );
+  }
+
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = url;
+  }
+
+  if (shouldUseNeonAdapter(url)) {
+    const normalized = normalizeNeonConnectionString(url);
     configureNeonDriver();
-    const adapter = new PrismaNeon({ connectionString: url });
+    const adapter = new PrismaNeon({ connectionString: normalized });
     return new PrismaClient({ adapter, log });
   }
 
@@ -70,7 +101,7 @@ function getClient() {
 }
 
 /**
- * Lazy proxy so the real PrismaClient is created after OpenNext has populated `process.env`.
+ * Lazy proxy so Prisma is created after env is available.
  * @type {import("@prisma/client").PrismaClient}
  */
 export const prisma = new Proxy(

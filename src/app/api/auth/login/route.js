@@ -110,6 +110,11 @@ export async function POST(request) {
     console.error("[auth/login]", e);
     const msg = String(e?.message ?? e);
     const code = e?.code;
+    const debugLogin = process.env.API_DEBUG_LOGIN === "1";
+    const debugExtra = debugLogin && msg ? { hint: msg.slice(0, 400) } : {};
+    if (msg.includes("DATABASE_URL is not set")) {
+      return errorResponse(msg, 503, { code: "MISSING_DATABASE_URL", ...debugExtra });
+    }
     if (msg.includes("AUTH_SECRET")) {
       return errorResponse(
         "Server configuration: set AUTH_SECRET in your .env file (at least 32 characters). Example: openssl rand -base64 32 — then restart the dev server.",
@@ -169,8 +174,8 @@ export async function POST(request) {
         ? { errorName: e.name }
         : {};
     if (prismaExtra.prismaCode) {
-      return errorResponse(`Login failed${suffix}`, 500, prismaExtra);
+      return errorResponse(`Login failed${suffix}`, 500, { ...prismaExtra, ...debugExtra });
     }
-    return errorResponse(`Login failed${suffix}`, 500, nameExtra);
+    return errorResponse(`Login failed${suffix}`, 500, { ...nameExtra, ...debugExtra });
   }
 }
