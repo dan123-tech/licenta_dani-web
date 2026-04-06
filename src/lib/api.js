@@ -299,8 +299,25 @@ export async function apiRemoveUser(userId) {
   return data;
 }
 
-export async function apiReservations(status) {
-  const url = status ? `/api/reservations?status=${encodeURIComponent(status)}` : "/api/reservations";
+/**
+ * @param {string | { status?: string; mine?: boolean } | undefined} statusOrOpts
+ * Pass `{ mine: true }` on the user dashboard so admins only see their own bookings.
+ * Legacy: a string sets the `status` query param only.
+ */
+export async function apiReservations(statusOrOpts) {
+  const params = new URLSearchParams();
+  let status;
+  let mine = false;
+  if (typeof statusOrOpts === "string") {
+    status = statusOrOpts;
+  } else if (statusOrOpts && typeof statusOrOpts === "object") {
+    status = statusOrOpts.status;
+    mine = !!statusOrOpts.mine;
+  }
+  if (status) params.set("status", status);
+  if (mine) params.set("mine", "1");
+  const q = params.toString();
+  const url = q ? `/api/reservations?${q}` : "/api/reservations";
   const res = await fetch(url, getOpts("GET"));
   const data = await res.json().catch(() => ({}));
   throwIfDataSourceNotConfigured(res, data);
