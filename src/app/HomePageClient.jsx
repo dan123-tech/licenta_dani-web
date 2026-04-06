@@ -158,18 +158,18 @@ export default function HomePageClient() {
           <div
             className="col-span-2 lg:col-span-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl flex flex-col items-center text-center gap-4 min-w-0"
             style={{
-              background: "rgba(245, 166, 35, 0.1)",
-              border: "1px solid rgba(245, 166, 35, 0.38)",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
             }}
           >
             <div
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
               style={{
-                background: "rgba(245, 166, 35, 0.18)",
-                border: "1px solid rgba(245, 166, 35, 0.45)",
+                background: "rgba(24, 95, 165, 0.22)",
+                border: "1px solid rgba(24, 95, 165, 0.4)",
               }}
             >
-              <Server className="w-5 h-5 sm:w-[22px] sm:h-[22px]" style={{ color: COL.accent }} strokeWidth={1.6} />
+              <Server className="w-5 h-5 sm:w-[22px] sm:h-[22px]" style={{ color: "#7ec0ea" }} strokeWidth={1.6} />
             </div>
             <div className="min-w-0 w-full max-w-3xl mx-auto">
               <h3
@@ -180,7 +180,7 @@ export default function HomePageClient() {
               </h3>
               <p
                 className="text-[12px] sm:text-sm leading-relaxed sm:leading-relaxed"
-                style={{ color: "rgba(255,255,255,0.55)" }}
+                style={{ color: "rgba(255,255,255,0.45)" }}
               >
                 {t("landing.selfHostedDesc")}
               </p>

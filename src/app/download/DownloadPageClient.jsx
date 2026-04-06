@@ -1,10 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { Download, MonitorSmartphone } from "lucide-react";
+import { Download, MonitorSmartphone, Server } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const COL = { base: "#0c1220", primary: "#185fa5", accent: "#f5a623" };
+
+/** Override with NEXT_PUBLIC_SOURCE_REPO_URL / NEXT_PUBLIC_SOURCE_ZIP_URL for forks. */
+const DEFAULT_SOURCE_REPO = "https://github.com/dan123-tech/licenta_dani-web";
+const DEFAULT_SOURCE_ZIP =
+  "https://github.com/dan123-tech/licenta_dani-web/archive/refs/heads/main.zip";
+
+function getSourceRepoUrl() {
+  const u = process.env.NEXT_PUBLIC_SOURCE_REPO_URL;
+  return typeof u === "string" && u.trim() ? u.trim() : DEFAULT_SOURCE_REPO;
+}
+
+function getSourceZipUrl() {
+  const u = process.env.NEXT_PUBLIC_SOURCE_ZIP_URL;
+  return typeof u === "string" && u.trim() ? u.trim() : DEFAULT_SOURCE_ZIP;
+}
 
 /** Served from public/downloads/fleetshare.apk — override with full URL if hosted elsewhere. */
 const DEFAULT_ANDROID_APK_PATH = "/downloads/fleetshare.apk";
@@ -97,6 +112,53 @@ export default function DownloadPageClient() {
                   >
                     {t("landing.signIn")}
                   </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="rounded-2xl p-5 sm:p-6"
+            style={{
+              background: "rgba(245, 166, 35, 0.08)",
+              border: "1px solid rgba(245, 166, 35, 0.32)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: "rgba(245, 166, 35, 0.16)",
+                  border: "1px solid rgba(245, 166, 35, 0.4)",
+                }}
+              >
+                <Server className="w-5 h-5" style={{ color: COL.accent }} strokeWidth={1.6} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base font-semibold mb-2" style={{ color: COL.accent }}>
+                  {t("landing.download.selfHostTitle")}
+                </h2>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.52)" }}>
+                  {t("landing.download.selfHostBody")}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={getSourceZipUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-xl text-white text-sm font-semibold bg-[#185fa5] hover:bg-[#1d4ed8] transition-colors"
+                  >
+                    <Download className="w-4 h-4 shrink-0" strokeWidth={2} aria-hidden />
+                    {t("landing.download.selfHostZipCta")}
+                  </a>
+                  <a
+                    href={getSourceRepoUrl()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center h-10 px-4 rounded-xl text-sm font-semibold transition-colors border border-white/15 text-white/85 hover:border-white/25 hover:bg-white/5"
+                  >
+                    {t("landing.download.selfHostRepoCta")}
+                  </a>
                 </div>
               </div>
             </div>

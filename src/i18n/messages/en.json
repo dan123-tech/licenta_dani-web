@@ -62,14 +62,18 @@
     },
     "download": {
       "pageTitle": "Download",
-      "pageSubtitle": "Web dashboard and Android companion",
-      "intro": "Use the web app in your browser for the full experience, or install the Android app on company devices. Your organisation can host everything on its own infrastructure.",
+      "pageSubtitle": "Use online, self-host for your company, or install the Android app",
+      "intro": "Use the web app in your browser, deploy your own instance with your database and domain, or install the Android app on company devices.",
       "androidTitle": "Android app",
       "androidBody": "Install the FleetShare Android client on your phone or tablet. Download the APK from this site, then open it to install (you may need to allow installs from unknown sources).",
       "apkFileHint": "This is an Android package (.apk), not a Windows program (.exe). Build the APK in Android Studio from the android/ folder, then copy it to public/downloads/fleetshare.apk before deploy.",
       "directCta": "Download Android app (APK)",
       "webTitle": "Web dashboard",
       "webBody": "No install required: register or sign in from any modern browser. Works best when your company deploys FleetShare on a URL your team trusts.",
+      "selfHostTitle": "Web version — your own deployment",
+      "selfHostBody": "Download the source and run FleetShare on your infrastructure (e.g. Vercel + Neon PostgreSQL). Configure environment variables for your company: database, auth secret, public URL, and optional email. Point the Android app at your HTTPS URL in android/gradle.properties.",
+      "selfHostZipCta": "Download source (ZIP)",
+      "selfHostRepoCta": "View on GitHub",
       "backHome": "← Back to home"
     }
   },
