@@ -4,7 +4,7 @@ Next.js + **PostgreSQL only** (Prisma). Intended for **Vercel** + a hosted datab
 
 This repo **does not** ship Database Settings or external data sources (no Microsoft Entra / SSO integration for user directories, no SQL Server / Firebase / SharePoint as app data layers).
 
-The **full thesis / server edition** (orchestrator + SSO-capable layers, Docker-focused) is the sibling project **`licenta_dani-main`** — keep that as your main Git repo; use **this** folder as a **separate Git repository** for the public web demo.
+The **full thesis / server edition** (orchestrator + SSO-capable layers, Docker-focused) lives in **[dan123-tech/Licenta](https://github.com/dan123-tech/Licenta)** on GitHub; use **this** repo as a **separate** public web / download site if you split them.
 
 ## New Git remote (you run once)
 

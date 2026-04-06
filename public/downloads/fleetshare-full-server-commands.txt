@@ -1,5 +1,5 @@
-FleetShare — full company server (Docker edition, licenta_dani-main)
-Default clone: https://github.com/dan123-tech/licenta_dani-main.git
+FleetShare — full company server (Docker edition)
+Default clone: https://github.com/dan123-tech/Licenta.git
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 What this does
@@ -52,4 +52,4 @@ After install
   • Stop: cd licenta_dani-main && ./install.sh --down   (or install.ps1 -Down)
   • Optional AI licence validator: see /download#ai-validator on the marketing site
 
-  This is NOT the small Vercel-only web repo — it is the full Docker stack from licenta_dani-main.
+  This is NOT the small Vercel-only web repo — it is the full Docker stack from the Licenta repo.

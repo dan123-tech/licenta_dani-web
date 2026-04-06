@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 # FleetShare — full server (Docker) bootstrap for Linux / macOS.
-# Download from your company /download page. Clones the full edition repo (same as folder licenta_dani-main),
+# Download from your company /download page. Clones the full edition repo (default: github.com/dan123-tech/Licenta),
 # detects this machine's primary IPv4, sets NEXT_PUBLIC_APP_URL / NEXTAUTH_URL, optional host ports, then runs ./install.sh
 #
 # Requires: Docker (Compose V2), git
 #
 # Usage:
 #   chmod +x fleetshare-full-server-install.sh
-#   ./fleetshare-full-server-install.sh                  # clone into ./licenta_dani-main under current dir
+#   ./fleetshare-full-server-install.sh                  # clone into ./Licenta under current dir
 #   ./fleetshare-full-server-install.sh ..               # parent folder (e.g. put project next to Downloads)
 #   FLEETSHARE_HTTP_PORT=8080 ./fleetshare-full-server-install.sh
 #   FLEETSHARE_SERVER_REPO=https://github.com/you/your-fork.git ./fleetshare-full-server-install.sh
 #
 # Environment (optional):
-#   FLEETSHARE_SERVER_REPO   Git URL (default: https://github.com/dan123-tech/licenta_dani-main.git)
-#   FLEETSHARE_INSTALL_DIR   Folder name to clone into (default: licenta_dani-main)
+#   FLEETSHARE_SERVER_REPO   Git URL (default: https://github.com/dan123-tech/Licenta.git)
+#   FLEETSHARE_INSTALL_DIR   Folder name to clone into (default: Licenta)
 #   FLEETSHARE_HTTP_PORT     Host port mapped to app :3000 (default: 3000)
 #   FLEETSHARE_LAN_PROXY_PORT Host port for :3001 (default: 3001)
 #   FLEETSHARE_PUBLIC_HOST   If set, skip IP detection and use this host (e.g. fleet.company.com)
 set -euo pipefail
 
-REPO_DEFAULT="https://github.com/dan123-tech/licenta_dani-main.git"
+REPO_DEFAULT="https://github.com/dan123-tech/Licenta.git"
 REPO="${FLEETSHARE_SERVER_REPO:-$REPO_DEFAULT}"
-DIR_NAME="${FLEETSHARE_INSTALL_DIR:-licenta_dani-main}"
+DIR_NAME="${FLEETSHARE_INSTALL_DIR:-Licenta}"
 HTTP_PORT="${FLEETSHARE_HTTP_PORT:-3000}"
 LAN_PORT="${FLEETSHARE_LAN_PROXY_PORT:-3001}"
 

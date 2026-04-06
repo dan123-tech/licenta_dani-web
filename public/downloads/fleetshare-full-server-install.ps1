@@ -3,7 +3,7 @@
   FleetShare - full server (Docker) bootstrap for Windows.
 
 .DESCRIPTION
-  Clones the full edition from GitHub, sets NEXT_PUBLIC_APP_URL / NEXTAUTH_URL
+  Clones the full FleetShare app from GitHub (default repo: dan123-tech/Licenta), sets NEXT_PUBLIC_APP_URL / NEXTAUTH_URL
   from this machine's IPv4 and optional ports, then runs install.ps1 (Docker Compose).
 
   Download from your company /download page. Requires Docker Desktop + git.
@@ -26,7 +26,7 @@ if ($Help) {
   exit 0
 }
 
-$RepoDefault = "https://github.com/dan123-tech/licenta_dani-main.git"
+$RepoDefault = "https://github.com/dan123-tech/Licenta.git"
 if ($env:FLEETSHARE_SERVER_REPO -and $env:FLEETSHARE_SERVER_REPO.Trim()) {
   $Repo = $env:FLEETSHARE_SERVER_REPO.Trim()
 } else {
@@ -35,7 +35,7 @@ if ($env:FLEETSHARE_SERVER_REPO -and $env:FLEETSHARE_SERVER_REPO.Trim()) {
 if ($env:FLEETSHARE_INSTALL_DIR -and $env:FLEETSHARE_INSTALL_DIR.Trim()) {
   $DirName = $env:FLEETSHARE_INSTALL_DIR.Trim()
 } else {
-  $DirName = "licenta_dani-main"
+  $DirName = "Licenta"
 }
 if ($env:FLEETSHARE_HTTP_PORT -and $env:FLEETSHARE_HTTP_PORT.Trim()) {
   $HttpPort = $env:FLEETSHARE_HTTP_PORT.Trim()
