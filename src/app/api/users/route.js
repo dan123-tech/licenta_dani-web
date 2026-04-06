@@ -9,6 +9,7 @@ import { getProvider, getLayerTable, getStoredCredentials, LAYERS, PROVIDERS } f
 import { requireCompany, requireAdmin, jsonResponse, errorResponse, dataSourceNotConfiguredResponse } from "@/lib/api-helpers";
 import { listFirebaseUsers, isFirebaseConfigured } from "@/lib/connectors/firebase-users";
 import { listSqlServerUsers, createSqlServerUser } from "@/lib/connectors/sql-server-users";
+import { drivingLicenceUrlForApi } from "@/lib/driving-licence-ref";
 
 const postSchema = z.object({
   email: z.string().email().min(1).max(255),
@@ -36,7 +37,12 @@ export async function GET(request) {
         if (users == null) {
           return dataSourceNotConfiguredResponse(LAYERS.USERS, "SQL Server credentials not saved. Connect again in Database Settings.");
         }
-        return jsonResponse(users);
+        return jsonResponse(
+          users.map((u) => ({
+            ...u,
+            drivingLicenceUrl: drivingLicenceUrlForApi(u.drivingLicenceUrl, u.userId),
+          }))
+        );
       } catch (err) {
         console.error("GET /api/users (SQL Server) error:", err);
         const msg = err?.message || String(err) || "Failed to load users from SQL Server";
@@ -85,7 +91,7 @@ export async function GET(request) {
         name: m.user.name,
         role: m.role,
         status: m.status,
-        drivingLicenceUrl: m.user.drivingLicenceUrl,
+        drivingLicenceUrl: drivingLicenceUrlForApi(m.user.drivingLicenceUrl, m.userId),
         drivingLicenceStatus: m.user.drivingLicenceStatus,
         drivingLicenceVerifiedBy: m.user.drivingLicenceVerifiedBy || null,
         createdAt: m.createdAt,

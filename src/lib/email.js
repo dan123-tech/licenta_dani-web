@@ -97,3 +97,102 @@ export async function sendInviteEmail({ to, token, inviteeName }) {
 
   return sendEmail({ to, subject: "You’re invited to FleetShare", html, text });
 }
+
+/**
+ * Sent after self-service registration.
+ */
+export async function sendWelcomeEmail({ to, name }) {
+  const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+  const text = [
+    greeting,
+    "",
+    "Your FleetShare account is ready. Sign in with the email you used to register.",
+    "",
+    "If you didn’t create this account, you can ignore this email.",
+  ].join("\n");
+  const html = `
+    <p>${greeting}</p>
+    <p>Your <strong>FleetShare</strong> account is ready. Sign in with the email you used to register.</p>
+    <p style="color:#64748b;font-size:13px">If you didn’t create this account, you can ignore this email.</p>
+  `.trim();
+  return sendEmail({ to, subject: "Welcome to FleetShare", html, text });
+}
+
+function formatReservationWhen(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  } catch {
+    return String(iso);
+  }
+}
+
+/**
+ * Sent when a user creates a reservation (local DB). Includes pickup window and codes when present.
+ */
+export async function sendReservationConfirmationEmail({ to, name, reservation }) {
+  const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+  const car = reservation?.car;
+  const carLabel = car
+    ? [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" ").trim() || reservation.carId
+    : reservation?.carId || "—";
+  const pickup = reservation?.pickup_code ?? "—";
+  const release = reservation?.release_code ?? "— (shown in the app when you return the vehicle)";
+  const validFrom = formatReservationWhen(reservation?.code_valid_from ?? reservation?.startDate);
+  const start = formatReservationWhen(reservation?.startDate);
+  const end = formatReservationWhen(reservation?.endDate);
+  const purpose = reservation?.purpose?.trim() || "—";
+
+  const text = [
+    greeting,
+    "",
+    "Your reservation is confirmed.",
+    "",
+    `Vehicle: ${carLabel}`,
+    `Start: ${start}`,
+    `End: ${end}`,
+    `Purpose: ${purpose}`,
+    "",
+    `Pickup code: ${pickup}`,
+    `Code valid from: ${validFrom}`,
+    `Release code: ${release}`,
+    "",
+    "Keep this email for reference, or open FleetShare to see live details.",
+  ].join("\n");
+
+  const html = `
+    <p>${greeting}</p>
+    <p>Your reservation is <strong>confirmed</strong>.</p>
+    <table style="border-collapse:collapse;font-size:14px;margin:12px 0">
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">Vehicle</td><td><strong>${carLabel}</strong></td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">Start</td><td>${start}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">End</td><td>${end}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">Purpose</td><td>${purpose}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">Pickup code</td><td><strong style="font-size:18px;letter-spacing:2px">${pickup}</strong></td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">Code valid from</td><td>${validFrom}</td></tr>
+      <tr><td style="padding:4px 12px 4px 0;color:#64748b">Release code</td><td>${release}</td></tr>
+    </table>
+    <p style="color:#64748b;font-size:13px">You can also open FleetShare for live details.</p>
+  `.trim();
+
+  return sendEmail({ to, subject: "Reservation confirmed — FleetShare", html, text });
+}
+
+/**
+ * 6-digit code after password when MFA is enabled.
+ */
+export async function sendMfaLoginCodeEmail({ to, code }) {
+  const text = [
+    "Your FleetShare sign-in code is:",
+    "",
+    String(code),
+    "",
+    "It expires in 10 minutes. If you didn’t try to sign in, ignore this email.",
+  ].join("\n");
+  const html = `
+    <p>Your FleetShare sign-in code is:</p>
+    <p style="font-size:28px;font-weight:700;letter-spacing:6px;font-family:ui-monospace,monospace">${String(code)}</p>
+    <p style="color:#64748b;font-size:13px">It expires in 10 minutes. If you didn’t try to sign in, ignore this email.</p>
+  `.trim();
+  return sendEmail({ to, subject: "Your FleetShare sign-in code", html, text });
+}

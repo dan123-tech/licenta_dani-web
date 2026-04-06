@@ -80,7 +80,28 @@ export async function apiLogin(email, password) {
   const res = await fetch("/api/auth/login", getOpts("POST", { email, password, clientType: "web" }));
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Login failed");
+  if (data.mfaRequired) {
+    return { mfaRequired: true, email: data.email || email };
+  }
   persistWebSessionFromResponse(data);
+  return { mfaRequired: false, ...data };
+}
+
+export async function apiVerifyMfaLogin(email, code) {
+  const res = await fetch(
+    "/api/auth/mfa-verify",
+    getOpts("POST", { email, code, clientType: "web" })
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Verification failed");
+  persistWebSessionFromResponse(data);
+  return data;
+}
+
+export async function apiUserMfaUpdate(enabled, password) {
+  const res = await fetch("/api/users/me/mfa", getOpts("PATCH", { enabled, password }));
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Could not update security settings");
   return data;
 }
 

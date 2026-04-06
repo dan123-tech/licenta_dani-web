@@ -8,6 +8,7 @@ import { normalizeClientType } from "@/lib/auth/session-tokens";
 import { getCompanyById } from "@/lib/companies";
 import { getUserById } from "@/lib/users";
 import { jsonResponse, errorResponse } from "@/lib/api-helpers";
+import { drivingLicenceUrlForApi } from "@/lib/driving-licence-ref";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,7 +29,8 @@ export async function GET() {
     role: session.role ?? null,
     companyId: session.companyId ?? null,
     drivingLicenceStatus: userRow?.drivingLicenceStatus ?? null,
-    drivingLicenceUrl: userRow?.drivingLicenceUrl ?? null,
+    drivingLicenceUrl: drivingLicenceUrlForApi(userRow?.drivingLicenceUrl, session.userId),
+    mfaEnabled: Boolean(userRow?.mfaEnabled),
   };
   const webExtra =
     normalizeClientType(session.client) === "web" && session.sid ? { webSessionId: session.sid } : {};

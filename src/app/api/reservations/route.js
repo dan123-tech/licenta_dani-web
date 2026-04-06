@@ -10,6 +10,7 @@ import { getProvider, getLayerTable, getStoredCredentials, LAYERS, PROVIDERS } f
 import { listSqlServerReservations } from "@/lib/connectors/sql-server-reservations";
 import { requireCompany, jsonResponse, errorResponse, dataSourceNotConfiguredResponse } from "@/lib/api-helpers";
 import { writeAuditLog } from "@/lib/audit";
+import { sendReservationConfirmationEmail } from "@/lib/email";
 
 const postSchema = z.object({
   carId: z.string().min(1),
@@ -175,6 +176,20 @@ export async function POST(request) {
         instant: isInstant,
       },
     });
+    if (currentUser?.email) {
+      try {
+        const sent = await sendReservationConfirmationEmail({
+          to: currentUser.email,
+          name: currentUser.name,
+          reservation,
+        });
+        if (!sent.ok) {
+          console.error("[reservations] confirmation email failed:", sent.error);
+        }
+      } catch (e) {
+        console.error("[reservations] confirmation email exception:", e);
+      }
+    }
     return jsonResponse(
       {
         id: reservation.id,

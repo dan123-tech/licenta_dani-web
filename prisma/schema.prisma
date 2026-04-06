@@ -76,6 +76,11 @@ model User {
   activeWebSessionToken     String?
   /** Random id for mobile cookie session; independent from web */
   activeMobileSessionToken  String?
+  /** When true, login sends a 6-digit email code after password succeeds */
+  mfaEnabled           Boolean              @default(false)
+  mfaOtpHash           String?
+  mfaOtpExpiresAt      DateTime?
+  mfaOtpAttempts       Int                  @default(0)
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
 

@@ -13,7 +13,7 @@ const nextConfig = {
     ],
   },
   /** OpenNext Cloudflare copies these for workerd; needed for packages like `jose`. */
-  serverExternalPackages: ["jose"],
+  serverExternalPackages: ["jose", "@vercel/blob"],
   /*
    * Next.js 16 does not accept `experimental.turbo: false` (strict config schema).
    * To build with webpack instead of Turbopack, use the CLI: `next build --webpack`

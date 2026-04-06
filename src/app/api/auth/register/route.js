@@ -7,6 +7,9 @@
 import { z } from "zod";
 import { findUserByEmail, createUser } from "@/lib/users";
 import { jsonResponse, errorResponse } from "@/lib/api-helpers";
+import { sendWelcomeEmail } from "@/lib/email";
+
+export const runtime = "nodejs";
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -30,6 +33,17 @@ export async function POST(request) {
   if (existing) return errorResponse("Email already registered", 409);
 
   const user = await createUser({ email, password, name });
+
+  // Must await: Vercel / Workers often freeze the isolate right after the response is sent,
+  // so fire-and-forget .then() never runs and no email is sent.
+  try {
+    const sent = await sendWelcomeEmail({ to: user.email, name: user.name });
+    if (!sent.ok) {
+      console.error("[auth/register] welcome email failed:", sent.error);
+    }
+  } catch (e) {
+    console.error("[auth/register] welcome email exception:", e);
+  }
 
   return jsonResponse(
     { user: { id: user.id, email: user.email, name: user.name } },

@@ -28,21 +28,44 @@ function isProduction() {
  * Whether the incoming request is served over HTTPS (or forwarded as such).
  * Vercel/serverless often use an internal http:// URL while the client used HTTPS; without a correct
  * forwarded proto, we'd set non-Secure cookies and browsers reject them on HTTPS pages (login looks OK but session is lost).
+ *
+ * Cloudflare in front of the origin sometimes sends **X-Forwarded-Proto: http** for the CF→origin hop
+ * (e.g. Flexible SSL) while the visitor used HTTPS. Treating that as final breaks session cookies on
+ * the public hostname. We treat as HTTPS if **any** trusted signal says so (URL, CF-Visitor, any proto in the list).
+ *
+ * Set **FORCE_HTTPS_SESSION_COOKIE=1** when you terminate TLS in front of the app and headers are wrong.
  * @param {Request} [request]
  */
 export function isRequestHttps(request) {
   if (!request) return false;
-  const raw = request.headers.get("x-forwarded-proto");
-  if (raw) {
-    const proto = raw.split(",")[0].trim().toLowerCase();
-    if (proto === "https") return true;
-    if (proto === "http") return false;
-  }
+  if (process.env.FORCE_HTTPS_SESSION_COOKIE === "1") return true;
+
   try {
     if (new URL(request.url).protocol === "https:") return true;
   } catch {
     /* ignore */
   }
+
+  const cfVisitor = request.headers.get("cf-visitor");
+  if (cfVisitor) {
+    try {
+      const j = JSON.parse(cfVisitor);
+      if (String(j?.scheme || "").toLowerCase() === "https") return true;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const raw = request.headers.get("x-forwarded-proto");
+  if (raw) {
+    const parts = raw.split(",").map((p) => p.trim().toLowerCase());
+    if (parts.some((p) => p === "https")) return true;
+  }
+
+  const forwarded = request.headers.get("forwarded");
+  if (forwarded && /proto=https/i.test(forwarded)) return true;
+  if (request.headers.get("x-forwarded-ssl") === "on") return true;
+
   if (process.env.VERCEL === "1" && process.env.NODE_ENV === "production") return true;
   return false;
 }
