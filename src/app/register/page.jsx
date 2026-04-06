@@ -117,7 +117,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form method="post" onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
             <div>
               <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text)" }}>
                 {t("register.name")}

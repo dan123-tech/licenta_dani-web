@@ -153,7 +153,7 @@ export default function LoginPage() {
           )}
 
           {!mfaStep ? (
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <form method="post" onSubmit={handlePasswordSubmit} className="space-y-4" autoComplete="on">
               <div>
                 <label
                   className="block text-[13px] font-semibold mb-1.5"
@@ -254,7 +254,7 @@ export default function LoginPage() {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleMfaSubmit} className="space-y-4">
+            <form method="post" onSubmit={handleMfaSubmit} className="space-y-4" autoComplete="on">
               <div>
                 <label
                   className="block text-[13px] font-semibold mb-1.5"
