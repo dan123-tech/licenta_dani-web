@@ -73,6 +73,17 @@
     "mfaVerifying": "Verifying…",
     "mfaBack": "Use a different account"
   },
+  "forcedPasswordChange": {
+    "title": "Choose a new password",
+    "body": "An administrator created your account. Enter the password they gave you, then choose your own password to continue.",
+    "current": "Current password (from your administrator)",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "submit": "Update password",
+    "submitting": "Saving…",
+    "mismatch": "New passwords do not match.",
+    "errorFallback": "Could not update password. Try again."
+  },
   "register": {
     "title": "Create your account",
     "subtitle": "Join FleetShare and manage your company cars.",
@@ -95,6 +106,9 @@
     "quickSetupAccent": "Quick",
     "quickSetupTitleRest": " configuration",
     "quickSetupBody": "Register → Create your company → Invite your team → Start reserving cars"
+  },
+  "admin": {
+    "addUserBlurb": "Creates the account immediately (Local database). If you leave password empty, a default temporary password is used. We email the user with a sign-in link; on first login they must choose a new password before using the app. Configure Resend (RESEND_API_KEY, EMAIL_FROM) for mail."
   },
   "sidebar": {
     "logoTagline": "Company car sharing",

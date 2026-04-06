@@ -8,6 +8,7 @@ import UserDashboard from "@/components/dashboard/UserDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import InAppNotificationPoller from "@/components/dashboard/InAppNotificationPoller";
 import WebSessionLiveGuard from "@/components/dashboard/WebSessionLiveGuard";
+import MustChangePasswordOverlay from "@/components/dashboard/MustChangePasswordOverlay";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DashboardPage() {
@@ -44,7 +45,13 @@ export default function DashboardPage() {
         <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--main-bg)" }}>
           <p className="text-slate-500">{t("common.loading")}</p>
         </div>
-      ) : !session ? null : (
+      ) : !session ? null : session.mustChangePassword ? (
+        <MustChangePasswordOverlay
+          onSuccess={async () => {
+            await loadSession();
+          }}
+        />
+      ) : (
         <DashboardContent session={session} company={company} loadSession={loadSession} />
       )}
     </>

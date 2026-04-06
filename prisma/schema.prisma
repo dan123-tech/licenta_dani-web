@@ -78,6 +78,8 @@ model User {
   activeMobileSessionToken  String?
   /** When true, login sends a 6-digit email code after password succeeds */
   mfaEnabled           Boolean              @default(false)
+  /** Set when an admin creates the account with a known password; user must change on first login */
+  mustChangePassword   Boolean              @default(false)
   mfaOtpHash           String?
   mfaOtpExpiresAt      DateTime?
   mfaOtpAttempts       Int                  @default(0)

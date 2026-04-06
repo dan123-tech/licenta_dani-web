@@ -108,14 +108,50 @@ export async function sendWelcomeEmail({ to, name }) {
     "",
     "Your FleetShare account is ready. Sign in with the email you used to register.",
     "",
+    "Optional: after you log in, you can turn on email sign-in codes (MFA) under Dashboard → Security.",
+    "",
     "If you didn’t create this account, you can ignore this email.",
   ].join("\n");
   const html = `
     <p>${greeting}</p>
     <p>Your <strong>FleetShare</strong> account is ready. Sign in with the email you used to register.</p>
+    <p style="color:#64748b;font-size:14px">Optional: after you log in, you can enable email sign-in codes (MFA) under <strong>Dashboard → Security</strong>.</p>
     <p style="color:#64748b;font-size:13px">If you didn’t create this account, you can ignore this email.</p>
   `.trim();
   return sendEmail({ to, subject: "Welcome to FleetShare", html, text });
+}
+
+/**
+ * Sent when an admin creates a user account with a password the admin chose.
+ * Does not include the password. User must change it on first login (app enforces).
+ */
+export async function sendAdminCreatedAccountEmail({ to, name }) {
+  const base = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+  const signInLink = base ? `${base}/login` : null;
+  const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+  const text = [
+    greeting,
+    "",
+    "An administrator created a FleetShare account for you.",
+    "Sign in with the email address this message was sent to and the password your administrator gave you.",
+    "On first sign-in you will be asked to choose a new password before using the app.",
+    "",
+    signInLink ? `Sign in: ${signInLink}` : "Open FleetShare and go to the sign-in page.",
+    "",
+    "If you didn’t expect this, contact your company administrator.",
+  ].join("\n");
+  const html = `
+    <p>${greeting}</p>
+    <p>An administrator created a <strong>FleetShare</strong> account for you.</p>
+    <p>Sign in with <strong>this email address</strong> and the <strong>password your administrator gave you</strong>. After you sign in, you will be prompted to <strong>choose your own password</strong> before continuing.</p>
+    ${
+      signInLink
+        ? `<p><a href="${signInLink}" style="display:inline-block;padding:10px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">Sign in to FleetShare</a></p>`
+        : ""
+    }
+    <p style="color:#64748b;font-size:13px">If you didn’t expect this, contact your company administrator.</p>
+  `.trim();
+  return sendEmail({ to, subject: "Your FleetShare account is ready — set your password", html, text });
 }
 
 function formatReservationWhen(iso) {

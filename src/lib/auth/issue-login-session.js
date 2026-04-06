@@ -16,6 +16,12 @@ import { getCompanyById } from "@/lib/companies";
 export async function buildLoginSuccessResponse(user, clientType, request) {
   const client = normalizeClientType(clientType);
 
+  const flags = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { mustChangePassword: true },
+  });
+  const mustChangePassword = Boolean(flags?.mustChangePassword);
+
   const enrolled = await prisma.companyMember.findMany({
     where: { userId: user.id, status: "ENROLLED" },
     include: { company: true },
@@ -29,7 +35,14 @@ export async function buildLoginSuccessResponse(user, clientType, request) {
     const sid = await rotateUserSessionToken(user.id, client);
     const company = await getCompanyById(member.companyId);
     const payload = {
-      user: { id: user.id, email: user.email, name: user.name, role: member.role, companyId: member.companyId },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: member.role,
+        companyId: member.companyId,
+        mustChangePassword,
+      },
       company: company ? { id: company.id, name: company.name, domain: company.domain, joinCode: company.joinCode } : null,
     };
     if (client === "web") payload.webSessionId = sid;
@@ -52,7 +65,7 @@ export async function buildLoginSuccessResponse(user, clientType, request) {
 
   const sid = await rotateUserSessionToken(user.id, client);
   const payload = {
-    user: { id: user.id, email: user.email, name: user.name, role: null, companyId: null },
+    user: { id: user.id, email: user.email, name: user.name, role: null, companyId: null, mustChangePassword },
     company: null,
   };
   if (client === "web") payload.webSessionId = sid;

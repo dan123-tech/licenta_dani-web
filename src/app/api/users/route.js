@@ -10,6 +10,9 @@ import { requireCompany, requireAdmin, jsonResponse, errorResponse, dataSourceNo
 import { listFirebaseUsers, isFirebaseConfigured } from "@/lib/connectors/firebase-users";
 import { listSqlServerUsers, createSqlServerUser } from "@/lib/connectors/sql-server-users";
 import { drivingLicenceUrlForApi } from "@/lib/driving-licence-ref";
+import { sendAdminCreatedAccountEmail } from "@/lib/email";
+
+export const runtime = "nodejs";
 
 const postSchema = z.object({
   email: z.string().email().min(1).max(255),
@@ -144,9 +147,21 @@ export async function POST(request) {
 
   const user = await createUser(
     { email: data.email, name: data.name, password: data.password || "ChangeMe123!" },
-    { companyId: out.session.companyId, role: data.role }
+    { companyId: out.session.companyId, role: data.role, mustChangePassword: true }
   );
   const member = await listCompanyMembers(out.session.companyId).then((m) => m.find((x) => x.userId === user.id));
+
+  let provisionEmailSent = false;
+  try {
+    const mail = await sendAdminCreatedAccountEmail({ to: user.email, name: user.name });
+    provisionEmailSent = mail.ok === true;
+    if (!mail.ok && mail.error !== "not_configured") {
+      console.error("[POST /api/users] provision email:", mail.error);
+    }
+  } catch (e) {
+    console.error("[POST /api/users] provision email exception:", e);
+  }
+
   return jsonResponse(
     {
       id: member?.id,
@@ -155,6 +170,8 @@ export async function POST(request) {
       name: user.name,
       role: member?.role ?? data.role,
       status: member?.status ?? "ENROLLED",
+      mustChangePassword: true,
+      provisionEmailSent,
     },
     201
   );

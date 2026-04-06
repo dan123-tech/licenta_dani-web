@@ -73,6 +73,17 @@
     "mfaVerifying": "Se verifică…",
     "mfaBack": "Alt cont"
   },
+  "forcedPasswordChange": {
+    "title": "Alege o parolă nouă",
+    "body": "Un administrator ți-a creat contul. Introdu parola pe care ți-a dat-o, apoi alege propria parolă pentru a continua.",
+    "current": "Parola actuală (de la administrator)",
+    "new": "Parolă nouă",
+    "confirm": "Confirmă parola nouă",
+    "submit": "Actualizează parola",
+    "submitting": "Se salvează…",
+    "mismatch": "Parolele noi nu coincid.",
+    "errorFallback": "Nu s-a putut actualiza parola. Încearcă din nou."
+  },
   "register": {
     "title": "Creează cont",
     "subtitle": "Alătură-te FleetShare și gestionează mașinile companiei.",
@@ -95,6 +106,9 @@
     "quickSetupAccent": "Configurare",
     "quickSetupTitleRest": " rapidă",
     "quickSetupBody": "Înregistrare → Creează compania → Invită echipa → Începe rezervările"
+  },
+  "admin": {
+    "addUserBlurb": "Creează contul imediat (bază locală). Dacă lași parola goală, se folosește o parolă temporară implicită. Trimitem e-mail cu link de autentificare; la prima autentificare utilizatorul trebuie să aleagă o parolă nouă. Configurează Resend (RESEND_API_KEY, EMAIL_FROM) pentru e-mail."
   },
   "sidebar": {
     "logoTagline": "Car sharing în companie",

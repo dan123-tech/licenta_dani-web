@@ -21,18 +21,20 @@ export async function findUserByEmail(email) {
 /**
  * Create a new user and optionally attach to a company with ENROLLED status.
  * @param {Object} data - { email, password (plain), name }
- * @param {Object} [options] - optional { companyId, role } for immediate enrollment
+ * @param {Object} [options] - optional { companyId, role, mustChangePassword } for enrollment / admin flows
  * @returns {Promise<Object>} Created user
  */
 export async function createUser(data, options) {
   const hashed = await hashPassword(data.password);
   const email = data.email.toLowerCase().trim();
+  const mustChangePassword = Boolean(options?.mustChangePassword);
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
         email,
         password: hashed,
         name: data.name.trim(),
+        ...(mustChangePassword ? { mustChangePassword: true } : {}),
       },
     });
     if (options?.companyId) {
@@ -274,6 +276,7 @@ export async function getUserById(userId) {
       drivingLicenceStatus: true,
       drivingLicenceUrl: true,
       mfaEnabled: true,
+      mustChangePassword: true,
     },
   });
 }

@@ -38,7 +38,7 @@ export async function POST(request) {
   if (user) {
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: await hashPassword(newPassword) },
+      data: { password: await hashPassword(newPassword), mustChangePassword: false },
     });
   } else {
     user = await prisma.user.create({
@@ -46,6 +46,7 @@ export async function POST(request) {
         email: invite.email,
         password: await hashPassword(newPassword),
         name: invite.email.split("@")[0],
+        mustChangePassword: false,
       },
     });
   }
@@ -56,7 +57,14 @@ export async function POST(request) {
   const client = normalizeClientType("web");
   const sid = await rotateUserSessionToken(user.id, client);
   const body = {
-    user: { id: user.id, email: user.email, name: user.name, role: member.role, companyId: member.companyId },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: member.role,
+      companyId: member.companyId,
+      mustChangePassword: false,
+    },
     company: { id: member.company.id, name: member.company.name },
     webSessionId: sid,
   };
