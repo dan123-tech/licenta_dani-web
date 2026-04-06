@@ -31,6 +31,9 @@
     "heroSub": "Reserve vehicles, validate licences automatically, and track fleet costs — all in one platform built for modern teams.",
     "ctaPrimary": "Start for free →",
     "ctaSecondary": "Sign in to dashboard",
+    "ctaDownload": "Download app",
+    "selfHostedTitle": "Your server, your data",
+    "selfHostedDesc": "FleetShare can be installed on your company’s own servers or cloud account so the platform stays independent — you control hosting, domains, and who accesses your fleet data.",
     "features": {
       "fleetTitle": "Fleet Management",
       "fleetDesc": "Track every vehicle in real time — availability, mileage, and maintenance status.",
@@ -56,6 +59,18 @@
       "bullet1": "AI-powered driving licence verification",
       "bullet2": "Real-time fleet availability",
       "bullet3": "Reservation history & analytics"
+    },
+    "download": {
+      "pageTitle": "Download",
+      "pageSubtitle": "Web dashboard and Android companion",
+      "intro": "Use the web app in your browser for the full experience, or install the Android app on company devices. Your organisation can host everything on its own infrastructure.",
+      "androidTitle": "Android app",
+      "androidBody": "The Android client lives in the android/ folder of the FleetShare project. IT can build a release APK in Android Studio (Build → Build Bundle(s) / APK(s)) and distribute it internally (MDM, shared drive, or your app store).",
+      "directCta": "Download APK / store",
+      "noDirectLink": "No public install link is configured for this site. Ask your administrator for the APK or internal store listing, or build from the project source.",
+      "webTitle": "Web dashboard",
+      "webBody": "No install required: register or sign in from any modern browser. Works best when your company deploys FleetShare on a URL your team trusts.",
+      "backHome": "← Back to home"
     }
   },
   "login": {

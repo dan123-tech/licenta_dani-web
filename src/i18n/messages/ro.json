@@ -31,6 +31,9 @@
     "heroSub": "Rezervă vehicule, validează permisele automat și urmărește costurile — totul într-o singură platformă pentru echipe moderne.",
     "ctaPrimary": "Începe gratuit →",
     "ctaSecondary": "Autentificare în panou",
+    "ctaDownload": "Descarcă aplicația",
+    "selfHostedTitle": "Serverul companiei, datele tale",
+    "selfHostedDesc": "FleetShare poate fi instalat pe serverele sau în contul cloud al companiei, astfel încât platforma rămâne independentă — controlați găzduirea, domeniile și cine accesează datele flotei.",
     "features": {
       "fleetTitle": "Gestionare flotă",
       "fleetDesc": "Urmărește fiecare vehicul în timp real — disponibilitate, kilometraj și mentenanță.",
@@ -56,6 +59,18 @@
       "bullet1": "Verificare permis cu AI",
       "bullet2": "Disponibilitate flotă în timp real",
       "bullet3": "Istoric rezervări și analize"
+    },
+    "download": {
+      "pageTitle": "Descărcare",
+      "pageSubtitle": "Panou web și aplicație Android",
+      "intro": "Folosiți aplicația web în browser pentru experiența completă sau instalați aplicația Android pe dispozitivele companiei. Organizația poate găzdui totul pe infrastructura proprie.",
+      "androidTitle": "Aplicație Android",
+      "androidBody": "Clientul Android se află în folderul android/ al proiectului FleetShare. IT poate genera un APK de release în Android Studio (Build → Build Bundle(s) / APK(s)) și îl distribuie intern (MDM, drive partajat sau magazinul intern).",
+      "directCta": "Descarcă APK / magazin",
+      "noDirectLink": "Nu există link public de instalare pentru acest site. Cereți administratorului APK-ul sau listarea din magazinul intern, sau compilați din surse.",
+      "webTitle": "Panou web",
+      "webBody": "Fără instalare: înregistrare sau autentificare din orice browser modern. Funcționează cel mai bine când compania publică FleetShare la un URL de încredere.",
+      "backHome": "← Înapoi acasă"
     }
   },
   "login": {
