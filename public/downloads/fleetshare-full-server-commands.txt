@@ -33,12 +33,17 @@ Windows (PowerShell)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Install: Docker Desktop, Git
 
-  Set-ExecutionPolicy -Scope Process Bypass -Force
+  Open PowerShell, cd to the folder with the script, then:
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   .\fleetshare-full-server-install.ps1
-  .\fleetshare-full-server-install.ps1 -Parent ..
 
-  $env:FLEETSHARE_HTTP_PORT = "8080"
-  .\fleetshare-full-server-install.ps1
+  If you see "unexpected }" or odd errors: re-download the .ps1 from the site
+  (older versions used $HostIp which breaks in Windows PowerShell).
+
+  Optional:
+  .\fleetshare-full-server-install.ps1 -Parent ..
+  $env:FLEETSHARE_HTTP_PORT = "8080"; .\fleetshare-full-server-install.ps1
+  $env:FLEETSHARE_PUBLIC_HOST = "192.168.1.50"; .\fleetshare-full-server-install.ps1
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 After install
