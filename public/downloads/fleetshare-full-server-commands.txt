@@ -1,0 +1,50 @@
+FleetShare — full company server (Docker edition, licenta_dani-main)
+Default clone: https://github.com/dan123-tech/licenta_dani-main.git
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+What this does
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • Clones the full FleetShare repo (Docker + Postgres + app + Caddy).
+  • Detects this machine's IPv4 (or use FLEETSHARE_PUBLIC_HOST).
+  • Writes NEXT_PUBLIC_APP_URL and NEXTAUTH_URL as http://IP:PORT (default port 3000).
+  • Ensures AUTH_SECRET exists (generates one if missing).
+  • Optionally remaps host ports via FLEETSHARE_HTTP_PORT / FLEETSHARE_LAN_PROXY_PORT.
+  • Runs the project's install.sh / install.ps1 (docker compose up).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Linux / Ubuntu VM (from your company /download page)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Install: Docker (Compose V2), git
+
+  chmod +x fleetshare-full-server-install.sh
+  ./fleetshare-full-server-install.sh
+  ./fleetshare-full-server-install.sh ..          # clone into parent folder
+
+  Custom port / fork:
+    FLEETSHARE_HTTP_PORT=8080 ./fleetshare-full-server-install.sh
+    FLEETSHARE_SERVER_REPO=https://github.com/you/fork.git ./fleetshare-full-server-install.sh
+
+  Fixed hostname instead of auto IP:
+    FLEETSHARE_PUBLIC_HOST=fleet.mycompany.com FLEETSHARE_HTTP_PORT=443 ./fleetshare-full-server-install.sh
+    (You still need TLS termination — e.g. reverse proxy or Caddy; see repo deploy/)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Windows (PowerShell)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Install: Docker Desktop, Git
+
+  Set-ExecutionPolicy -Scope Process Bypass -Force
+  .\fleetshare-full-server-install.ps1
+  .\fleetshare-full-server-install.ps1 -Parent ..
+
+  $env:FLEETSHARE_HTTP_PORT = "8080"
+  .\fleetshare-full-server-install.ps1
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+After install
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  • Browser (LAN): http://SERVER_IP:3000  (or the port you chose)
+  • Stop: cd licenta_dani-main && ./install.sh --down   (or install.ps1 -Down)
+  • Optional AI licence validator: see /download#ai-validator on the marketing site
+
+  This is NOT the small Vercel-only web repo — it is the full Docker stack from licenta_dani-main.
