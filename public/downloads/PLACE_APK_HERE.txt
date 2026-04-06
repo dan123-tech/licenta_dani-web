@@ -1,9 +1,15 @@
-Place your release Android app here as:
+Place your SIGNED release (or debug) APK here with this exact name:
 
   fleetshare.apk
 
-Build it in Android Studio: android/ app module -> Build -> Build Bundle(s) / APK(s) -> APK.
+Android Studio: open the "android" folder -> Build -> Generate Signed App Bundle / APK -> APK
+(or Build -> Build Bundle(s) / APK(s) -> APK for a debug APK for testing).
 
-The website serves this file at /downloads/fleetshare.apk (Download page and optional env NEXT_PUBLIC_ANDROID_DOWNLOAD_URL).
+Copy the built .apk into:  public/downloads/fleetshare.apk
+Then commit and redeploy (Vercel, etc.). Without this file, the download link returns 404 and phones cannot install anything.
 
-Note: Android installs .apk packages, not Windows .exe files.
+Website URL: https://YOUR-SITE/downloads/fleetshare.apk
+
+Optional: host the APK elsewhere and set NEXT_PUBLIC_ANDROID_DOWNLOAD_URL in .env to that full HTTPS URL.
+
+Install on phone: open the downloaded file from Notifications or Downloads; allow "Install unknown apps" for Chrome/your browser if Android asks.

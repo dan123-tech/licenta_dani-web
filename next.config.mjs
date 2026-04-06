@@ -13,10 +13,8 @@ const nextConfig = {
             key: "Content-Type",
             value: "application/vnd.android.package-archive",
           },
-          {
-            key: "Content-Disposition",
-            value: "attachment; filename=\"FleetShare.apk\"",
-          },
+          // No Content-Disposition: attachment — on many phones that blocks “Open” / package installer;
+          // let the browser treat it as an Android package.
         ],
       },
     ];

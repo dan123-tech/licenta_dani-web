@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Download, MonitorSmartphone, Server } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
@@ -39,7 +40,26 @@ function isSameOriginApkPath(href) {
 export default function DownloadPageClient() {
   const { t } = useI18n();
   const androidHref = getAndroidDownloadHref();
-  const apkDownloadAttr = isSameOriginApkPath(androidHref) ? { download: "FleetShare.apk" } : {};
+  const [apkReachable, setApkReachable] = useState(null);
+
+  useEffect(() => {
+    if (!isSameOriginApkPath(androidHref)) {
+      setApkReachable(null);
+      return;
+    }
+    const url = typeof window !== "undefined" ? `${window.location.origin}${androidHref}` : androidHref;
+    let cancelled = false;
+    fetch(url, { method: "HEAD", cache: "no-store" })
+      .then((res) => {
+        if (!cancelled) setApkReachable(res.ok);
+      })
+      .catch(() => {
+        if (!cancelled) setApkReachable(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [androidHref]);
 
   return (
     <div className="min-h-screen" style={{ background: COL.base }}>
@@ -188,12 +208,23 @@ export default function DownloadPageClient() {
                 <p className="text-sm leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.5)" }}>
                   {t("landing.download.androidBody")}
                 </p>
-                <p className="text-xs leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <p className="text-xs leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>
                   {t("landing.download.apkFileHint")}
                 </p>
+                <p className="text-xs leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  {t("landing.download.apkInstallSteps")}
+                </p>
+                {apkReachable === false && (
+                  <p
+                    className="text-sm leading-relaxed mb-4 rounded-xl px-3 py-2.5 border border-amber-500/40 bg-amber-500/10"
+                    style={{ color: "rgba(254, 243, 199, 0.95)" }}
+                    role="status"
+                  >
+                    {t("landing.download.apkMissingWarning")}
+                  </p>
+                )}
                 <a
                   href={androidHref}
-                  {...apkDownloadAttr}
                   {...(!isSameOriginApkPath(androidHref)
                     ? { target: "_blank", rel: "noopener noreferrer" }
                     : {})}
