@@ -43,7 +43,9 @@
     },
     "footer": {
       "privacy": "Politica de confidențialitate",
-      "terms": "Termeni și condiții"
+      "terms": "Termeni și condiții",
+      "support": "Asistență",
+      "cookies": "Preferințe cookie"
     },
     "preferencesPanelHint": "Alege limba și moneda",
     "branding": {
@@ -381,6 +383,34 @@
       "s7Body": "În măsura permisă de lege, nu suntem răspunzători pentru daune indirecte, incidentale, speciale, consecutive sau punitive, sau pentru pierderea profiturilor, datelor sau fondului comercial. Răspunderea noastră cumulativă este limitată la sumele plătite de dvs. în cele douăsprezece luni anterioare reclamației (sau, dacă nu există, la o sumă simbolică).",
       "s8Title": "Legea aplicabilă",
       "s8Body": "Acești termeni sunt guvernați de legea aplicabilă entității care operează instanța FleetShare pe care o utilizați, dacă nu prevede altfel un acord separat scris. Instanțele din acea jurisdicție pot avea competență exclusivă acolo unde legea permite."
+    },
+    "support": {
+      "pageTitle": "Asistență",
+      "updated": "Ultima actualizare: 6 aprilie 2026",
+      "s1Title": "Ajutor pentru cont",
+      "s1Body": "Pentru autentificare, încărcare permis, rezervări sau acces la companie, contactați mai întâi administratorul FleetShare al organizației. Poate reseta accesul, aproba permisele și gestiona setările flotei.",
+      "s2Title": "Instanță și probleme tehnice",
+      "s2Body": "Dacă ceva nu se încarcă, reîmprospătați pagina sau deconectați-vă și autentificați-vă din nou. Ștergeți cache-ul browserului dacă persistă. Administratorii pot verifica starea serviciului, configurația și integrările pentru instanța dvs.",
+      "s3Title": "Confidențialitate și date",
+      "s3Body": "Întrebările despre prelucrarea datelor cu caracter personal sunt acoperite în Politica de confidențialitate. Organizația dvs. este adesea operatorul datelor pentru angajați și flotă; noi le prelucrăm pentru a furniza serviciul, conform acelei politici.",
+      "s4Title": "Încă aveți nevoie de ajutor?",
+      "s4Body": "Întrebați echipa IT sau de flotă despre contactul corect pentru această instanță FleetShare (de ex. e-mail partajat sau sistem de tichete). Documentația poate fi furnizată de organizație."
+    },
+    "cookies": {
+      "pageTitle": "Preferințe cookie",
+      "updated": "Ultima actualizare: 6 aprilie 2026",
+      "s1Title": "Prezentare",
+      "s1Body": "Această pagină descrie modul în care FleetShare folosește cookie-uri și stocare similară pe dispozitivul dvs. Limităm urmărirea la minimum necesar pentru funcționarea sigură a aplicației.",
+      "s2Title": "Cookie-uri esențiale și sesiune",
+      "s2Body": "Folosim cookie-uri de sesiune HTTP-only (sau echivalent) pentru a vă menține autentificat și pentru ca serverele să vă protejeze contul. Sunt strict necesare pentru serviciu și nu pot fi dezactivate în timp ce folosiți panoul.",
+      "s3Title": "Preferințe (stocare locală)",
+      "s3Body": "Limba și moneda alese pot fi salvate în stocarea locală a browserului pentru a le reține între vizite. Nu sunt folosite pentru publicitate și nu vă urmăresc pe alte site-uri.",
+      "s4Title": "Analiză și marketing",
+      "s4Body": "Această instanță nu folosește cookie-uri publicitare terțe. Dacă organizația activează analize opționale (găzduire sau configurare), acestea vor fi descrise separat; întrebați administratorul ce este activ.",
+      "s5Title": "Setări în browser",
+      "s5Body": "Puteți bloca sau șterge cookie-uri și datele site-ului din setările browserului. Blocarea cookie-urilor esențiale de sesiune poate împiedica autentificarea sau poate opri aplicația până le permiteți din nou pentru acest site.",
+      "s6Title": "Mai multe informații",
+      "s6Body": "Pentru detalii despre datele personale, consultați Politica de confidențialitate. Pentru practici specifice organizației (păstrare, sub-procesatori, DPA), contactați administratorul FleetShare."
     }
   },
   "userSecurityForm": {

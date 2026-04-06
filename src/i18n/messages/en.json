@@ -43,7 +43,9 @@
     },
     "footer": {
       "privacy": "Privacy Policy",
-      "terms": "Terms and Conditions"
+      "terms": "Terms and Conditions",
+      "support": "Support",
+      "cookies": "Cookie preferences"
     },
     "preferencesPanelHint": "Choose your language and currency",
     "branding": {
@@ -381,6 +383,34 @@
       "s7Body": "To the extent permitted by law, we are not liable for indirect, incidental, special, consequential, or punitive damages, or loss of profits, data, or goodwill. Our aggregate liability for claims relating to the service is limited to the amounts you paid us in the twelve months before the claim (or, if none, a nominal amount).",
       "s8Title": "Governing law",
       "s8Body": "These Terms are governed by the laws applicable to the contracting entity operating your FleetShare deployment, unless a separate written agreement states otherwise. Courts in that jurisdiction have exclusive venue where permitted."
+    },
+    "support": {
+      "pageTitle": "Support",
+      "updated": "Last updated: 6 April 2026",
+      "s1Title": "Help with your account",
+      "s1Body": "For login issues, driving licence uploads, reservations, or company access, contact your organisation’s FleetShare administrator first. They can reset access, approve licences, and manage fleet settings.",
+      "s2Title": "Deployment & technical issues",
+      "s2Body": "If something does not load, try refreshing the page or signing out and back in. Clear your browser cache if problems persist. Administrators can check service status, environment configuration, and integration settings for your deployment.",
+      "s3Title": "Privacy and data",
+      "s3Body": "Questions about how personal data is handled are covered in our Privacy Policy. Your organisation is often the data controller for employee and fleet data; we process it to provide the service as described there.",
+      "s4Title": "Still stuck?",
+      "s4Body": "Ask your internal IT or fleet team for the right contact for this FleetShare instance (for example a shared inbox or ticketing system). Generic product documentation may be available from your organisation."
+    },
+    "cookies": {
+      "pageTitle": "Cookie preferences",
+      "updated": "Last updated: 6 April 2026",
+      "s1Title": "Overview",
+      "s1Body": "This page describes how FleetShare uses cookies and similar storage on your device. We keep tracking to a minimum and focus on what is needed to run the app securely.",
+      "s2Title": "Essential cookies & session",
+      "s2Body": "We use HTTP-only session cookies (or equivalent) so you can stay signed in and so our servers can protect your account. These are strictly necessary for the service and cannot be turned off while you use the dashboard.",
+      "s3Title": "Preferences (local storage)",
+      "s3Body": "Your language and currency choices may be saved in your browser’s local storage so the site remembers them between visits. This is not used for advertising and does not track you across other websites.",
+      "s4Title": "Analytics and marketing",
+      "s4Body": "This deployment does not use third-party advertising cookies. Optional analytics, if enabled by your organisation’s hosting or configuration, would be described separately; you can ask your administrator what is active for your environment.",
+      "s5Title": "Managing your browser",
+      "s5Body": "You can block or delete cookies and site data in your browser settings. Note that blocking essential session cookies may prevent sign-in or cause the app to stop working until you allow them again for this site.",
+      "s6Title": "More information",
+      "s6Body": "For details on personal data, see our Privacy Policy. If you need organisation-specific practices (retention, subprocessors, DPA), contact your FleetShare administrator."
     }
   },
   "userSecurityForm": {

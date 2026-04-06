@@ -198,6 +198,20 @@ export default function HomePageClient() {
             >
               {t("landing.footer.terms")}
             </Link>
+            <span aria-hidden>·</span>
+            <Link
+              href="/support"
+              className="hover:underline text-[#185fa5] hover:text-[#1d4ed8] transition-colors"
+            >
+              {t("landing.footer.support")}
+            </Link>
+            <span aria-hidden>·</span>
+            <Link
+              href="/cookies"
+              className="hover:underline text-[#185fa5] hover:text-[#1d4ed8] transition-colors"
+            >
+              {t("landing.footer.cookies")}
+            </Link>
           </div>
         </div>
       </main>
