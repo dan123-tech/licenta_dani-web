@@ -147,7 +147,54 @@ After code changes, **redeploy** production before re-running external scans.
 
 ---
 
-## 6. Related source files (quick index)
+## 6. Maintenance statistics + maintenance seed automation
+
+### 6.1 Admin maintenance statistics UI
+
+- **Page:** Admin dashboard → **Maintenance log**.
+- **Computed aggregates (`useMemo`) over maintenance events:**
+  - total maintenance records;
+  - total cost and average cost (for rows that include cost);
+  - records and cost in the last 12 months;
+  - ratio of records with cost values;
+  - top vehicles by number of service entries (with per-vehicle accumulated cost);
+  - last 6 calendar months grouped counts (visual bar chart).
+- **Display rule:** stats block is shown when maintenance data is loaded and there is at least one record.
+- **Formatting:** cost values use locale/currency formatting from i18n (`formatCurrency`).
+
+### 6.2 i18n for maintenance statistics
+
+- Added `maintenanceStats.*` translation keys in:
+  - `src/i18n/messages/en.json`
+  - `src/i18n/messages/ro.json`
+- This avoids rendering raw translation keys in the Maintenance log statistics area.
+
+### 6.3 Database seed for maintenance logs (all cars)
+
+- Added **idempotent** seed script: `scripts/seed-maintenance-all-cars.js`.
+- Behavior:
+  - scans cars (all companies, or one company when `COMPANY_ID` is set);
+  - inserts sample maintenance rows only for cars with **no** maintenance history yet;
+  - updates `Car.lastServiceMileage` and `Car.lastServiceYearMonth` from the latest seeded service event.
+- Added npm command: **`npm run seed:maintenance`**.
+- Main demo seed (`scripts/seed-users-and-cars.js`) now calls the maintenance seed helper so demo cars get maintenance history automatically.
+
+### 6.4 Script/runtime compatibility for Prisma client engine
+
+- Added `scripts/prisma-for-scripts.js` as a shared helper for Node scripts.
+- Reason: schema uses `engineType = "client"`; script-side Prisma needs a driver adapter setup (Neon + `ws`) aligned with app runtime expectations.
+
+### 6.5 Brand assets update
+
+- Updated SVG brand assets in `public/brand/`:
+  - `fleetshare-logo-dark.svg`
+  - `fleetshare-logo-light.svg`
+  - `fleetshare-mark-dark.svg`
+  - `fleetshare-mark-light.svg`
+
+---
+
+## 7. Related source files (quick index)
 
 | Area | Files |
 |------|--------|
@@ -162,6 +209,9 @@ After code changes, **redeploy** production before re-running external scans.
 | Caddy TLS path | `deploy/Caddyfile`, `docker-compose.yml` |
 | Security disclosure | `public/.well-known/security.txt`, `public/_headers` |
 | Maintenance + calendar + booking prefs | `src/lib/maintenance.js`, `src/app/api/maintenance/**`, `src/app/api/calendar/feed/route.js`, `src/app/api/users/me/notifications/route.js`, `src/app/api/users/me/calendar-feed/route.js`, `src/lib/email.js` |
+| Maintenance statistics UI | `src/components/dashboard/AdminDashboard.jsx`, `src/i18n/messages/en.json`, `src/i18n/messages/ro.json` |
+| Maintenance seeding scripts | `scripts/seed-maintenance-all-cars.js`, `scripts/seed-users-and-cars.js`, `scripts/prisma-for-scripts.js`, `package.json` |
+| Brand SVG updates | `public/brand/fleetshare-logo-*.svg`, `public/brand/fleetshare-mark-*.svg` |
 
 ---
 

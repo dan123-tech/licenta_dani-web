@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   BarChart2,
   Building2,
@@ -14,7 +14,10 @@ import {
   Plus,
   ShieldCheck,
   Wrench,
+  Download,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
 import FleetBookingCalendar from "./FleetBookingCalendar";
 import AccessCodeQRButton, { ACCESS_CODE_SLOT_CLASS } from "./AccessCodeQRButton";
@@ -147,7 +150,7 @@ function CarConsumptionCell({ car, onUpdated }) {
 }
 
 export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs, setViewAs }) {
-  const { t, formatNumber, formatCurrency } = useI18n();
+  const { t, formatNumber, formatCurrency, locale } = useI18n();
   const [section, setSection] = useState("cars");
   const [cars, setCars] = useState([]);
   const [users, setUsers] = useState([]);
@@ -427,6 +430,30 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
       }
     }
 
+    const yNow = new Date().getFullYear();
+    const yearBuckets = [0, 1, 2].map((offset) => {
+      const year = yNow - offset;
+      let count = 0;
+      let yTotalCost = 0;
+      let yCostCount = 0;
+      for (const ev of events) {
+        if (new Date(ev.performedAt).getFullYear() !== year) continue;
+        count++;
+        const c = ev.cost != null && !Number.isNaN(Number(ev.cost)) ? Number(ev.cost) : null;
+        if (c != null) {
+          yTotalCost += c;
+          yCostCount++;
+        }
+      }
+      return {
+        year,
+        count,
+        totalCost: yTotalCost,
+        costCount: yCostCount,
+        avgCost: yCostCount > 0 ? yTotalCost / yCostCount : null,
+      };
+    });
+
     return {
       totalEvents: events.length,
       totalCost,
@@ -436,8 +463,279 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
       totalCostLast12: totalCost12,
       topCars,
       monthBuckets,
+      yearBuckets,
     };
   }, [maintenanceEvents]);
+
+  const downloadMaintenanceCsv = useCallback(() => {
+    const s = maintenanceStats;
+    const events = Array.isArray(maintenanceEvents) ? maintenanceEvents : [];
+    const csvCell = (v) => {
+      const str = v == null ? "" : String(v);
+      if (/[",\n\r]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+      return str;
+    };
+    const lines = [];
+    lines.push(csvCell(t("maintenanceStats.title")));
+    if (company?.name) lines.push(csvCell(company.name));
+    lines.push("");
+    lines.push(csvCell(t("maintenanceStats.csvSectionSummary")));
+    lines.push(
+      [csvCell(t("maintenanceStats.csvColMetric")), csvCell(t("maintenanceStats.csvColValue"))].join(","),
+    );
+    const summaryRows = [
+      [t("maintenanceStats.totalRecords"), String(s.totalEvents)],
+      [t("maintenanceStats.totalCost"), s.costCount > 0 ? formatCurrency(s.totalCost) : "—"],
+      ...(s.costCount > 0 ? [[t("maintenanceStats.avgCost"), formatCurrency(s.avgCost)]] : []),
+      [t("maintenanceStats.last12Title"), String(s.countLast12Months)],
+      [t("maintenanceStats.costLabel"), s.totalCostLast12 > 0 ? formatCurrency(s.totalCostLast12) : "—"],
+      [t("maintenanceStats.withCost"), `${s.costCount} / ${s.totalEvents}`],
+    ];
+    for (const [k, v] of summaryRows) {
+      lines.push([csvCell(k), csvCell(v)].join(","));
+    }
+    lines.push("");
+    lines.push(csvCell(t("maintenanceStats.byYearTitle")));
+    lines.push(
+      [
+        csvCell(t("maintenanceStats.csvColYear")),
+        csvCell(t("maintenanceStats.csvColRecords")),
+        csvCell(t("maintenanceStats.csvColTotalCost")),
+        csvCell(t("maintenanceStats.csvColRecordsWithCost")),
+      ].join(","),
+    );
+    for (const yb of s.yearBuckets) {
+      lines.push(
+        [
+          csvCell(String(yb.year)),
+          csvCell(String(yb.count)),
+          csvCell(yb.totalCost > 0 ? formatCurrency(yb.totalCost) : "—"),
+          csvCell(String(yb.costCount)),
+        ].join(","),
+      );
+    }
+    lines.push("");
+    lines.push(csvCell(t("maintenanceStats.csvSectionTopVehicles")));
+    lines.push(
+      [
+        csvCell(t("maintenanceStats.csvColRank")),
+        csvCell(t("maintenanceStats.csvColVehicle")),
+        csvCell(t("maintenanceStats.csvColServiceCount")),
+        csvCell(t("maintenanceStats.csvColVehicleCostTotal")),
+      ].join(","),
+    );
+    s.topCars.forEach((row, idx) => {
+      lines.push(
+        [
+          csvCell(String(idx + 1)),
+          csvCell(row.label),
+          csvCell(String(row.count)),
+          csvCell(row.costSum > 0 ? formatCurrency(row.costSum) : "—"),
+        ].join(","),
+      );
+    });
+    lines.push("");
+    lines.push(csvCell(t("maintenanceStats.csvSectionByMonth")));
+    lines.push([csvCell(t("maintenanceStats.csvColMonth")), csvCell(t("maintenanceStats.csvColCount"))].join(","));
+    for (const b of s.monthBuckets) {
+      lines.push([csvCell(b.label), csvCell(String(b.count))].join(","));
+    }
+    lines.push("");
+    lines.push(csvCell(t("maintenanceStats.csvSectionAllRecords")));
+    lines.push(
+      [
+        csvCell(t("maintenanceStats.csvColDate")),
+        csvCell(t("maintenanceStats.csvColVehicle")),
+        csvCell(t("maintenanceStats.csvColService")),
+        csvCell(t("maintenanceStats.csvColKm")),
+        csvCell(t("maintenanceStats.csvColCost")),
+        csvCell(t("maintenanceStats.csvColNotes")),
+      ].join(","),
+    );
+    for (const ev of events) {
+      const veh = [ev.car?.brand, ev.car?.registrationNumber].filter(Boolean).join(" ").trim() || "—";
+      const cost =
+        ev.cost != null && !Number.isNaN(Number(ev.cost)) ? formatCurrency(Number(ev.cost)) : "—";
+      lines.push(
+        [
+          csvCell(formatDate(ev.performedAt)),
+          csvCell(veh),
+          csvCell(ev.serviceType || ""),
+          csvCell(ev.mileageKm != null ? String(ev.mileageKm) : ""),
+          csvCell(cost),
+          csvCell(ev.notes || ""),
+        ].join(","),
+      );
+    }
+    const blob = new Blob([`\uFEFF${lines.join("\r\n")}`], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${t("maintenanceStats.exportFilePrefix")}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, [
+    maintenanceStats,
+    maintenanceEvents,
+    company,
+    t,
+    formatCurrency,
+    formatDate,
+  ]);
+
+  const downloadMaintenancePdf = useCallback(() => {
+    const s = maintenanceStats;
+    const events = Array.isArray(maintenanceEvents) ? maintenanceEvents : [];
+    const locStr = locale === "ro" ? "ro-RO" : "en-GB";
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    let y = 14;
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(t("maintenanceStats.title"), 14, y);
+    y += 8;
+    if (company?.name) {
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text(company.name, 14, y);
+      y += 6;
+    }
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(t("stats.pdfGeneratedOn", { datetime: new Date().toLocaleString(locStr) }), 14, y);
+    y += 10;
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(t("maintenanceStats.byYearTitle"), 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: y,
+      head: [
+        [
+          t("maintenanceStats.csvColYear"),
+          t("maintenanceStats.csvColRecords"),
+          t("maintenanceStats.csvColTotalCost"),
+          t("maintenanceStats.csvColRecordsWithCost"),
+        ],
+      ],
+      body: s.yearBuckets.map((row) => [
+        String(row.year),
+        String(row.count),
+        row.totalCost > 0 ? formatCurrency(row.totalCost) : "—",
+        String(row.costCount),
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [71, 85, 105] },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(t("maintenanceStats.csvSectionSummary"), 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: y,
+      head: [[t("maintenanceStats.csvColMetric"), t("maintenanceStats.csvColValue")]],
+      body: [
+        [t("maintenanceStats.totalRecords"), String(s.totalEvents)],
+        [
+          t("maintenanceStats.totalCost"),
+          s.costCount > 0 ? formatCurrency(s.totalCost) : "—",
+        ],
+        ...(s.costCount > 0 ? [[t("maintenanceStats.avgCost"), formatCurrency(s.avgCost)]] : []),
+        [t("maintenanceStats.last12Title"), String(s.countLast12Months)],
+        [
+          t("maintenanceStats.costLabel"),
+          s.totalCostLast12 > 0 ? formatCurrency(s.totalCostLast12) : "—",
+        ],
+        [t("maintenanceStats.withCost"), `${s.costCount} / ${s.totalEvents}`],
+      ],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [71, 85, 105] },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(t("maintenanceStats.csvSectionTopVehicles"), 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: y,
+      head: [
+        [
+          t("maintenanceStats.csvColRank"),
+          t("maintenanceStats.csvColVehicle"),
+          t("maintenanceStats.csvColServiceCount"),
+          t("maintenanceStats.csvColVehicleCostTotal"),
+        ],
+      ],
+      body: s.topCars.map((row, idx) => [
+        String(idx + 1),
+        row.label,
+        String(row.count),
+        row.costSum > 0 ? formatCurrency(row.costSum) : "—",
+      ]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [71, 85, 105] },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(t("maintenanceStats.csvSectionByMonth"), 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: y,
+      head: [[t("maintenanceStats.csvColMonth"), t("maintenanceStats.csvColCount")]],
+      body: s.monthBuckets.map((b) => [b.label, String(b.count)]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [71, 85, 105] },
+    });
+    y = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text(t("maintenanceStats.csvSectionAllRecords"), 14, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: y,
+      head: [
+        [
+          t("maintenanceStats.csvColDate"),
+          t("maintenanceStats.csvColVehicle"),
+          t("maintenanceStats.csvColService"),
+          t("maintenanceStats.csvColKm"),
+          t("maintenanceStats.csvColCost"),
+          t("maintenanceStats.csvColNotes"),
+        ],
+      ],
+      body: events.map((ev) => {
+        const veh = [ev.car?.brand, ev.car?.registrationNumber].filter(Boolean).join(" ").trim() || "—";
+        const cost =
+          ev.cost != null && !Number.isNaN(Number(ev.cost)) ? formatCurrency(Number(ev.cost)) : "—";
+        return [
+          formatDate(ev.performedAt),
+          veh,
+          ev.serviceType || "—",
+          ev.mileageKm != null ? String(ev.mileageKm) : "—",
+          cost,
+          (ev.notes || "").slice(0, 200),
+        ];
+      }),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [71, 85, 105] },
+    });
+
+    doc.save(`${t("maintenanceStats.exportFilePrefix")}-${new Date().toISOString().slice(0, 10)}.pdf`);
+  }, [
+    maintenanceStats,
+    maintenanceEvents,
+    company,
+    t,
+    formatCurrency,
+    formatDate,
+    locale,
+  ]);
 
   async function saveCompanySettings(e) {
     e.preventDefault();
@@ -1976,7 +2274,30 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
 
             {!maintenanceLoading && maintenanceStats.totalEvents > 0 && (
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-slate-800">{t("maintenanceStats.title")}</h3>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">{t("maintenanceStats.title")}</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">{t("maintenanceStats.exportHint")}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={downloadMaintenanceCsv}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                    >
+                      <Download className="h-3.5 w-3.5" aria-hidden />
+                      {t("maintenanceStats.downloadCsv")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={downloadMaintenancePdf}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
+                    >
+                      <Download className="h-3.5 w-3.5" aria-hidden />
+                      {t("maintenanceStats.downloadPdf")}
+                    </button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t("maintenanceStats.totalRecords")}</p>
@@ -2007,6 +2328,37 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                       {maintenanceStats.costCount} / {maintenanceStats.totalEvents}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">{t("maintenanceStats.withCostHint")}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-800 mb-3">{t("maintenanceStats.byYearTitle")}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {maintenanceStats.yearBuckets.map((yb, idx) => (
+                      <div
+                        key={yb.year}
+                        className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm"
+                      >
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          {idx === 0
+                            ? t("maintenanceStats.yearThis", { year: yb.year })
+                            : idx === 1
+                              ? t("maintenanceStats.yearLast", { year: yb.year })
+                              : t("maintenanceStats.yearTwoAgo", { year: yb.year })}
+                        </p>
+                        <p className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">{yb.count}</p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {t("maintenanceStats.yearCostLine")}{" "}
+                          {yb.totalCost > 0 ? formatCurrency(yb.totalCost) : "—"}
+                          {yb.costCount > 0 && (
+                            <span className="text-slate-500">
+                              {" "}
+                              ({t("maintenanceStats.yearAvgShort")}: {formatCurrency(yb.avgCost)})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
