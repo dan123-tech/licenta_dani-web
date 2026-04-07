@@ -16,9 +16,44 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/** Canonical URL for metadata (Open Graph, favicon discovery). Prefer NEXT_PUBLIC_APP_URL in production. */
+function metadataBaseUrl() {
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (raw) {
+    try {
+      return new URL(raw.includes("://") ? raw : `https://${raw}`);
+    } catch {
+      /* fall through */
+    }
+  }
+  return new URL("https://companyfleetshare.com");
+}
+
 export const metadata = {
+  metadataBase: metadataBaseUrl(),
   title: "Company Car Sharing",
   description: "Company car sharing – login, reserve cars, manage fleet",
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  openGraph: {
+    type: "website",
+    siteName: "FleetShare",
+    title: "Company Car Sharing",
+    description: "Company car sharing – login, reserve cars, manage fleet",
+    images: [{ url: "/icon-512.png", width: 512, height: 512, alt: "FleetShare" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Company Car Sharing",
+    description: "Company car sharing – login, reserve cars, manage fleet",
+    images: ["/icon-512.png"],
+  },
 };
 
 export const viewport = { width: "device-width", initialScale: 1, maximumScale: 5 };

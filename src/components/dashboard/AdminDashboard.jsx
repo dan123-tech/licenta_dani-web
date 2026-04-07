@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Wrench,
   Download,
+  Filter,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -88,6 +89,25 @@ function formatLastServiceYearMonth(ym) {
   const [y, m] = ym.split("-");
   const d = new Date(Number(y), Number(m) - 1, 1);
   return d.toLocaleString(undefined, { month: "long", year: "numeric" });
+}
+
+/** @param {Date} d */
+function toYmdLocal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** @param {string} iso YYYY-MM-DD */
+function maintDayStartMs(iso) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+}
+
+/** @param {string} iso YYYY-MM-DD */
+function maintDayEndMs(iso) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
 }
 
 function CarConsumptionCell({ car, onUpdated }) {
@@ -223,6 +243,10 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [maintCost, setMaintCost] = useState("");
   const [maintNotes, setMaintNotes] = useState("");
   const [maintSaving, setMaintSaving] = useState(false);
+  const [maintFilterCarId, setMaintFilterCarId] = useState("");
+  const [maintFilterDateFrom, setMaintFilterDateFrom] = useState("");
+  const [maintFilterDateTo, setMaintFilterDateTo] = useState("");
+  const [maintFilterService, setMaintFilterService] = useState("");
 
   async function loadMaintenance() {
     setMaintenanceLoading(true);
@@ -373,8 +397,21 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     return true;
   });
 
+  const filteredMaintenanceEvents = useMemo(() => {
+    let list = Array.isArray(maintenanceEvents) ? [...maintenanceEvents] : [];
+    if (maintFilterCarId) list = list.filter((ev) => ev.carId === maintFilterCarId);
+    const fromMs = maintDayStartMs(maintFilterDateFrom);
+    const toMs = maintDayEndMs(maintFilterDateTo);
+    if (fromMs != null) list = list.filter((ev) => new Date(ev.performedAt).getTime() >= fromMs);
+    if (toMs != null) list = list.filter((ev) => new Date(ev.performedAt).getTime() <= toMs);
+    const svc = maintFilterService.trim().toLowerCase();
+    if (svc) list = list.filter((ev) => (ev.serviceType || "").toLowerCase().includes(svc));
+    list.sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt));
+    return list;
+  }, [maintenanceEvents, maintFilterCarId, maintFilterDateFrom, maintFilterDateTo, maintFilterService]);
+
   const maintenanceStats = useMemo(() => {
-    const events = Array.isArray(maintenanceEvents) ? maintenanceEvents : [];
+    const events = Array.isArray(filteredMaintenanceEvents) ? filteredMaintenanceEvents : [];
     const now = Date.now();
     const ms12mo = 365 * 24 * 60 * 60 * 1000;
     const cutoff12 = now - ms12mo;
@@ -465,11 +502,11 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
       monthBuckets,
       yearBuckets,
     };
-  }, [maintenanceEvents]);
+  }, [filteredMaintenanceEvents]);
 
   const downloadMaintenanceCsv = useCallback(() => {
     const s = maintenanceStats;
-    const events = Array.isArray(maintenanceEvents) ? maintenanceEvents : [];
+    const events = Array.isArray(filteredMaintenanceEvents) ? filteredMaintenanceEvents : [];
     const csvCell = (v) => {
       const str = v == null ? "" : String(v);
       if (/[",\n\r]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
@@ -575,7 +612,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     URL.revokeObjectURL(a.href);
   }, [
     maintenanceStats,
-    maintenanceEvents,
+    filteredMaintenanceEvents,
     company,
     t,
     formatCurrency,
@@ -584,7 +621,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
 
   const downloadMaintenancePdf = useCallback(() => {
     const s = maintenanceStats;
-    const events = Array.isArray(maintenanceEvents) ? maintenanceEvents : [];
+    const events = Array.isArray(filteredMaintenanceEvents) ? filteredMaintenanceEvents : [];
     const locStr = locale === "ro" ? "ro-RO" : "en-GB";
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     let y = 14;
@@ -729,7 +766,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     doc.save(`${t("maintenanceStats.exportFilePrefix")}-${new Date().toISOString().slice(0, 10)}.pdf`);
   }, [
     maintenanceStats,
-    maintenanceEvents,
+    filteredMaintenanceEvents,
     company,
     t,
     formatCurrency,
@@ -2272,6 +2309,119 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               </form>
             </div>
 
+            {!maintenanceLoading && maintenanceEvents.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
+                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-slate-500 shrink-0" aria-hidden />
+                  {t("maintenanceFilters.title")}
+                </h3>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <label className="block text-xs font-medium text-slate-600">
+                    {t("maintenanceFilters.vehicle")}
+                    <select
+                      value={maintFilterCarId}
+                      onChange={(e) => setMaintFilterCarId(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    >
+                      <option value="">{t("maintenanceFilters.allVehicles")}</option>
+                      {cars.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.brand} {c.registrationNumber}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    {t("maintenanceFilters.dateFrom")}
+                    <input
+                      type="date"
+                      value={maintFilterDateFrom}
+                      onChange={(e) => setMaintFilterDateFrom(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    {t("maintenanceFilters.dateTo")}
+                    <input
+                      type="date"
+                      value={maintFilterDateTo}
+                      onChange={(e) => setMaintFilterDateTo(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2 lg:col-span-1">
+                    {t("maintenanceFilters.serviceContains")}
+                    <input
+                      type="text"
+                      value={maintFilterService}
+                      onChange={(e) => setMaintFilterService(e.target.value)}
+                      placeholder={t("maintenanceFilters.servicePlaceholder")}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    />
+                  </label>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(start.getDate() - 30);
+                      setMaintFilterDateFrom(toYmdLocal(start));
+                      setMaintFilterDateTo(toYmdLocal(end));
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100"
+                  >
+                    {t("maintenanceFilters.preset30")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const end = new Date();
+                      const start = new Date();
+                      start.setDate(start.getDate() - 90);
+                      setMaintFilterDateFrom(toYmdLocal(start));
+                      setMaintFilterDateTo(toYmdLocal(end));
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100"
+                  >
+                    {t("maintenanceFilters.preset90")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const now = new Date();
+                      const start = new Date(now.getFullYear(), 0, 1);
+                      const end = new Date(now.getFullYear(), 11, 31);
+                      setMaintFilterDateFrom(toYmdLocal(start));
+                      setMaintFilterDateTo(toYmdLocal(end));
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100"
+                  >
+                    {t("maintenanceFilters.presetYear")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMaintFilterCarId("");
+                      setMaintFilterDateFrom("");
+                      setMaintFilterDateTo("");
+                      setMaintFilterService("");
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                  >
+                    {t("maintenanceFilters.clear")}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  {t("maintenanceFilters.activeHint", {
+                    count: filteredMaintenanceEvents.length,
+                    total: maintenanceEvents.length,
+                  })}
+                </p>
+              </div>
+            )}
+
             {!maintenanceLoading && maintenanceStats.totalEvents > 0 && (
               <div className="space-y-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -2445,8 +2595,14 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                           No maintenance records yet.
                         </td>
                       </tr>
+                    ) : filteredMaintenanceEvents.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-8 px-4 text-center text-slate-500 text-sm">
+                          {t("maintenanceFilters.noMatch")}
+                        </td>
+                      </tr>
                     ) : (
-                      maintenanceEvents.map((ev) => (
+                      filteredMaintenanceEvents.map((ev) => (
                         <tr key={ev.id} className="border-t border-slate-100 hover:bg-slate-50/80">
                           <td className="py-3 px-4 text-sm text-slate-800">{formatDate(ev.performedAt)}</td>
                           <td className="py-3 px-4 text-sm">

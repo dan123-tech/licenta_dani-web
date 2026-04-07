@@ -199,6 +199,21 @@
     "csvColCost": "Cost",
     "csvColNotes": "Notes"
   },
+  "maintenanceFilters": {
+    "title": "Filters",
+    "vehicle": "Vehicle",
+    "allVehicles": "All vehicles",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "serviceContains": "Service type contains",
+    "servicePlaceholder": "e.g. oil, brake",
+    "clear": "Clear filters",
+    "preset30": "Last 30 days",
+    "preset90": "Last 90 days",
+    "presetYear": "This year",
+    "noMatch": "No maintenance records match these filters.",
+    "activeHint": "Showing {count} of {total} records"
+  },
   "sidebar": {
     "logoTagline": "Company car sharing",
     "platformSubtitle": "Car sharing platform",

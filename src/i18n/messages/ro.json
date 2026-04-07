@@ -199,6 +199,21 @@
     "csvColCost": "Cost",
     "csvColNotes": "Note"
   },
+  "maintenanceFilters": {
+    "title": "Filtre",
+    "vehicle": "Vehicul",
+    "allVehicles": "Toate vehiculele",
+    "dateFrom": "De la data",
+    "dateTo": "Până la data",
+    "serviceContains": "Tip service conține",
+    "servicePlaceholder": "ex. ulei, frâne",
+    "clear": "Șterge filtrele",
+    "preset30": "Ultimele 30 zile",
+    "preset90": "Ultimele 90 zile",
+    "presetYear": "Anul curent",
+    "noMatch": "Nicio înregistrare de service nu corespunde filtrelor.",
+    "activeHint": "Se afișează {count} din {total} înregistrări"
+  },
   "sidebar": {
     "logoTagline": "Car sharing în companie",
     "platformSubtitle": "Platformă car sharing",
