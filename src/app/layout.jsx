@@ -26,6 +26,13 @@ function metadataBaseUrl() {
       /* fall through */
     }
   }
+  if (process.env.VERCEL_URL) {
+    return new URL(`https://${process.env.VERCEL_URL}`);
+  }
+  // Local dev: resolve icon/OG URLs on the host you use (avoids tab icon pointing at production while testing).
+  if (process.env.NODE_ENV === "development") {
+    return new URL("http://localhost:3100");
+  }
   return new URL("https://companyfleetshare.com");
 }
 
@@ -36,9 +43,11 @@ export const metadata = {
   manifest: "/site.webmanifest",
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
       { url: "/icon.png", sizes: "192x192", type: "image/png" },
       { url: "/icon.svg", type: "image/svg+xml" },
     ],
+    shortcut: "/favicon.ico",
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
