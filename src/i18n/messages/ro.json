@@ -478,6 +478,13 @@
     "calendarFeedCopy": "Copiază link",
     "calendarFeedRotate": "Link nou (îl invalidează pe cel vechi)",
     "calendarFeedDisable": "Dezactivează abonamentul",
-    "calendarFeedCopied": "Link copiat."
+    "calendarFeedCopied": "Link copiat.",
+    "calendarFeedHelpAria": "Cum adaugi acest link în Google Calendar",
+    "calendarFeedGoogleTitle": "Google Calendar (în browser)",
+    "calendarFeedGoogleStep1": "Deschide Google Calendar în browser: calendar.google.com",
+    "calendarFeedGoogleStep2": "În stânga, la Alte calendare, apasă butonul +.",
+    "calendarFeedGoogleStep3": "Alege Din URL.",
+    "calendarFeedGoogleStep4": "Lipește linkul FleetShare (folosește Copiază link de mai sus), apoi Adaugă calendar.",
+    "calendarFeedGoogleStep5": "Evenimentele pot apărea după câteva ore; Google actualizează calendarele abonate periodic."
   }
 }

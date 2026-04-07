@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Fragment, useMemo } from "react";
-import { LayoutGrid, IdCard, Car, Wrench, Calendar, History, CalendarDays, Shield } from "lucide-react";
+import { LayoutGrid, IdCard, Car, Wrench, Calendar, History, CalendarDays, Shield, Info } from "lucide-react";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
 import FleetBookingCalendar from "./FleetBookingCalendar";
 import AccessCodeQRButton, { ACCESS_CODE_SLOT_CLASS } from "./AccessCodeQRButton";
@@ -684,7 +684,33 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-800 mb-1">{t("userSecurityForm.calendarFeedTitle")}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-sm font-semibold text-slate-800">{t("userSecurityForm.calendarFeedTitle")}</h3>
+                  <span className="relative inline-flex group">
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+                      aria-label={t("userSecurityForm.calendarFeedHelpAria")}
+                      aria-describedby="calendar-feed-google-help"
+                    >
+                      <Info className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+                    </button>
+                    <div
+                      id="calendar-feed-google-help"
+                      role="tooltip"
+                      className="pointer-events-none invisible absolute z-[60] bottom-full left-0 mb-2 w-[min(calc(100vw-2rem),18rem)] rounded-lg border border-slate-200 bg-white p-3 text-left text-xs leading-relaxed text-slate-700 shadow-lg opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 sm:left-1/2 sm:w-80 sm:-translate-x-1/2"
+                    >
+                      <p className="mb-2 font-semibold text-slate-900">{t("userSecurityForm.calendarFeedGoogleTitle")}</p>
+                      <ol className="list-decimal space-y-1.5 pl-4 marker:text-slate-500">
+                        <li>{t("userSecurityForm.calendarFeedGoogleStep1")}</li>
+                        <li>{t("userSecurityForm.calendarFeedGoogleStep2")}</li>
+                        <li>{t("userSecurityForm.calendarFeedGoogleStep3")}</li>
+                        <li>{t("userSecurityForm.calendarFeedGoogleStep4")}</li>
+                        <li className="text-slate-600">{t("userSecurityForm.calendarFeedGoogleStep5")}</li>
+                      </ol>
+                    </div>
+                  </span>
+                </div>
                 <p className="text-xs text-slate-500 mb-3">{t("userSecurityForm.calendarFeedIntro")}</p>
                 <div className="flex flex-wrap gap-2">
                   <button

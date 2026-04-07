@@ -478,6 +478,13 @@
     "calendarFeedCopy": "Copy link",
     "calendarFeedRotate": "New link (invalidates old)",
     "calendarFeedDisable": "Disable subscription",
-    "calendarFeedCopied": "Link copied."
+    "calendarFeedCopied": "Link copied.",
+    "calendarFeedHelpAria": "How to add this link in Google Calendar",
+    "calendarFeedGoogleTitle": "Google Calendar (web)",
+    "calendarFeedGoogleStep1": "Open Google Calendar in a browser: calendar.google.com",
+    "calendarFeedGoogleStep2": "On the left, under Other calendars, click the + button.",
+    "calendarFeedGoogleStep3": "Choose From URL.",
+    "calendarFeedGoogleStep4": "Paste the FleetShare link (use Copy link above), then click Add calendar.",
+    "calendarFeedGoogleStep5": "Events may take a few hours to appear; Google refreshes subscribed calendars periodically."
   }
 }
