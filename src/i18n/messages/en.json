@@ -155,6 +155,19 @@
   "admin": {
     "addUserBlurb": "Creates the account immediately (Local database). If you leave password empty, a default temporary password is used. We email the user with a sign-in link; on first login they must choose a new password before using the app. Configure Resend (RESEND_API_KEY, EMAIL_FROM) for mail."
   },
+  "maintenanceStats": {
+    "title": "Maintenance statistics",
+    "totalRecords": "Total records",
+    "totalCost": "Total cost",
+    "avgCost": "Avg. per record (with cost)",
+    "last12Title": "Last 12 months",
+    "costLabel": "Cost in that window",
+    "withCost": "Records with cost",
+    "withCostHint": "How many entries include a cost amount.",
+    "last6Months": "Records by month (last 6)",
+    "last6Hint": "Number of service entries per calendar month.",
+    "topVehicles": "Most serviced vehicles"
+  },
   "sidebar": {
     "logoTagline": "Company car sharing",
     "platformSubtitle": "Car sharing platform",

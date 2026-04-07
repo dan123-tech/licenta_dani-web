@@ -155,6 +155,19 @@
   "admin": {
     "addUserBlurb": "Creează contul imediat (bază locală). Dacă lași parola goală, se folosește o parolă temporară implicită. Trimitem e-mail cu link de autentificare; la prima autentificare utilizatorul trebuie să aleagă o parolă nouă. Configurează Resend (RESEND_API_KEY, EMAIL_FROM) pentru e-mail."
   },
+  "maintenanceStats": {
+    "title": "Statistici întreținere",
+    "totalRecords": "Înregistrări totale",
+    "totalCost": "Cost total",
+    "avgCost": "Medie per înregistrare (cu cost)",
+    "last12Title": "Ultimele 12 luni",
+    "costLabel": "Cost în acel interval",
+    "withCost": "Înregistrări cu cost",
+    "withCostHint": "Câte intrări includ o sumă de cost.",
+    "last6Months": "Înregistrări pe lună (ultimele 6)",
+    "last6Hint": "Număr de intrări service pe lună calendaristică.",
+    "topVehicles": "Cele mai des întreținute vehicule"
+  },
   "sidebar": {
     "logoTagline": "Car sharing în companie",
     "platformSubtitle": "Platformă car sharing",

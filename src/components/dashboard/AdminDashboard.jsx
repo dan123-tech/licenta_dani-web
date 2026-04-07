@@ -147,7 +147,7 @@ function CarConsumptionCell({ car, onUpdated }) {
 }
 
 export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs, setViewAs }) {
-  const { t, formatNumber } = useI18n();
+  const { t, formatNumber, formatCurrency } = useI18n();
   const [section, setSection] = useState("cars");
   const [cars, setCars] = useState([]);
   const [users, setUsers] = useState([]);
@@ -369,6 +369,75 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     }
     return true;
   });
+
+  const maintenanceStats = useMemo(() => {
+    const events = Array.isArray(maintenanceEvents) ? maintenanceEvents : [];
+    const now = Date.now();
+    const ms12mo = 365 * 24 * 60 * 60 * 1000;
+    const cutoff12 = now - ms12mo;
+
+    let totalCost = 0;
+    let costCount = 0;
+    let totalCost12 = 0;
+    let count12 = 0;
+    const byCar = new Map();
+
+    for (const ev of events) {
+      const ts = new Date(ev.performedAt).getTime();
+      if (ts >= cutoff12) count12 += 1;
+
+      const c = ev.cost != null && !Number.isNaN(Number(ev.cost)) ? Number(ev.cost) : null;
+      if (c != null) {
+        totalCost += c;
+        costCount += 1;
+        if (ts >= cutoff12) totalCost12 += c;
+      }
+
+      const label = [ev.car?.brand, ev.car?.registrationNumber].filter(Boolean).join(" ").trim() || "—";
+      const cur = byCar.get(ev.carId) || { carId: ev.carId, label, count: 0, costSum: 0 };
+      cur.count += 1;
+      if (c != null) cur.costSum += c;
+      byCar.set(ev.carId, cur);
+    }
+
+    const topCars = [...byCar.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+
+    const monthBuckets = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const y = d.getFullYear();
+      const m = d.getMonth();
+      const key = `${y}-${String(m + 1).padStart(2, "0")}`;
+      monthBuckets.push({
+        key,
+        label: d.toLocaleString(undefined, { month: "short", year: "numeric" }),
+        count: 0,
+        cost: 0,
+      });
+    }
+    for (const ev of events) {
+      const d = new Date(ev.performedAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const bucket = monthBuckets.find((b) => b.key === key);
+      if (bucket) {
+        bucket.count += 1;
+        const c = ev.cost != null && !Number.isNaN(Number(ev.cost)) ? Number(ev.cost) : null;
+        if (c != null) bucket.cost += c;
+      }
+    }
+
+    return {
+      totalEvents: events.length,
+      totalCost,
+      costCount,
+      avgCost: costCount > 0 ? totalCost / costCount : null,
+      countLast12Months: count12,
+      totalCostLast12: totalCost12,
+      topCars,
+      monthBuckets,
+    };
+  }, [maintenanceEvents]);
 
   async function saveCompanySettings(e) {
     e.preventDefault();
@@ -1904,6 +1973,103 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                 </div>
               </form>
             </div>
+
+            {!maintenanceLoading && maintenanceStats.totalEvents > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-slate-800">{t("maintenanceStats.title")}</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t("maintenanceStats.totalRecords")}</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">{maintenanceStats.totalEvents}</p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t("maintenanceStats.totalCost")}</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
+                      {maintenanceStats.costCount > 0 ? formatCurrency(maintenanceStats.totalCost) : "—"}
+                    </p>
+                    {maintenanceStats.costCount > 0 && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {t("maintenanceStats.avgCost")}: {formatCurrency(maintenanceStats.avgCost)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t("maintenanceStats.last12Title")}</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">{maintenanceStats.countLast12Months}</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {t("maintenanceStats.costLabel")}{" "}
+                      {maintenanceStats.totalCostLast12 > 0 ? formatCurrency(maintenanceStats.totalCostLast12) : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm col-span-2 lg:col-span-1">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t("maintenanceStats.withCost")}</p>
+                    <p className="mt-1 text-2xl font-bold text-slate-900 tabular-nums">
+                      {maintenanceStats.costCount} / {maintenanceStats.totalEvents}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">{t("maintenanceStats.withCostHint")}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-800 mb-3">{t("maintenanceStats.last6Months")}</p>
+                    <div className="flex items-end gap-1.5 min-h-[112px]">
+                      {(() => {
+                        const maxC = Math.max(1, ...maintenanceStats.monthBuckets.map((x) => x.count));
+                        const barMaxPx = 72;
+                        return maintenanceStats.monthBuckets.map((b) => {
+                          const px = Math.max(6, Math.round((b.count / maxC) * barMaxPx));
+                          return (
+                            <div key={b.key} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                              <div
+                                className="w-full rounded-t-md bg-[var(--primary)]/80 transition-all"
+                                style={{ height: `${px}px` }}
+                                title={`${b.label}: ${b.count}`}
+                              />
+                              <span className="text-[10px] text-slate-500 truncate w-full text-center" title={b.label}>
+                                {b.label}
+                              </span>
+                              <span className="text-xs font-semibold text-slate-800">{b.count}</span>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">{t("maintenanceStats.last6Hint")}</p>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                    <p className="text-sm font-semibold text-slate-800 mb-3">{t("maintenanceStats.topVehicles")}</p>
+                    {maintenanceStats.topCars.length === 0 ? (
+                      <p className="text-sm text-slate-500">—</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {maintenanceStats.topCars.map((row, idx) => (
+                          <li
+                            key={row.carId}
+                            className="flex items-center justify-between gap-2 text-sm border-b border-slate-100 pb-2 last:border-0 last:pb-0"
+                          >
+                            <span className="text-slate-700 truncate">
+                              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600 mr-2">
+                                {idx + 1}
+                              </span>
+                              {row.label}
+                            </span>
+                            <span className="shrink-0 font-semibold text-slate-900 tabular-nums">
+                              {row.count}
+                              {row.costSum > 0 ? (
+                                <span className="text-slate-500 font-normal ml-1">({formatCurrency(row.costSum)})</span>
+                              ) : null}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {maintenanceLoading ? (
               <p className="text-slate-500">Loading…</p>
             ) : (

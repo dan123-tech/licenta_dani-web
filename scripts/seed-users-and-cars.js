@@ -1,7 +1,8 @@
 /**
  * Seed the database with: 2 admin accounts, 3 user accounts, 5 cars.
  * All users and cars belong to one company (created if needed).
- * Run: node scripts/seed-users-and-cars.js
+ * Adds sample maintenance log entries for every company car that has none yet.
+ * Run: node scripts/seed-users-and-cars.js  or  npm run seed
  * Requires: DATABASE_URL in .env, migrations applied.
  */
 
@@ -17,10 +18,11 @@ if (fs.existsSync(envPath)) {
   });
 }
 
-const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
+const { createPrismaForScripts } = require("./prisma-for-scripts.js");
+const { ensureMaintenanceForCars } = require("./seed-maintenance-all-cars.js");
 
-const prisma = new PrismaClient();
+const prisma = createPrismaForScripts();
 
 const SALT_ROUNDS = 10;
 const DEFAULT_PASSWORD = "password123";
@@ -146,6 +148,14 @@ async function main() {
       });
       console.log("Created car:", spec.brand, spec.registrationNumber);
     }
+  }
+
+  // 4. Maintenance log: sample history for every car that has none yet
+  const maint = await ensureMaintenanceForCars(prisma, { companyId: company.id });
+  if (maint.carsTouched > 0) {
+    console.log(
+      `Maintenance seed: ${maint.carsTouched} car(s), ${maint.created} record(s) added.`,
+    );
   }
 
   console.log("\nDone.");

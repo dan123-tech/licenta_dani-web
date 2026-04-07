@@ -22,6 +22,7 @@
     "lint": "eslint",
     "populatedb": "node scripts/populate-db.js",
     "seed": "node scripts/seed-users-and-cars.js",
+    "seed:maintenance": "node scripts/seed-maintenance-all-cars.js",
     "reset-password": "node scripts/reset-user-password.js",
     "seed-sqlserver": "node scripts/seed-sqlserver.js",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
