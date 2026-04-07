@@ -114,5 +114,6 @@ See the `docs/` folder (copied from the main project). Ignore SQL Server / multi
 |-----|----------|
 | **`docs/WEB_HOSTING_GUIDE.md`** | Deploy to the web, env vars, Git push, troubleshooting |
 | **`docs/IMPLEMENTATION_LOG.md`** | What was built: installers, download UX, security hardening |
+| **`docs/FAVICON_AND_SEARCH.md`** | Favicon / logo in Google results (`icon.png`, Search Console) |
 | **`docs/SECURITY.md`** | SQLi, XSS, CORS, CSRF, headers (technical summary) |
 | **`docs/DATABASE.md`** | Postgres / Neon connection strings |
