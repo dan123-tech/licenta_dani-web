@@ -93,6 +93,91 @@ function normalizeDatabaseName(input) {
     .slice(0, 40)}`;
 }
 
+function parseDatabaseNameFromUrl(databaseUrl) {
+  try {
+    const u = new URL(databaseUrl);
+    return (u.pathname || "").replace(/^\/+/, "").trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+function parseRoleFromUrl(databaseUrl) {
+  try {
+    const u = new URL(databaseUrl);
+    return decodeURIComponent((u.username || "").trim()) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureDatabaseOnBranch(projectId, branchId, databaseName, roleName) {
+  try {
+    await neonFetchWithRetry(`/projects/${projectId}/branches/${branchId}/databases`, {
+      method: "POST",
+      body: JSON.stringify({
+        database: {
+          name: databaseName,
+          owner_name: roleName,
+        },
+      }),
+    });
+  } catch (e) {
+    const msg = String(e?.message || "");
+    if (msg.includes("already exists") || msg.includes("Neon API 409")) return;
+    if (msg.includes("could not apply config without read-write endpoint")) {
+      await ensureReadWriteEndpoint(projectId, branchId);
+      await neonFetchWithRetry(`/projects/${projectId}/branches/${branchId}/databases`, {
+        method: "POST",
+        body: JSON.stringify({
+          database: {
+            name: databaseName,
+            owner_name: roleName,
+          },
+        }),
+      });
+      return;
+    }
+    throw e;
+  }
+}
+
+export async function ensureNeonTenantDatabase({
+  companyId,
+  branchId,
+  databaseName,
+  roleName,
+  existingDatabaseUrl,
+}) {
+  const projectId = required("NEON_PROJECT_ID");
+  const resolvedRole =
+    roleName ||
+    parseRoleFromUrl(existingDatabaseUrl) ||
+    process.env.NEON_ROLE_NAME?.trim() ||
+    required("NEON_ROLE_NAME");
+  let resolvedBranchId = branchId;
+  if (!resolvedBranchId) {
+    const branch = await getBranchByName(projectId, `tenant-${companyId}`);
+    if (!branch?.id) {
+      throw new Error(`Could not resolve tenant branch for company ${companyId}`);
+    }
+    resolvedBranchId = branch.id;
+  }
+  const resolvedDbName =
+    databaseName || parseDatabaseNameFromUrl(existingDatabaseUrl) || normalizeDatabaseName(companyId);
+
+  await ensureDatabaseOnBranch(projectId, resolvedBranchId, resolvedDbName, resolvedRole);
+  const conn = await neonFetchWithRetry(
+    `/projects/${projectId}/connection_uri?database_name=${encodeURIComponent(resolvedDbName)}&role_name=${encodeURIComponent(resolvedRole)}&branch_id=${encodeURIComponent(resolvedBranchId)}`
+  );
+
+  return {
+    branchId: resolvedBranchId,
+    databaseName: resolvedDbName,
+    databaseUrl: conn.uri,
+  };
+}
+
 export async function provisionNeonTenant({ companyId, companyName }) {
   const projectId = required("NEON_PROJECT_ID");
   const rootBranchId = process.env.NEON_ROOT_BRANCH_ID?.trim() || "br-main";
@@ -123,33 +208,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
     }
   }
 
-  try {
-    await neonFetchWithRetry(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
-      method: "POST",
-      body: JSON.stringify({
-        database: {
-          name: databaseName,
-          owner_name: roleName,
-        },
-      }),
-    });
-  } catch (e) {
-    const msg = String(e?.message || "");
-    if (msg.includes("could not apply config without read-write endpoint")) {
-      await ensureReadWriteEndpoint(projectId, branch.branch.id);
-      await neonFetchWithRetry(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
-        method: "POST",
-        body: JSON.stringify({
-          database: {
-            name: databaseName,
-            owner_name: roleName,
-          },
-        }),
-      });
-    } else {
-      throw e;
-    }
-  }
+  await ensureDatabaseOnBranch(projectId, branch.branch.id, databaseName, roleName);
 
   const conn = await neonFetchWithRetry(
     `/projects/${projectId}/connection_uri?database_name=${encodeURIComponent(databaseName)}&role_name=${encodeURIComponent(roleName)}&branch_id=${encodeURIComponent(branch.branch.id)}`

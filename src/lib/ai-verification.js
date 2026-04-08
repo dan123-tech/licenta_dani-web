@@ -104,10 +104,12 @@ async function postLicenceToAI(url, imageBuffer, mimeType, filename, fieldName, 
 }
 
 function candidatePaths() {
+  // Prefer the known driving-licence endpoint first to survive env misconfiguration
+  // like AI_VERIFY_PATH=/verify.
   const raw = [
+    "/validate",
     AI_VERIFY_PATH,
     process.env.LICENSE_VALIDATOR_ENDPOINT,
-    "/validate",
     "/validate-license",
     "/verify",
   ].filter(Boolean);

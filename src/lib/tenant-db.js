@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { prisma as controlPrisma } from "@/lib/db";
+import { ensureNeonTenantDatabase } from "@/lib/neon-tenants";
 
 const tenantClients = new Map();
 const MAX_TENANT_CLIENTS = 20;
@@ -249,7 +250,35 @@ export async function getTenantPrisma(companyId) {
     return client;
   }
   const cfg = await getTenantConfig(companyId);
-  const client = createTenantClient(cfg.databaseUrl);
+  let client = createTenantClient(cfg.databaseUrl);
+  try {
+    await client.$queryRawUnsafe("SELECT 1");
+  } catch (e) {
+    const msg = String(e?.message || "");
+    if (cfg.provider === "neon" && (msg.includes("3D000") || msg.includes("does not exist"))) {
+      const repaired = await ensureNeonTenantDatabase({
+        companyId,
+        branchId: cfg.branchId || undefined,
+        databaseName: cfg.databaseName || undefined,
+        existingDatabaseUrl: cfg.databaseUrl || undefined,
+      });
+      await controlPrisma.companyTenant.update({
+        where: { companyId },
+        data: {
+          branchId: repaired.branchId,
+          databaseName: repaired.databaseName,
+          databaseUrl: repaired.databaseUrl,
+          provisioningStatus: "READY",
+          provisioningError: null,
+        },
+      });
+      await client.$disconnect().catch(() => {});
+      client = createTenantClient(repaired.databaseUrl);
+      await client.$queryRawUnsafe("SELECT 1");
+    } else {
+      throw e;
+    }
+  }
   touchClient(companyId, client);
   return client;
 }
