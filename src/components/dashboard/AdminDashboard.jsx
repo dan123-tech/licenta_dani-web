@@ -44,8 +44,6 @@ import {
   apiRefreshReservationCodes,
   apiVerifyPickupCode,
   apiDataSourceConfigGet,
-  apiAiValidationConfigGet,
-  apiAiValidationConfigPatch,
   apiMaintenanceList,
   apiMaintenanceCreate,
   apiMaintenanceDelete,
@@ -235,11 +233,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [usersFilterRole, setUsersFilterRole] = useState("");
   const [usersFilterStatus, setUsersFilterStatus] = useState("");
   const [usersFilterDl, setUsersFilterDl] = useState("");
-  const [aiValidationConfig, setAiValidationConfig] = useState({
-    drivingEnabled: true,
-    faceEnabled: true,
-  });
-  const [aiConfigSaving, setAiConfigSaving] = useState(false);
+  const [aiFilterMode, setAiFilterMode] = useState("driving");
   const [dataSourceConfig, setDataSourceConfig] = useState(null);
   const [dataSourceNotConfigured, setDataSourceNotConfigured] = useState({ users: false, cars: false, reservations: false });
   const [maintenanceEvents, setMaintenanceEvents] = useState([]);
@@ -273,14 +267,13 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     setError("");
     setDataSourceNotConfigured({ users: false, cars: false, reservations: false });
     try {
-      const [configRes, carsRes, usersRes, invitesRes, reservRes, approvalsRes, aiCfgRes] = await Promise.all([
+      const [configRes, carsRes, usersRes, invitesRes, reservRes, approvalsRes] = await Promise.all([
         apiDataSourceConfigGet().catch(() => ({ users: "LOCAL", cars: "LOCAL", reservations: "LOCAL" })),
         apiCars().catch((err) => ({ __error: err })),
         apiUsers().catch((err) => ({ __error: err })),
         apiInvites().catch(() => []),
         apiReservations().catch((err) => ({ __error: err })),
         apiPendingExceededApprovals().catch(() => []),
-        apiAiValidationConfigGet().catch(() => ({ drivingEnabled: true, faceEnabled: true })),
       ]);
       if (configRes && !configRes.__error) setDataSourceConfig(configRes);
       if (carsRes?.__error) {
@@ -303,12 +296,6 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
         setReservations([]);
       } else setReservations(Array.isArray(reservRes) ? reservRes : []);
       setPendingApprovals(Array.isArray(approvalsRes) ? approvalsRes : []);
-      if (aiCfgRes && !aiCfgRes.__error) {
-        setAiValidationConfig({
-          drivingEnabled: aiCfgRes.drivingEnabled !== false,
-          faceEnabled: aiCfgRes.faceEnabled !== false,
-        });
-      }
     } catch (err) {
       setError(err.message || "Failed to load data");
     } finally {
@@ -841,41 +828,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     }
   }
 
-  async function handleAiValidationToggle(key, value) {
-    setAiConfigSaving(true);
-    setError("");
-    try {
-      const payload = key === "drivingEnabled" ? { drivingEnabled: value } : { faceEnabled: value };
-      const updated = await apiAiValidationConfigPatch(payload);
-      setAiValidationConfig({
-        drivingEnabled: updated.drivingEnabled !== false,
-        faceEnabled: updated.faceEnabled !== false,
-      });
-    } catch (err) {
-      setError(err.message || "Failed to save AI validation settings");
-    } finally {
-      setAiConfigSaving(false);
-    }
-  }
-
-  async function setAiValidationMode(mode) {
-    setAiConfigSaving(true);
-    setError("");
-    try {
-      const payload =
-        mode === "driving"
-          ? { drivingEnabled: true, faceEnabled: false }
-          : { drivingEnabled: false, faceEnabled: true };
-      const updated = await apiAiValidationConfigPatch(payload);
-      setAiValidationConfig({
-        drivingEnabled: updated.drivingEnabled !== false,
-        faceEnabled: updated.faceEnabled !== false,
-      });
-    } catch (err) {
-      setError(err.message || "Failed to save AI validation settings");
-    } finally {
-      setAiConfigSaving(false);
-    }
+  function setAiValidationMode(mode) {
+    setAiFilterMode(mode === "face" ? "face" : "driving");
   }
 
   async function handleExceededApproval(reservationId, action) {
@@ -2186,8 +2140,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
         )}
 
         {section === "aiVerification" && (() => {
-          const showDriving = aiValidationConfig.drivingEnabled;
-          const showFace = !aiValidationConfig.drivingEnabled && aiValidationConfig.faceEnabled;
+          const showDriving = aiFilterMode !== "face";
+          const showFace = aiFilterMode === "face";
           const aiUsers = users.filter((m) => {
             if (showDriving) return m.drivingLicenceStatus != null || m.drivingLicenceVerifiedBy != null;
             if (showFace) return m.identityStatus != null || m.identityVerifiedBy != null;
@@ -2213,7 +2167,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                 <div className="min-w-0 flex-1">
                   <h2 className="text-xl font-bold text-cyan-100 mb-1">AI Verification</h2>
                   <p className="text-sm text-slate-200">
-                    Enable one mode at a time: Driving mode shows only driving-licence requests, Face mode shows only face-recognition requests.
+                    Filter only: Driving mode shows only driving-licence requests, Face mode shows only face-recognition requests.
                   </p>
                 </div>
               </div>
@@ -2238,27 +2192,25 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  disabled={aiConfigSaving}
                   onClick={() => setAiValidationMode("driving")}
                   className={`px-3 py-2 text-sm font-semibold rounded-xl shadow-sm transition-colors ${
-                    aiValidationConfig.drivingEnabled
+                    showDriving
                       ? "bg-emerald-600 text-white hover:bg-emerald-700"
                       : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                  } disabled:opacity-60`}
+                  }`}
                 >
-                  AI Driving: {aiValidationConfig.drivingEnabled ? "ON" : "OFF"}
+                  AI Driving Filter
                 </button>
                 <button
                   type="button"
-                  disabled={aiConfigSaving}
                   onClick={() => setAiValidationMode("face")}
                   className={`px-3 py-2 text-sm font-semibold rounded-xl shadow-sm transition-colors ${
-                    aiValidationConfig.faceEnabled
+                    showFace
                       ? "bg-emerald-600 text-white hover:bg-emerald-700"
                       : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                  } disabled:opacity-60`}
+                  }`}
                 >
-                  AI Face: {aiValidationConfig.faceEnabled ? "ON" : "OFF"}
+                  AI Face Filter
                 </button>
               </div>
             </div>

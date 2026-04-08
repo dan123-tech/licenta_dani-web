@@ -1,7 +1,6 @@
 const DEFAULT_AI_URL =
   process.env.AI_FACE_RECOGNITION_URL ||
   process.env.AI_FACE_MATCH_URL ||
-  process.env.AI_DRIVING_LICENCE_LLM_CLOUDFLARE_URL ||
   process.env.AI_VERIFICATION_URL ||
   "http://localhost:8080";
 const AI_TIMEOUT_MS = parseInt(
@@ -42,6 +41,11 @@ function makeImagePart(buffer, mimeType, filename) {
  */
 export async function verifyIdentityFaceMatch(licence, liveScan) {
   const base = DEFAULT_AI_URL.replace(/\/$/, "");
+  if (!base) {
+    throw new Error(
+      "Face recognition backend URL is not configured. Set AI_FACE_RECOGNITION_URL."
+    );
+  }
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
   try {
@@ -87,7 +91,10 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
       };
     }
 
-    throw lastError || new Error("Face match endpoint not found.");
+    throw (
+      lastError ||
+      new Error(`Face match endpoint not found on ${base} (tried: ${paths.join(", ")})`)
+    );
   } catch (err) {
     if (err?.name === "AbortError") {
       throw new Error("Identity verification timed out.");
