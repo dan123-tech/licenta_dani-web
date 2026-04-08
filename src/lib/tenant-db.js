@@ -7,6 +7,12 @@ const tenantClients = new Map();
 const MAX_TENANT_CLIENTS = 20;
 const ALLOW_TENANT_FALLBACK = String(process.env.ALLOW_TENANT_FALLBACK || "").toLowerCase() === "true";
 const tenantSchemaReady = new Set();
+const PINNED_CONTROL_PLANE_COMPANIES = new Set(
+  String(process.env.PINNED_CONTROL_PLANE_COMPANIES || "comp1")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+);
 
 function isNeonUrl(url) {
   return /neon\.tech/i.test(url || "");
@@ -50,6 +56,19 @@ function isMappedToControlPlaneDatabase(url) {
   const a = parseDbIdentity(controlUrl);
   const b = parseDbIdentity(url);
   return Boolean(a && b && a.host === b.host && a.db === b.db);
+}
+
+async function isPinnedToControlPlane(companyId) {
+  if (PINNED_CONTROL_PLANE_COMPANIES.has(String(companyId || "").toLowerCase())) return true;
+  const company = await controlPrisma.company.findUnique({
+    where: { id: companyId },
+    select: { name: true, joinCode: true, domain: true },
+  });
+  if (!company) return false;
+  const aliases = [company.name, company.joinCode, company.domain]
+    .map((v) => String(v || "").trim().toLowerCase())
+    .filter(Boolean);
+  return aliases.some((v) => PINNED_CONTROL_PLANE_COMPANIES.has(v));
 }
 
 function touchClient(companyId, client) {
@@ -466,6 +485,22 @@ export async function ensureTenantSchema(companyId) {
 
 export async function getTenantConfig(companyId) {
   if (!companyId) throw new Error("companyId is required");
+  const controlDbUrl = String(process.env.DATABASE_URL || "").trim();
+  if (await isPinnedToControlPlane(companyId)) {
+    if (!isUsableDatabaseUrl(controlDbUrl)) {
+      throw new Error("DATABASE_URL is required for control-plane pinned company");
+    }
+    return {
+      companyId,
+      provider: "neon",
+      databaseUrl: controlDbUrl,
+      branchId: process.env.NEON_ROOT_BRANCH_ID?.trim() || "br-main",
+      branchName: `root-${process.env.NEON_ROOT_BRANCH_ID?.trim() || "br-main"}`,
+      databaseName: parseDbIdentity(controlDbUrl)?.db || "neondb",
+      provisioningStatus: "READY",
+      provisioningError: null,
+    };
+  }
   let cfg = await controlPrisma.companyTenant.findUnique({ where: { companyId } });
   if (!cfg) {
     cfg = await autoProvisionMissingTenant(companyId);
@@ -479,7 +514,6 @@ export async function getTenantConfig(companyId) {
 
   // Graceful runtime fallback: if tenant provisioning is blocked/failed, keep the company usable
   // on control-plane DB instead of hard failing requests with 503.
-  const controlDbUrl = String(process.env.DATABASE_URL || "").trim();
   if (ALLOW_TENANT_FALLBACK && isUsableDatabaseUrl(controlDbUrl)) {
     if (process.env.NODE_ENV !== "production") {
       console.warn("[tenant-db] fallback to control DATABASE_URL", {

@@ -43,13 +43,19 @@ function buildCandidatePaths() {
   const normalizedConfigured = configuredRaw.startsWith("/") ? configuredRaw : `/${configuredRaw}`;
   // Prefer stable default endpoints first, then custom configured path.
   const candidates = [
+    normalizedConfigured,
     "/verify",
     "/api/verify",
     "/face-match",
     "/api/face-match",
+    "/verify-license-face",
+    "/api/verify-license-face",
+    "/verify-face",
+    "/api/verify-face",
     "/match",
     "/api/match",
-    normalizedConfigured,
+    "/compare",
+    "/api/compare",
   ];
   return [...new Set(candidates)];
 }

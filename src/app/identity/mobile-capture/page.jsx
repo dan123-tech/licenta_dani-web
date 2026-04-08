@@ -269,7 +269,7 @@ function MobileCapturePageInner() {
                     border: "3px solid rgba(255,255,255,0.95)",
                     borderRadius: "50% / 44%",
                     boxShadow:
-                      "0 0 0 9999px rgba(0,0,0,0.35), 0 0 8px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.35)",
+                      "0 0 0 9999px rgba(5,26,64,0.72), 0 0 8px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.35)",
                   }}
                 />
               </div>
