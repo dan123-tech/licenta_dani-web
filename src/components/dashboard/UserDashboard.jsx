@@ -273,6 +273,19 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
     };
   }, [liveScanPreviewUrl]);
 
+  // Attach camera stream after the preview <video> mounts.
+  useEffect(() => {
+    const video = liveVideoRef.current;
+    const stream = liveStreamRef.current;
+    if (!liveScanReady || !video || !stream) return;
+    video.srcObject = stream;
+    video
+      .play()
+      .catch(() => {
+        // Some browsers may defer autoplay; capture button will remain gated by ready state.
+      });
+  }, [liveScanReady]);
+
   async function handleDlSave() {
     if (!selectedDlFile) return;
     setDlUploading(true);
@@ -327,6 +340,9 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
     setError("");
     setIdentityNotice(null);
     try {
+      if (!navigator?.mediaDevices?.getUserMedia) {
+        throw new Error("Camera is not supported in this browser. Please use a modern browser (Chrome/Edge/Safari) over HTTPS.");
+      }
       if (liveScanPreviewUrl) URL.revokeObjectURL(liveScanPreviewUrl);
       setLiveScanPreviewUrl(null);
       setLiveScanCaptureFile(null);
@@ -340,7 +356,15 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
       }
       setLiveScanReady(true);
     } catch (err) {
-      setError(err.message || "Could not open camera");
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        setError("Camera access denied. Please allow camera permission in your browser and click Start live scan again.");
+      } else if (err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError") {
+        setError("No camera device found. Connect a camera and try again.");
+      } else if (err?.name === "NotReadableError" || err?.name === "TrackStartError") {
+        setError("Camera is busy in another app/tab. Close other camera apps and try again.");
+      } else {
+        setError(err?.message || "Could not open camera");
+      }
     } finally {
       setLiveScanStarting(false);
     }
@@ -361,6 +385,10 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
     const video = liveVideoRef.current;
     const canvas = liveCanvasRef.current;
     if (!video || !canvas) return;
+    if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+      setError("Camera is starting. Please wait 1-2 seconds and press Capture again.");
+      return;
+    }
     const w = video.videoWidth || 720;
     const h = video.videoHeight || 720;
     canvas.width = w;
