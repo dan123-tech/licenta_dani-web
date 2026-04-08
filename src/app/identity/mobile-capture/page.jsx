@@ -135,28 +135,34 @@ function MobileCapturePageInner() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 p-4">
-      <div className="max-w-md mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <h1 className="text-lg font-bold">Mobile Identity Verification</h1>
-        <p className="text-sm text-slate-600 mt-1">
+    <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-4">
+      <div className="max-w-md mx-auto rounded-3xl border border-white/10 bg-black/30 backdrop-blur p-5 shadow-2xl">
+        <h1 className="text-xl font-bold">Verify your identity</h1>
+        <p className="text-sm text-slate-300 mt-1">
           {sessionInfo?.userName ? `Hi ${sessionInfo.userName}, ` : ""}
-          take a clear selfie so we can compare it with your driving licence photo.
+          center your face in the circle, then take a clear selfie.
         </p>
         {sessionInfo?.expiresAt && (
-          <p className="text-xs text-slate-500 mt-1">Link expires: {new Date(sessionInfo.expiresAt).toLocaleString()}</p>
+          <p className="text-xs text-slate-400 mt-1">Link expires: {new Date(sessionInfo.expiresAt).toLocaleString()}</p>
         )}
 
         {cameraReady && (
-          <div className="mt-4 rounded-xl border border-slate-200 overflow-hidden bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto max-h-80 object-contain" />
+          <div className="mt-4 relative rounded-2xl overflow-hidden border border-white/15 bg-black">
+            <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto max-h-[26rem] object-cover" />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="w-64 h-64 rounded-full border-4 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]" />
+            </div>
+            <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/55 text-xs">
+              Keep your face inside the circle
+            </div>
           </div>
         )}
         <canvas ref={canvasRef} className="hidden" />
 
         {captureUrl && (
           <div className="mt-4">
-            <p className="text-sm font-medium mb-2">Captured photo</p>
-            <img src={captureUrl} alt="Captured selfie" className="rounded-xl border border-slate-200 bg-slate-50 w-full h-auto max-h-80 object-contain" />
+            <p className="text-sm font-medium mb-2 text-slate-200">Captured photo</p>
+            <img src={captureUrl} alt="Captured selfie" className="rounded-2xl border border-white/15 bg-black/20 w-full h-auto max-h-[26rem] object-contain" />
           </div>
         )}
 
@@ -168,7 +174,7 @@ function MobileCapturePageInner() {
               disabled={cameraOpening || submitting}
               className="px-4 py-2 rounded-xl bg-[var(--primary)] text-white font-semibold disabled:opacity-40"
             >
-              {cameraOpening ? "Opening camera…" : "Start camera"}
+              {cameraOpening ? "Opening camera..." : "Start camera"}
             </button>
           )}
           {cameraReady && (
@@ -176,14 +182,14 @@ function MobileCapturePageInner() {
               <button
                 type="button"
                 onClick={captureFrame}
-                className="px-4 py-2 rounded-xl bg-red-500 text-white font-semibold"
+                className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-semibold"
               >
                 Capture photo
               </button>
               <button
                 type="button"
                 onClick={stopCamera}
-                className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+                className="px-4 py-2 rounded-xl bg-white/10 text-slate-100 font-semibold"
               >
                 Stop camera
               </button>
@@ -193,21 +199,21 @@ function MobileCapturePageInner() {
             type="button"
             onClick={submitCapture}
             disabled={!captureFile || submitting}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold disabled:opacity-40"
+            className="px-4 py-2 rounded-xl bg-slate-100 text-slate-900 font-semibold disabled:opacity-40"
           >
-            {submitting ? "Submitting…" : "Submit verification"}
+            {submitting ? "Submitting..." : "Submit verification"}
           </button>
         </div>
 
-        {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
+        {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
 
         {result?.identityStatus && (
-          <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="mt-4 rounded-xl border border-white/15 bg-white/5 p-3">
             <p className="text-sm font-semibold">Result: {result.identityStatus}</p>
             {typeof result.identityScore === "number" && (
-              <p className="text-xs text-slate-600 mt-1">Score: {result.identityScore.toFixed(3)}</p>
+              <p className="text-xs text-slate-300 mt-1">Score: {result.identityScore.toFixed(3)}</p>
             )}
-            {result.message && <p className="text-xs text-slate-600 mt-1">{result.message}</p>}
+            {result.message && <p className="text-xs text-slate-300 mt-1">{result.message}</p>}
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Fragment, useMemo, useRef } from "react";
+import { useState, useEffect, Fragment, useMemo } from "react";
 import { LayoutGrid, IdCard, Car, Wrench, Calendar, History, CalendarDays, Shield, Info } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
@@ -17,7 +17,6 @@ import {
   apiExtendReservation,
   apiUploadDrivingLicence,
   apiDeleteDrivingLicence,
-  apiVerifyIdentity,
   apiCreateMobileCaptureSession,
   apiUserMfaUpdate,
   apiUserEmailNotifications,
@@ -101,17 +100,9 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
   const [selectedDlFile, setSelectedDlFile] = useState(null);
   const [dlPreviewUrl, setDlPreviewUrl] = useState(null);
   const [dlNotice, setDlNotice] = useState(null);
-  const [identityVerifying, setIdentityVerifying] = useState(false);
-  const [liveScanStarting, setLiveScanStarting] = useState(false);
-  const [liveScanReady, setLiveScanReady] = useState(false);
-  const [liveScanPreviewUrl, setLiveScanPreviewUrl] = useState(null);
-  const [liveScanCaptureFile, setLiveScanCaptureFile] = useState(null);
   const [identityNotice, setIdentityNotice] = useState(null);
   const [mobileCaptureSession, setMobileCaptureSession] = useState(null);
   const [mobileCaptureBusy, setMobileCaptureBusy] = useState(false);
-  const liveVideoRef = useRef(null);
-  const liveCanvasRef = useRef(null);
-  const liveStreamRef = useRef(null);
   const [now, setNow] = useState(() => new Date());
   const [scheduleModal, setScheduleModal] = useState(null);
   const [scheduleStart, setScheduleStart] = useState("");
@@ -267,28 +258,6 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
     return () => { if (dlPreviewUrl) URL.revokeObjectURL(dlPreviewUrl); };
   }, [dlPreviewUrl]);
 
-  useEffect(() => {
-    return () => {
-      if (liveScanPreviewUrl) URL.revokeObjectURL(liveScanPreviewUrl);
-      if (liveStreamRef.current) {
-        for (const track of liveStreamRef.current.getTracks()) track.stop();
-        liveStreamRef.current = null;
-      }
-    };
-  }, [liveScanPreviewUrl]);
-
-  // Attach camera stream after the preview <video> mounts.
-  useEffect(() => {
-    const video = liveVideoRef.current;
-    const stream = liveStreamRef.current;
-    if (!liveScanReady || !video || !stream) return;
-    video.srcObject = stream;
-    video
-      .play()
-      .catch(() => {
-        // Some browsers may defer autoplay; capture button will remain gated by ready state.
-      });
-  }, [liveScanReady]);
 
   async function handleDlSave() {
     if (!selectedDlFile) return;
@@ -379,102 +348,6 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
     }
   }
 
-  async function startLiveScan() {
-    setLiveScanStarting(true);
-    setError("");
-    setIdentityNotice(null);
-    try {
-      if (!navigator?.mediaDevices?.getUserMedia) {
-        throw new Error("Camera is not supported in this browser. Please use a modern browser (Chrome/Edge/Safari) over HTTPS.");
-      }
-      if (liveScanPreviewUrl) URL.revokeObjectURL(liveScanPreviewUrl);
-      setLiveScanPreviewUrl(null);
-      setLiveScanCaptureFile(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      liveStreamRef.current = stream;
-      if (liveVideoRef.current) {
-        liveVideoRef.current.srcObject = stream;
-      }
-      setLiveScanReady(true);
-    } catch (err) {
-      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
-        setError("Camera access denied. Please allow camera permission in your browser and click Start live scan again.");
-      } else if (err?.name === "NotFoundError" || err?.name === "DevicesNotFoundError") {
-        setError("No camera device found. Connect a camera and try again.");
-      } else if (err?.name === "NotReadableError" || err?.name === "TrackStartError") {
-        setError("Camera is busy in another app/tab. Close other camera apps and try again.");
-      } else {
-        setError(err?.message || "Could not open camera");
-      }
-    } finally {
-      setLiveScanStarting(false);
-    }
-  }
-
-  function stopLiveScan() {
-    if (liveStreamRef.current) {
-      for (const track of liveStreamRef.current.getTracks()) track.stop();
-      liveStreamRef.current = null;
-    }
-    if (liveVideoRef.current) {
-      liveVideoRef.current.srcObject = null;
-    }
-    setLiveScanReady(false);
-  }
-
-  async function captureLiveScanFrame() {
-    const video = liveVideoRef.current;
-    const canvas = liveCanvasRef.current;
-    if (!video || !canvas) return;
-    if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
-      setError("Camera is starting. Please wait 1-2 seconds and press Capture again.");
-      return;
-    }
-    const w = video.videoWidth || 720;
-    const h = video.videoHeight || 720;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, w, h);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
-    if (!blob) {
-      setError("Failed to capture frame from camera");
-      return;
-    }
-    const file = new File([blob], `live-scan-${Date.now()}.jpg`, { type: "image/jpeg" });
-    if (liveScanPreviewUrl) URL.revokeObjectURL(liveScanPreviewUrl);
-    setLiveScanPreviewUrl(URL.createObjectURL(file));
-    setLiveScanCaptureFile(file);
-    stopLiveScan();
-  }
-
-  async function handleIdentityVerify() {
-    setIdentityVerifying(true);
-    setError("");
-    setIdentityNotice(null);
-    try {
-      if (!liveScanCaptureFile) {
-        setError("Please capture a live face scan first.");
-        return;
-      }
-      const data = await apiVerifyIdentity(liveScanCaptureFile);
-      await onUserUpdated?.();
-      if (data.identityStatus === "VERIFIED") {
-        setIdentityNotice({ type: "success", text: "Identity verified successfully. You can reserve cars now." });
-      } else if (data.identityStatus === "REJECTED") {
-        setIdentityNotice({ type: "warning", text: "Identity verification failed. Upload a clearer selfie or contact admin." });
-      } else {
-        setIdentityNotice({ type: "warning", text: data.message || "Verification pending admin review." });
-      }
-    } catch (err) {
-      setError(err.message || "Identity verification failed");
-    } finally {
-      setIdentityVerifying(false);
-    }
-  }
 
   async function handleMfaToggle(enable) {
     if (!mfaPassword.trim()) {
@@ -845,55 +718,8 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                 </span>
               </div>
               <p className="text-sm text-slate-500 mb-2">
-                Use a live face scan (camera) instead of selfie upload.
-              </p>
-              {liveScanReady && (
-                <div className="mb-3 rounded-xl border border-slate-200 overflow-hidden bg-black">
-                  <video ref={liveVideoRef} autoPlay playsInline muted className="w-full h-auto max-h-72 object-contain" />
-                </div>
+                This step is completed on your phone. Scan the QR code above or use the email link to open the mobile camera page and capture your face photo.
               )}
-              <canvas ref={liveCanvasRef} className="hidden" />
-              {liveScanPreviewUrl && (
-                <div className="mt-3">
-                  <p className="text-sm font-medium text-slate-700 mb-1">Captured live scan:</p>
-                  <img src={liveScanPreviewUrl} alt="Live scan preview" className="rounded-xl border border-slate-200 max-h-44 object-contain bg-slate-50 mb-3" />
-                </div>
-              )}
-              <div className="flex flex-wrap gap-3 mt-4">
-                <button
-                  type="button"
-                  onClick={startLiveScan}
-                  disabled={liveScanStarting || liveScanReady}
-                  className="px-5 py-2.5 rounded-xl font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  {liveScanStarting ? "Opening camera…" : "Start live scan"}
-                </button>
-                <button
-                  type="button"
-                  onClick={captureLiveScanFrame}
-                  disabled={!liveScanReady}
-                  className="px-5 py-2.5 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  Capture frame
-                </button>
-                <button
-                  type="button"
-                  onClick={handleIdentityVerify}
-                  disabled={identityVerifying || !user?.drivingLicenceUrl || !liveScanCaptureFile}
-                  className="px-5 py-2.5 rounded-xl font-semibold text-white bg-[#1E293B] hover:bg-[#334155] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
-                >
-                  {identityVerifying ? "Verifying…" : "Verify liveness + identity"}
-                </button>
-                {liveScanReady && (
-                  <button
-                    type="button"
-                    onClick={stopLiveScan}
-                    className="px-5 py-2.5 rounded-xl font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm"
-                  >
-                    Stop camera
-                  </button>
-                )}
-              </div>
               {identityNotice && (
                 <div
                   className={`mt-4 rounded-xl px-4 py-3 text-sm ${
