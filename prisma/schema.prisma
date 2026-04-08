@@ -111,6 +111,7 @@ model User {
   updatedAt            DateTime             @updatedAt
 
   companyMembers CompanyMember[]
+  mobileCaptureSessions MobileCaptureSession[]
   reservations   Reservation[]
   auditLogs      AuditLog[]
 
@@ -139,6 +140,7 @@ model Company {
   updatedAt                 DateTime @updatedAt
 
   members      CompanyMember[]
+  mobileCaptureSessions MobileCaptureSession[]
   invites      Invite[]
   cars         Car[]
   maintenanceEvents MaintenanceEvent[]
@@ -201,6 +203,29 @@ model Invite {
 
   @@index([token])
   @@index([companyId])
+}
+
+model MobileCaptureSession {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  companyId   String
+  status      String   @default("PENDING")
+  expiresAt   DateTime
+  usedAt      DateTime?
+  emailSentAt DateTime?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@index([status])
 }
 
 // ---------------------------------------------------------------------------

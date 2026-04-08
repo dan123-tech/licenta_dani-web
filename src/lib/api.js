@@ -404,6 +404,41 @@ export async function apiVerifyIdentity(liveScanFile) {
   return data;
 }
 
+export async function apiCreateMobileCaptureSession(opts = {}) {
+  const res = await fetch(
+    "/api/users/me/identity/mobile-session",
+    getOpts("POST", { sendEmail: Boolean(opts.sendEmail) })
+  );
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Failed to create mobile verification link");
+  return data;
+}
+
+export async function apiMobileCaptureSessionInfo(token) {
+  const qs = new URLSearchParams({ token: String(token || "") }).toString();
+  const res = await fetch(`/api/identity/mobile-capture?${qs}`, {
+    method: "GET",
+    cache: "no-store",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Invalid or expired mobile verification link");
+  return data;
+}
+
+export async function apiSubmitMobileCapture(token, file) {
+  const form = new FormData();
+  form.append("token", String(token || ""));
+  form.append("file", file);
+  const res = await fetch("/api/identity/mobile-capture", {
+    method: "POST",
+    cache: "no-store",
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Failed to submit mobile face capture");
+  return data;
+}
+
 export async function apiSetUserIdentityStatus(userId, identityStatus) {
   const res = await fetch(`/api/users/${userId}`, getOpts("PATCH", { identityStatus }));
   const data = await res.json().catch(() => ({}));

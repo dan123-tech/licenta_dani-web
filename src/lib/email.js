@@ -220,6 +220,40 @@ export async function sendInviteEmail({ to, token, inviteeName }) {
   return sendEmail({ to, subject: "You’re invited to FleetShare", html, text });
 }
 
+export async function sendMobileCaptureLinkEmail({ to, name, captureUrl, expiresAt }) {
+  const greeting = name?.trim() ? `Hi ${name.trim()},` : "Hi,";
+  const safeName = name?.trim() ? escapeEmailText(name.trim()) : "";
+  const expiresText = expiresAt
+    ? new Date(expiresAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })
+    : "soon";
+
+  const text = [
+    greeting,
+    "",
+    "To finish identity verification, open this secure link on your phone and take a live selfie.",
+    "",
+    captureUrl,
+    "",
+    `This link expires at ${expiresText} and can be used only once.`,
+    brandedTextFooter(),
+  ].join("\n");
+
+  const innerHtml = `
+    <p style="margin:0 0 16px;font-size:18px;font-weight:600;color:#0f172a;">${safeName ? `Hi ${safeName},` : "Hi,"}</p>
+    <p style="margin:0 0 16px;">To finish identity verification, open the link below on your phone and take a live selfie. We will compare it with your driving licence photo.</p>
+    ${buttonHtml(captureUrl, "Open mobile verification")}
+    <p style="margin:16px 0 0;font-size:13px;color:#64748b;">This secure link expires at <strong>${escapeEmailText(expiresText)}</strong> and can be used only once.</p>
+    <p style="margin:16px 0 0;font-size:13px;color:#64748b;">If the button does not open, copy this URL:<br /><span style="word-break:break-all;color:#0369a1;">${escapeEmailText(captureUrl)}</span></p>
+  `.trim();
+
+  const html = wrapBrandedEmailHtml({
+    innerHtml,
+    preheader: "Finish identity verification on your phone.",
+  });
+
+  return sendEmail({ to, subject: "Complete identity verification on your phone", html, text });
+}
+
 /**
  * Sent after self-service registration.
  */

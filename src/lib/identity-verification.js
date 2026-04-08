@@ -35,16 +35,22 @@ function buildFaceAuthHeaders() {
 }
 
 function buildCandidatePaths() {
-  const configured = (
+  const configuredRaw = (
     process.env.AI_FACE_RECOGNITION_VERIFY_PATH ||
     process.env.AI_FACE_MATCH_PATH ||
     "/verify"
   ).trim();
-  const normalizedConfigured = configured.startsWith("/") ? configured : `/${configured}`;
-  const candidates = [normalizedConfigured];
-  if (configured !== "/verify") candidates.push("/verify");
-  if (configured !== "/face-match") candidates.push("/face-match");
-  if (configured !== "/match") candidates.push("/match");
+  const normalizedConfigured = configuredRaw.startsWith("/") ? configuredRaw : `/${configuredRaw}`;
+  // Prefer stable default endpoints first, then custom configured path.
+  const candidates = [
+    "/verify",
+    "/api/verify",
+    "/face-match",
+    "/api/face-match",
+    "/match",
+    "/api/match",
+    normalizedConfigured,
+  ];
   return [...new Set(candidates)];
 }
 
@@ -74,7 +80,6 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
   try {
-    let lastError = null;
     const paths = buildCandidatePaths();
 
     for (const p of paths) {
@@ -95,8 +100,7 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
         headers: buildFaceAuthHeaders(),
       });
       if (res.status === 404) {
-        const text404 = await res.text();
-        lastError = new Error(`Face match returned 404 on ${p}: ${text404.slice(0, 200)}`);
+        await res.text();
         continue;
       }
       if (res.status === 401) {
@@ -127,10 +131,7 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
       };
     }
 
-    throw (
-      lastError ||
-      new Error(`Face match endpoint not found on ${base} (tried: ${paths.join(", ")})`)
-    );
+    throw new Error(`Face match endpoint not found on ${base} (tried: ${paths.join(", ")})`);
   } catch (err) {
     if (err?.name === "AbortError") {
       throw new Error("Identity verification timed out.");

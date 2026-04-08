@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment, useMemo, useRef } from "react";
 import { LayoutGrid, IdCard, Car, Wrench, Calendar, History, CalendarDays, Shield, Info } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
 import FleetBookingCalendar from "./FleetBookingCalendar";
 import AccessCodeQRButton, { ACCESS_CODE_SLOT_CLASS } from "./AccessCodeQRButton";
@@ -17,6 +18,7 @@ import {
   apiUploadDrivingLicence,
   apiDeleteDrivingLicence,
   apiVerifyIdentity,
+  apiCreateMobileCaptureSession,
   apiUserMfaUpdate,
   apiUserEmailNotifications,
   apiUserCalendarFeedUrl,
@@ -105,6 +107,8 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
   const [liveScanPreviewUrl, setLiveScanPreviewUrl] = useState(null);
   const [liveScanCaptureFile, setLiveScanCaptureFile] = useState(null);
   const [identityNotice, setIdentityNotice] = useState(null);
+  const [mobileCaptureSession, setMobileCaptureSession] = useState(null);
+  const [mobileCaptureBusy, setMobileCaptureBusy] = useState(false);
   const liveVideoRef = useRef(null);
   const liveCanvasRef = useRef(null);
   const liveStreamRef = useRef(null);
@@ -314,6 +318,21 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
             "Photo saved, but the AI service did not respond. Status is pending until an admin reviews or you try again.",
         });
       }
+
+      try {
+        setMobileCaptureBusy(true);
+        const mobile = await apiCreateMobileCaptureSession();
+        setMobileCaptureSession(mobile);
+      } catch (mobileErr) {
+        setIdentityNotice({
+          type: "warning",
+          text:
+            mobileErr?.message ||
+            "Driving licence uploaded, but mobile verification link could not be created yet. Please try Generate link below.",
+        });
+      } finally {
+        setMobileCaptureBusy(false);
+      }
     } catch (err) {
       setError(err.message || "Upload failed");
     } finally {
@@ -327,11 +346,36 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
     setError("");
     try {
       await apiDeleteDrivingLicence();
+      setMobileCaptureSession(null);
       onUserUpdated?.();
     } catch (err) {
       setError(err.message || "Delete failed");
     } finally {
       setDlDeleting(false);
+    }
+  }
+
+  async function createOrEmailMobileLink(sendEmail = false) {
+    setMobileCaptureBusy(true);
+    setError("");
+    setIdentityNotice(null);
+    try {
+      const data = await apiCreateMobileCaptureSession({ sendEmail });
+      setMobileCaptureSession(data);
+      if (sendEmail) {
+        if (data?.email?.sent) {
+          setIdentityNotice({ type: "success", text: "Verification link sent to your email. Open it on your phone and capture your face photo." });
+        } else {
+          setIdentityNotice({
+            type: "warning",
+            text: data?.email?.error ? `Could not send email: ${data.email.error}` : "Could not send email right now. You can still use the QR code.",
+          });
+        }
+      }
+    } catch (err) {
+      setError(err?.message || "Failed to create mobile verification link");
+    } finally {
+      setMobileCaptureBusy(false);
     }
   }
 
@@ -726,6 +770,57 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                   }`}
                 >
                   {dlNotice.text}
+                </div>
+              )}
+              {user?.drivingLicenceUrl && identityStatus !== "VERIFIED" && (
+                <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 p-4">
+                  <p className="text-sm font-semibold text-sky-900">Mandatory mobile face capture</p>
+                  <p className="text-xs text-sky-800 mt-1">
+                    After uploading your driving licence, you must complete a mobile selfie check to finish verification.
+                  </p>
+                  {mobileCaptureSession?.captureUrl ? (
+                    <div className="mt-3">
+                      <div className="inline-flex items-center justify-center p-2 bg-white rounded-lg border border-sky-200">
+                        <QRCodeSVG value={mobileCaptureSession.captureUrl} size={170} includeMargin />
+                      </div>
+                      <p className="mt-2 text-[11px] text-sky-900 break-all">
+                        {mobileCaptureSession.captureUrl}
+                      </p>
+                      <p className="text-xs text-sky-800 mt-1">
+                        Expires: {mobileCaptureSession.expiresAt ? new Date(mobileCaptureSession.expiresAt).toLocaleString() : "soon"}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-sky-800">Generate your secure mobile verification link.</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => createOrEmailMobileLink(false)}
+                      disabled={mobileCaptureBusy}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-40"
+                    >
+                      {mobileCaptureBusy ? "Generating…" : "Generate link / refresh QR"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => createOrEmailMobileLink(true)}
+                      disabled={mobileCaptureBusy}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-slate-700 hover:bg-slate-800 disabled:opacity-40"
+                    >
+                      Send to my email
+                    </button>
+                    {mobileCaptureSession?.captureUrl && (
+                      <a
+                        href={mobileCaptureSession.captureUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-800 bg-white border border-slate-300 hover:bg-slate-50"
+                      >
+                        Open on this device
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
               {!canReserve && dlStatus !== "PENDING" && dlStatus !== "REJECTED" && (
