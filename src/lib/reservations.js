@@ -5,6 +5,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { getTenantPrisma } from "@/lib/tenant-db";
 
 const SERIALIZABLE_TX = {
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
@@ -102,11 +103,14 @@ async function getNextActiveReservationStartAfter(tx, carId, after) {
  * @param {string|null} [purpose]
  * @returns {Promise<Object>} Created reservation
  */
-export async function createReservation(userId, carId, startDate, endDate, purpose) {
+export async function createReservation(userId, carId, startDate, endDate, purpose, companyId) {
+  const resolvedCompanyId =
+    companyId || (await prisma.car.findUnique({ where: { id: carId }, select: { companyId: true } }))?.companyId;
+  const tenant = await getTenantPrisma(resolvedCompanyId);
   const pickup_code = generateSixDigitCode();
   const code_valid_from = startDate;
 
-  return prisma.$transaction(
+  return tenant.$transaction(
     async (tx) => {
       const overlap = await hasOverlappingReservationTx(tx, carId, startDate, endDate);
       if (overlap) {
@@ -147,12 +151,15 @@ const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
  * @param {string|null} [purpose]
  * @returns {Promise<Object>} Created reservation with car and user
  */
-export async function createInstantReservation(userId, carId, purpose) {
+export async function createInstantReservation(userId, carId, purpose, companyId) {
+  const resolvedCompanyId =
+    companyId || (await prisma.car.findUnique({ where: { id: carId }, select: { companyId: true } }))?.companyId;
+  const tenant = await getTenantPrisma(resolvedCompanyId);
   const now = new Date();
   const pickup_code = generateSixDigitCode();
   const code_valid_from = now;
 
-  return prisma.$transaction(
+  return tenant.$transaction(
     async (tx) => {
       const nextScheduledStart = await getNextActiveReservationStartAfter(tx, carId, now);
       const endUntilRelease =
@@ -199,17 +206,18 @@ export async function createInstantReservation(userId, carId, purpose) {
  * @returns {Promise<Object[]>}
  */
 export async function listReservations(options) {
+  const tenant = await getTenantPrisma(options.companyId);
   const where = {};
   if (options.status) where.status = options.status;
   if (options.userId) where.userId = options.userId;
   if (options.carId) where.carId = options.carId;
   if (options.companyId) where.car = { companyId: options.companyId };
 
-  return prisma.reservation.findMany({
+  return tenant.reservation.findMany({
     where,
     orderBy: { startDate: "desc" },
     include: {
-      car: { select: { id: true, brand: true, model: true, registrationNumber: true, km: true } },
+      car: { select: { id: true, companyId: true, brand: true, model: true, registrationNumber: true, km: true } },
       user: { select: { id: true, name: true, email: true } },
     },
   });
@@ -221,12 +229,13 @@ export async function listReservations(options) {
  * @returns {Promise<Object>} same or updated reservation with pickup_code/code_valid_from
  */
 export async function ensureReservationHasCodes(r) {
+  const tenant = await getTenantPrisma(r.car?.companyId);
   if (r.status !== "ACTIVE" || r.pickup_code) return r;
   const startDate = r.startDate ? new Date(r.startDate) : new Date();
   const pickup_code = generateSixDigitCode();
   // Code valid for 30 min from reservation start (same rule as create)
   const code_valid_from = startDate;
-  await prisma.reservation.update({
+  await tenant.reservation.update({
     where: { id: r.id },
     data: { pickup_code, code_valid_from },
   });
@@ -310,7 +319,8 @@ export async function updateExceededApprovalStatus(reservationId, status, adminC
  * @param {string} companyId
  */
 export async function listPendingExceededApprovals(companyId) {
-  return prisma.reservation.findMany({
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.reservation.findMany({
     where: {
       status: "COMPLETED",
       releasedExceededStatus: "PENDING_APPROVAL",

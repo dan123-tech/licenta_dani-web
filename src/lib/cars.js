@@ -2,7 +2,7 @@
  * Car domain logic: CRUD and listing by company/status.
  */
 
-import { prisma } from "@/lib/db";
+import { getTenantPrisma } from "@/lib/tenant-db";
 
 /**
  * List cars for a company with optional status filter.
@@ -11,6 +11,7 @@ import { prisma } from "@/lib/db";
  * @returns {Promise<Object[]>} Cars with reservation count
  */
 export async function listCars(companyId, status) {
+  const prisma = await getTenantPrisma(companyId);
   return prisma.car.findMany({
     where: { companyId, ...(status ? { status } : {}) },
     orderBy: { createdAt: "desc" },
@@ -25,6 +26,7 @@ export async function listCars(companyId, status) {
  * @returns {Promise<Object|null>}
  */
 export async function getCarById(carId, companyId) {
+  const prisma = await getTenantPrisma(companyId);
   return prisma.car.findFirst({
     where: { id: carId, companyId },
     include: {
@@ -44,6 +46,7 @@ export async function getCarById(carId, companyId) {
  * @returns {Promise<Object>}
  */
 export async function createCar(companyId, data) {
+  const prisma = await getTenantPrisma(companyId);
   const lastYm =
     data.lastServiceYearMonth != null && String(data.lastServiceYearMonth).trim() !== ""
       ? String(data.lastServiceYearMonth).trim()
@@ -75,6 +78,7 @@ export async function createCar(companyId, data) {
  * @returns {Promise<Object>} updateMany result
  */
 export async function updateCar(carId, companyId, data) {
+  const prisma = await getTenantPrisma(companyId);
   const update = {
     ...(data.brand !== undefined && { brand: data.brand.trim() }),
     ...(data.model !== undefined && { model: data.model?.trim() || null }),
@@ -117,6 +121,7 @@ export async function updateCar(carId, companyId, data) {
  * @returns {Promise<Object>} deleteMany result
  */
 export async function deleteCar(carId, companyId) {
+  const prisma = await getTenantPrisma(companyId);
   return prisma.car.deleteMany({
     where: { id: carId, companyId },
   });

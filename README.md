@@ -1,4 +1,4 @@
-# FleetShare — Company Car Sharing (Web Edition)
+﻿# FleetShare — Company Car Sharing (Web Edition)
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma)
@@ -14,7 +14,7 @@ PostgreSQL-first Next.js app for company fleet booking, licence validation, and 
 |---|---|
 | Web app + API routes | Next.js (App Router) |
 | Auth/session | Cookie-based auth |
-| Database | PostgreSQL via Prisma |
+| Database | PostgreSQL via Prisma (control-plane + per-company tenant DB) |
 | Recommended production hosting | Vercel + Neon |
 | AI backend (driving licence / identity) | `ai-driving-licence-llm-cloudflare` |
 
@@ -22,7 +22,7 @@ PostgreSQL-first Next.js app for company fleet booking, licence validation, and 
 
 - User and admin dashboards
 - Driving licence upload and AI validation flow
-- Identity anti-impersonation flow (selfie + face match)
+- Identity anti-impersonation flow (live scan + face match)
 - Reservation lifecycle (create, release, history, approvals)
 - Maintenance log + analytics exports
 - i18n (EN/RO), mobile-friendly UI, API docs endpoint
@@ -51,6 +51,8 @@ Core:
 
 AI backend (recommended on Vercel):
 - `AI_DRIVING_LICENCE_LLM_CLOUDFLARE_URL=https://<your-cloudflare-ai-backend>`
+- `AI_FACE_RECOGNITION_URL=https://ai-face-recognition-nine.vercel.app`
+- `AI_FACE_RECOGNITION_VERIFY_PATH=/verify`
 
 Legacy/local fallback (kept for Docker/dev compatibility):
 - `AI_VERIFICATION_URL=http://localhost:8080`
@@ -64,6 +66,12 @@ Identity face-match tuning:
 
 Booking enforcement toggle:
 - `ENFORCE_IDENTITY_VERIFICATION=true`
+
+Tenant provisioning (Neon, database-per-company):
+- `NEON_API_KEY`
+- `NEON_PROJECT_ID`
+- `NEON_ROLE_NAME`
+- `NEON_ROOT_BRANCH_ID` (optional, default `br-main`)
 
 ## Deployment (Recommended)
 
@@ -83,10 +91,16 @@ Detailed guides:
 
 The current anti-impersonation implementation includes:
 - licence image upload (`/api/users/me/driving-licence`)
-- selfie upload (`/api/users/me/selfie`)
+- live camera scan capture in dashboard
 - AI face match (`/api/users/me/identity/verify`)
 - admin approve/reject controls in user management
 - optional reservation block until verified (`ENFORCE_IDENTITY_VERIFICATION=true`)
+
+## Multi-Tenant Databases
+
+- Each company is provisioned with a dedicated Neon database/branch.
+- Shared control-plane DB stores auth/session + company-to-tenant mapping.
+- Company-scoped operations resolve `companyId` to tenant connection and execute on that tenant DB.
 
 ## Documentation Index
 

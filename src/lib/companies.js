@@ -5,6 +5,8 @@
 
 import { prisma } from "@/lib/db";
 import { randomBytes } from "crypto";
+import { provisionNeonTenant } from "@/lib/neon-tenants";
+import { getTenantPrisma } from "@/lib/tenant-db";
 
 const JOIN_CODE_LENGTH = 8;
 const JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0,O,1,I to avoid confusion
@@ -24,10 +26,8 @@ function generateJoinCode() {
  * @returns {Promise<Object|null>} Company or null
  */
 export async function getCompanyById(companyId) {
-  return prisma.company.findUnique({
-    where: { id: companyId },
-    include: { _count: { select: { members: true, cars: true } } },
-  });
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.company.findUnique({ where: { id: companyId }, include: { _count: { select: { members: true, cars: true } } } });
 }
 
 /**
@@ -68,9 +68,47 @@ export async function updateCompany(companyId, data) {
   for (const key of allowed) {
     if (data[key] !== undefined) update[key] = data[key];
   }
-  return prisma.company.update({
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.company.update({
     where: { id: companyId },
     data: update,
+  });
+}
+
+async function seedTenantCompanyData({ company, ownerUser }) {
+  const tenant = await getTenantPrisma(company.id);
+  await tenant.$transaction(async (tx) => {
+    await tx.user.upsert({
+      where: { id: ownerUser.id },
+      update: { email: ownerUser.email, name: ownerUser.name },
+      create: {
+        id: ownerUser.id,
+        email: ownerUser.email,
+        password: ownerUser.password,
+        name: ownerUser.name,
+      },
+    });
+    await tx.company.upsert({
+      where: { id: company.id },
+      update: { name: company.name, domain: company.domain, joinCode: company.joinCode },
+      create: {
+        id: company.id,
+        name: company.name,
+        domain: company.domain,
+        joinCode: company.joinCode,
+      },
+    });
+    await tx.companyMember.upsert({
+      where: { userId_companyId: { userId: ownerUser.id, companyId: company.id } },
+      update: { role: "ADMIN", status: "ENROLLED" },
+      create: {
+        id: `${company.id}_${ownerUser.id}`,
+        userId: ownerUser.id,
+        companyId: company.id,
+        role: "ADMIN",
+        status: "ENROLLED",
+      },
+    });
   });
 }
 
@@ -105,8 +143,51 @@ export async function createCompany(userId, data) {
         status: "ENROLLED",
       },
     });
+    await tx.companyTenant.create({
+      data: {
+        companyId: company.id,
+        provider: "neon",
+        databaseUrl: "pending://provisioning",
+        provisioningStatus: "PROVISIONING",
+      },
+    });
     return company;
   });
+}
+
+export async function createCompanyWithTenant(userId, data) {
+  const company = await createCompany(userId, data);
+  try {
+    console.info("[tenant] provisioning started", { companyId: company.id });
+    const provisioned = await provisionNeonTenant({
+      companyId: company.id,
+      companyName: company.name,
+    });
+    await prisma.companyTenant.update({
+      where: { companyId: company.id },
+      data: {
+        ...provisioned,
+        provisioningStatus: "READY",
+        provisioningError: null,
+      },
+    });
+    const owner = await prisma.user.findUnique({ where: { id: userId } });
+    if (owner) {
+      await seedTenantCompanyData({ company, ownerUser: owner });
+    }
+    console.info("[tenant] provisioning ready", { companyId: company.id, branchId: provisioned.branchId });
+    return company;
+  } catch (error) {
+    console.error("[tenant] provisioning failed", { companyId: company.id, error: error?.message });
+    await prisma.companyTenant.update({
+      where: { companyId: company.id },
+      data: {
+        provisioningStatus: "FAILED",
+        provisioningError: error?.message?.slice(0, 1000) || "Tenant provisioning failed",
+      },
+    });
+    throw error;
+  }
 }
 
 /**

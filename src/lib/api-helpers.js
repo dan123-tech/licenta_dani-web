@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { isCompanyAdmin } from "@/lib/companies";
+import { getTenantConfig } from "@/lib/tenant-db";
 
 export function jsonResponse(data, status = 200) {
   return NextResponse.json(data, { status });
@@ -39,6 +40,17 @@ export async function requireCompany() {
   if ("response" in out) return out;
   if (!out.session.companyId) {
     return { response: errorResponse("Join or create a company first", 403) };
+  }
+  try {
+    await getTenantConfig(out.session.companyId);
+  } catch (err) {
+    return {
+      response: errorResponse(
+        err?.message || "Company tenant database is not ready",
+        503,
+        { code: "TENANT_DB_NOT_READY" }
+      ),
+    };
   }
   return out;
 }

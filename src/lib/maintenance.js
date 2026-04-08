@@ -2,13 +2,14 @@
  * Maintenance history per vehicle (local DB).
  */
 
-import { prisma } from "@/lib/db";
+import { getTenantPrisma } from "@/lib/tenant-db";
 
 /**
  * @param {string} companyId
  * @param {{ carId?: string }} [opts]
  */
 export async function listMaintenanceEvents(companyId, opts = {}) {
+  const prisma = await getTenantPrisma(companyId);
   return prisma.maintenanceEvent.findMany({
     where: {
       companyId,
@@ -27,6 +28,7 @@ export async function listMaintenanceEvents(companyId, opts = {}) {
  * @param {{ performedAt: Date, mileageKm?: number|null, serviceType: string, cost?: number|null, notes?: string|null }} data
  */
 export async function createMaintenanceEvent(companyId, carId, data) {
+  const prisma = await getTenantPrisma(companyId);
   const car = await prisma.car.findFirst({
     where: { id: carId, companyId },
     select: { id: true },
@@ -50,6 +52,7 @@ export async function createMaintenanceEvent(companyId, carId, data) {
 }
 
 export async function deleteMaintenanceEvent(companyId, id) {
+  const prisma = await getTenantPrisma(companyId);
   const row = await prisma.maintenanceEvent.findFirst({
     where: { id, companyId },
     select: { id: true },

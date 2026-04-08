@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createCompany } from "@/lib/companies";
+import { createCompanyWithTenant } from "@/lib/companies";
 import { extendUserSession } from "@/lib/auth";
 import { normalizeClientType } from "@/lib/auth/session-tokens";
 import { requireSession, errorResponse } from "@/lib/api-helpers";
@@ -21,7 +21,7 @@ export async function POST(request) {
   const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) return errorResponse("Invalid input", 422);
 
-  const company = await createCompany(out.session.userId, parsed.data);
+  const company = await createCompanyWithTenant(out.session.userId, parsed.data);
 
   const payload = {
     company: {

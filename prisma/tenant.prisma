@@ -1,0 +1,221 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+  output     = "../src/generated/prisma-tenant"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("TENANT_DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum MemberStatus {
+  ENROLLED
+  PENDING_INVITE
+}
+
+enum CarStatus {
+  AVAILABLE
+  RESERVED
+  IN_MAINTENANCE
+}
+
+enum ReservationStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ExceededApprovalStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum FuelType {
+  Benzine
+  Diesel
+  Electric
+  Hybrid
+}
+
+enum AuditAction {
+  CAR_ADDED
+  CAR_UPDATED
+  CAR_STATUS_CHANGED
+  CAR_DELETED
+  RESERVATION_CREATED
+  RESERVATION_CANCELLED
+  RESERVATION_COMPLETED
+  RESERVATION_EXTENDED
+  KM_EXCEEDED_APPROVED
+  KM_EXCEEDED_REJECTED
+  PRICING_CHANGED
+  COMPANY_SETTINGS_CHANGED
+  USER_INVITED
+  USER_ROLE_CHANGED
+  USER_REMOVED
+  DRIVING_LICENCE_STATUS_CHANGED
+}
+
+model User {
+  id                        String   @id
+  email                     String   @unique
+  password                  String
+  name                      String
+  avatarUrl                 String?
+  drivingLicenceUrl         String?
+  drivingLicenceStatus      String?
+  drivingLicenceVerifiedBy  String?
+  selfieUrl                 String?
+  identityStatus            String?
+  identityVerifiedAt        DateTime?
+  identityVerifiedBy        String?
+  identityScore             Float?
+  identityReason            String?
+  fcmToken                  String?
+  fcmTokenUpdatedAt         DateTime?
+  mfaEnabled                Boolean  @default(false)
+  mustChangePassword        Boolean  @default(false)
+  mfaOtpHash                String?
+  mfaOtpExpiresAt           DateTime?
+  mfaOtpAttempts            Int      @default(0)
+  emailBookingNotifications Boolean  @default(true)
+  calendarFeedToken         String?  @unique
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  reservations Reservation[]
+  companyMembers CompanyMember[]
+  auditLogs AuditLog[]
+}
+
+model Company {
+  id                        String   @id
+  name                      String
+  domain                    String?
+  joinCode                  String?  @unique
+  defaultKmUsage            Int      @default(100)
+  averageFuelPricePerLiter  Float?
+  defaultConsumptionL100km  Float?   @default(7.5)
+  priceBenzinePerLiter      Float?
+  priceDieselPerLiter       Float?
+  priceHybridPerLiter       Float?
+  priceElectricityPerKwh    Float?
+  dataSourceConfig          Json?
+  dataSourceCredentials     Json?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  members CompanyMember[]
+  invites Invite[]
+  cars Car[]
+  maintenanceEvents MaintenanceEvent[]
+}
+
+model CompanyMember {
+  id        String       @id
+  userId    String
+  companyId String
+  role      Role         @default(USER)
+  status    MemberStatus @default(PENDING_INVITE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model Invite {
+  id        String   @id
+  token     String   @unique
+  email     String
+  companyId String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model Car {
+  id                         String     @id
+  companyId                  String
+  brand                      String
+  model                      String?
+  registrationNumber         String
+  km                         Int        @default(0)
+  status                     CarStatus  @default(AVAILABLE)
+  fuelType                   FuelType   @default(Benzine)
+  averageConsumptionL100km   Float?
+  averageConsumptionKwh100km Float?
+  batteryLevel               Int?
+  batteryCapacityKwh         Float?
+  lastServiceMileage         Int?
+  lastServiceYearMonth       String?    @db.VarChar(7)
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  maintenanceEvents MaintenanceEvent[]
+}
+
+model MaintenanceEvent {
+  id          String   @id
+  companyId   String
+  carId       String
+  performedAt DateTime
+  mileageKm   Int?
+  serviceType String   @db.VarChar(120)
+  cost        Float?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  car     Car     @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+model Reservation {
+  id                          String                 @id
+  userId                      String
+  carId                       String
+  startDate                   DateTime
+  endDate                     DateTime
+  purpose                     String?
+  status                      ReservationStatus      @default(ACTIVE)
+  pickup_code                 String?
+  code_valid_from             DateTime?
+  release_code                String?
+  releasedKmUsed              Int?
+  releasedExceededReason      String?
+  releasedExceededStatus      ExceededApprovalStatus?
+  releasedExceededAdminComment String?
+  pushReminderBeforeStartSentAt DateTime?
+  pushReminderStartSentAt     DateTime?
+  pushReminderEndSentAt       DateTime?
+  createdAt                   DateTime               @default(now())
+  updatedAt                   DateTime               @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car  Car  @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String      @id
+  companyId  String
+  actorId    String?
+  action     AuditAction
+  entityType String
+  entityId   String?
+  meta       Json?
+  createdAt  DateTime    @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+}

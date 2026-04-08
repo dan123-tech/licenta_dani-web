@@ -42,6 +42,17 @@ Priority used by the app:
 2. `AI_VERIFICATION_URL` (legacy/local fallback)
 3. `http://localhost:8080` (dev fallback)
 
+### 2.2 Tenant database provisioning (database-per-company)
+
+For automatic per-company database creation in Neon, add:
+
+- `NEON_API_KEY`
+- `NEON_PROJECT_ID`
+- `NEON_ROLE_NAME` (example: `neondb_owner`)
+- Optional `NEON_ROOT_BRANCH_ID` (default used by app: `br-main`)
+
+The app stores tenant mapping in `CompanyTenant` and routes company-scoped queries to the dedicated tenant database when `provisioningStatus=READY`.
+
 ### 3. Cloudflare (custom domain)
 
 1. Add the domain to Cloudflare (change nameservers at your registrar if needed).

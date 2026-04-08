@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { randomBytes } from "crypto";
+import { getTenantPrisma } from "@/lib/tenant-db";
 
 /**
  * Find user by email (for login).
@@ -46,6 +47,23 @@ export async function createUser(data, options) {
           status: "ENROLLED",
         },
       });
+      const tenant = await getTenantPrisma(options.companyId);
+      await tenant.user.upsert({
+        where: { id: user.id },
+        update: { email: user.email, name: user.name, password: user.password },
+        create: { id: user.id, email: user.email, name: user.name, password: user.password },
+      });
+      await tenant.companyMember.upsert({
+        where: { userId_companyId: { userId: user.id, companyId: options.companyId } },
+        update: { role: options.role, status: "ENROLLED" },
+        create: {
+          id: `${options.companyId}_${user.id}`,
+          userId: user.id,
+          companyId: options.companyId,
+          role: options.role,
+          status: "ENROLLED",
+        },
+      });
     }
     return user;
   });
@@ -64,7 +82,8 @@ export async function createInvite(companyId, email, role, name) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
   const emailNorm = email.toLowerCase().trim();
 
-  return prisma.$transaction(async (tx) => {
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.$transaction(async (tx) => {
     const invite = await tx.invite.create({
       data: { token, email: emailNorm, companyId, expiresAt },
     });
@@ -144,7 +163,8 @@ export async function getInviteByToken(token) {
  * @returns {Promise<Object[]>}
  */
 export async function listInvites(companyId) {
-  return prisma.invite.findMany({
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.invite.findMany({
     where: { companyId },
     orderBy: { createdAt: "desc" },
   });
@@ -157,7 +177,8 @@ export async function listInvites(companyId) {
  * @returns {Promise<Object[]>}
  */
 export async function listCompanyMembers(companyId, status) {
-  return prisma.companyMember.findMany({
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.companyMember.findMany({
     where: { companyId, ...(status ? { status } : {}) },
     include: {
       user: {
@@ -188,7 +209,8 @@ export async function listCompanyMembers(companyId, status) {
  * @param {string} role - "ADMIN" or "USER"
  */
 export async function updateMemberRole(companyId, userId, role) {
-  return prisma.companyMember.update({
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.companyMember.update({
     where: { userId_companyId: { userId, companyId } },
     data: { role },
   });
@@ -200,7 +222,8 @@ export async function updateMemberRole(companyId, userId, role) {
  * @param {string} userId
  */
 export async function removeMember(companyId, userId) {
-  return prisma.companyMember.delete({
+  const tenant = await getTenantPrisma(companyId);
+  return tenant.companyMember.delete({
     where: { userId_companyId: { userId, companyId } },
   });
 }

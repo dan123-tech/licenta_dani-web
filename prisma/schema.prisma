@@ -65,6 +65,12 @@ enum FuelType {
   Hybrid
 }
 
+enum CompanyTenantStatus {
+  PROVISIONING
+  READY
+  FAILED
+}
+
 // ---------------------------------------------------------------------------
 // User – global account (email, password, name)
 // ---------------------------------------------------------------------------
@@ -136,6 +142,25 @@ model Company {
   invites      Invite[]
   cars         Car[]
   maintenanceEvents MaintenanceEvent[]
+  tenant       CompanyTenant?
+}
+
+model CompanyTenant {
+  id                 String              @id @default(cuid())
+  companyId          String              @unique
+  provider           String              @default("neon")
+  databaseUrl        String
+  branchId           String?
+  branchName         String?
+  databaseName       String?
+  provisioningStatus CompanyTenantStatus @default(PROVISIONING)
+  provisioningError  String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([provisioningStatus])
 }
 
 // ---------------------------------------------------------------------------

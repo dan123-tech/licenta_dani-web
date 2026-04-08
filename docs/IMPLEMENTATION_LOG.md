@@ -237,7 +237,25 @@ After code changes, **redeploy** production before re-running external scans.
 
 ---
 
-## 7. Related source files (quick index)
+## 7. Database-per-company tenancy (Neon)
+
+- Added tenant mapping model in Prisma:
+  - `CompanyTenant` with `provider`, `databaseUrl`, `provisioningStatus`, branch/database metadata.
+- Added tenant status enum:
+  - `CompanyTenantStatus` (`PROVISIONING`, `READY`, `FAILED`).
+- Added runtime tenant resolver:
+  - `src/lib/tenant-db.js` resolves `companyId -> tenant Prisma client` with in-memory client cache.
+- Added Neon provisioning client:
+  - `src/lib/neon-tenants.js` creates branch + database and retrieves tenant connection URI via Neon API.
+- Company creation now provisions tenant DB:
+  - `createCompanyWithTenant()` in `src/lib/companies.js`
+  - `POST /api/companies` now uses this flow.
+- Added readiness guard:
+  - `requireCompany()` returns `503 TENANT_DB_NOT_READY` until tenant provisioning is complete.
+- Added migration helper script for `comp1`:
+  - `scripts/migrate-comp1-to-tenant.js` copies tenant-scoped data and marks mapping as `READY`.
+
+## 8. Related source files (quick index)
 
 | Area | Files |
 |------|--------|

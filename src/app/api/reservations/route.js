@@ -159,13 +159,13 @@ export async function POST(request) {
   try {
     let reservation;
     if (isInstant) {
-      reservation = await createInstantReservation(out.session.userId, carId, purpose);
+      reservation = await createInstantReservation(out.session.userId, carId, purpose, out.session.companyId);
       await updateCar(carId, reservation.car.companyId, { status: "RESERVED" });
     } else {
       const start = new Date(startDate);
       const end = new Date(endDate);
       if (end <= start) return errorResponse("End must be after start", 422);
-      reservation = await createReservation(out.session.userId, carId, start, end, purpose);
+      reservation = await createReservation(out.session.userId, carId, start, end, purpose, out.session.companyId);
       // Future time-window bookings must not flip the car to RESERVED immediately; the car stays
       // AVAILABLE until the slot starts so others can book non-overlapping periods (e.g. 12–14
       // while another user has 14–15). Instant bookings still set RESERVED above.
