@@ -20,15 +20,16 @@ export async function POST(request) {
   if ("response" in out) return out.response;
   const parsed = bodySchema.safeParse(await request.json());
   if (!parsed.success) return errorResponse("Invalid input", 422);
-  let company;
+  let created;
   try {
-    company = await createCompanyWithTenant(out.session.userId, parsed.data);
+    created = await createCompanyWithTenant(out.session.userId, parsed.data);
   } catch (err) {
     const message =
       err?.message?.slice?.(0, 400) ||
       "Company was created in control-plane but tenant provisioning failed. Check Neon env vars and Vercel logs.";
     return errorResponse(message, 500, { code: "TENANT_PROVISIONING_FAILED" });
   }
+  const company = created?.company || created;
 
   const payload = {
     company: {
@@ -37,7 +38,15 @@ export async function POST(request) {
       domain: company.domain,
       joinCode: company.joinCode,
     },
-    message: "Share the join code so others can join your company.",
+    message:
+      created?.tenantFallback
+        ? "Company created. Tenant provisioning is temporarily unavailable, so fallback storage was used."
+        : "Share the join code so others can join your company.",
+    tenantProvisioning: {
+      status: created?.tenantStatus || "READY",
+      fallback: Boolean(created?.tenantFallback),
+      error: created?.tenantError || null,
+    },
   };
   const res = NextResponse.json(payload, { status: 201 });
   const sid = await extendUserSession(

@@ -7,13 +7,37 @@
  * Form field: AI_VERIFY_FORM_FIELD (default "file") – some services expect "image"
  */
 
-const DEFAULT_AI_URL =
+function normalizeBaseUrl(raw) {
+  const v = String(raw || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v.replace(/\/$/, "");
+  return `https://${v}`.replace(/\/$/, "");
+}
+
+const DEFAULT_AI_URL = normalizeBaseUrl(
   process.env.AI_DRIVING_LICENCE_LLM_CLOUDFLARE_URL ||
-  process.env.AI_VERIFICATION_URL ||
-  "http://localhost:8080";
-const AI_VERIFY_PATH = process.env.AI_VERIFY_PATH || "/validate";
+    process.env.LICENSE_VALIDATOR_URL ||
+    process.env.AI_VERIFICATION_URL ||
+    "http://localhost:8080"
+);
+const AI_VERIFY_PATH = process.env.AI_VERIFY_PATH || process.env.LICENSE_VALIDATOR_ENDPOINT || "/validate";
 const AI_FORM_FIELD = process.env.AI_VERIFY_FORM_FIELD || "file";
 const AI_TIMEOUT_MS = parseInt(process.env.AI_VERIFICATION_TIMEOUT_MS || "30000", 10);
+
+function buildAiAuthHeaders() {
+  const headers = {};
+  const auth =
+    process.env.AI_DRIVING_LICENCE_AUTHORIZATION ||
+    process.env.AI_BACKEND_AUTHORIZATION ||
+    "";
+  const bypass =
+    process.env.AI_DRIVING_LICENCE_BYPASS_TOKEN ||
+    process.env.AI_BACKEND_BYPASS_TOKEN ||
+    "";
+  if (auth.trim()) headers.Authorization = auth.trim();
+  if (bypass.trim()) headers["x-vercel-protection-bypass"] = bypass.trim();
+  return headers;
+}
 
 /**
  * Normalize various validator JSON shapes into approved (2+ years) or not.
@@ -76,7 +100,21 @@ function buildLicenceFormData(imageBuffer, mimeType, filename, fieldName) {
 
 async function postLicenceToAI(url, imageBuffer, mimeType, filename, fieldName, signal) {
   const form = buildLicenceFormData(imageBuffer, mimeType, filename, fieldName);
-  return fetch(url, { method: "POST", body: form, signal });
+  return fetch(url, { method: "POST", body: form, signal, headers: buildAiAuthHeaders() });
+}
+
+function candidatePaths() {
+  const raw = [
+    AI_VERIFY_PATH,
+    process.env.LICENSE_VALIDATOR_ENDPOINT,
+    "/validate",
+    "/validate-license",
+  ].filter(Boolean);
+  const normalized = raw.map((p) => {
+    const t = String(p).trim();
+    return t.startsWith("/") ? t : `/${t}`;
+  });
+  return [...new Set(normalized)];
 }
 
 /**
@@ -86,28 +124,37 @@ async function postLicenceToAI(url, imageBuffer, mimeType, filename, fieldName, 
  * @returns {Promise<{ hasTwoPlusYearsExperience: boolean, raw?: object }>}
  */
 export async function verifyDrivingLicenceWithAI(imageBuffer, mimeType, filename = "driving-licence.jpg") {
-  const base = DEFAULT_AI_URL.replace(/\/$/, "");
-  const url = `${base}${AI_VERIFY_PATH}`;
+  const base = DEFAULT_AI_URL;
+  const paths = candidatePaths();
+  const urls = paths.map((p) => `${base}${p}`);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
   let res;
+  let activeUrl = urls[0];
   const primaryField = AI_FORM_FIELD;
   const altField = primaryField === "file" ? "image" : "file";
 
   try {
-    if (process.env.NODE_ENV !== "production") {
-      console.info("[ai-verification] POST", url, "field=", primaryField);
-    }
-    res = await postLicenceToAI(url, imageBuffer, mimeType, filename, primaryField, controller.signal);
-
-    // FastAPI often returns 422 if multipart field name doesn't match UploadFile param
-    if (res.status === 422) {
-      const t = await res.text();
+    for (const url of urls) {
+      activeUrl = url;
       if (process.env.NODE_ENV !== "production") {
-        console.warn("[ai-verification] 422 with field", primaryField, "retrying field", altField, t.slice(0, 200));
+        console.info("[ai-verification] POST", url, "field=", primaryField);
       }
-      res = await postLicenceToAI(url, imageBuffer, mimeType, filename, altField, controller.signal);
+      res = await postLicenceToAI(url, imageBuffer, mimeType, filename, primaryField, controller.signal);
+
+      // FastAPI often returns 422 if multipart field name doesn't match UploadFile param
+      if (res.status === 422) {
+        const t = await res.text();
+        if (process.env.NODE_ENV !== "production") {
+          console.warn("[ai-verification] 422 with field", primaryField, "retrying field", altField, t.slice(0, 200));
+        }
+        res = await postLicenceToAI(url, imageBuffer, mimeType, filename, altField, controller.signal);
+      }
+
+      // Retry next candidate path for wrong route/method.
+      if (res.status === 404 || res.status === 405) continue;
+      break;
     }
   } catch (err) {
     clearTimeout(timeoutId);
@@ -129,9 +176,11 @@ export async function verifyDrivingLicenceWithAI(imageBuffer, mimeType, filename
       console.warn("[ai-verification] non-OK", res.status, text.slice(0, 500));
     }
     throw new Error(
-      res.status === 503 || res.status === 502
-        ? "AI verification service is temporarily unavailable. Your licence is pending manual review."
-        : `AI verification returned ${res.status}: ${text.slice(0, 200)}`
+      res.status === 401
+        ? "AI verification returned 401 (authentication required). Configure AI_DRIVING_LICENCE_AUTHORIZATION or AI_DRIVING_LICENCE_BYPASS_TOKEN in Vercel."
+        : res.status === 503 || res.status === 502
+        ? `AI verification service is temporarily unavailable at ${activeUrl}. Your licence is pending manual review.`
+        : `AI verification returned ${res.status} at ${activeUrl}: ${text.slice(0, 200)}`
     );
   }
 

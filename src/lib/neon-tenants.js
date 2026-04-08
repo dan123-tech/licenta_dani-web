@@ -27,6 +27,26 @@ async function neonFetch(path, init = {}) {
   return payload;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function neonFetchWithRetry(path, init = {}, retries = 4) {
+  let lastErr = null;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await neonFetch(path, init);
+    } catch (e) {
+      const msg = String(e?.message || "");
+      lastErr = e;
+      if (!msg.includes("Neon API 423")) throw e;
+      if (i === retries) throw e;
+      await sleep(1200 * (i + 1));
+    }
+  }
+  throw lastErr || new Error("Neon request failed");
+}
+
 async function ensureReadWriteEndpoint(projectId, branchId) {
   try {
     await neonFetch(`/projects/${projectId}/endpoints`, {
@@ -61,7 +81,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
   const databaseName = normalizeDatabaseName(companyName || companyId);
   const roleName = required("NEON_ROLE_NAME");
 
-  const branch = await neonFetch(`/projects/${projectId}/branches`, {
+  const branch = await neonFetchWithRetry(`/projects/${projectId}/branches`, {
     method: "POST",
     body: JSON.stringify({
       branch: {
@@ -72,7 +92,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
   });
 
   try {
-    await neonFetch(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
+    await neonFetchWithRetry(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
       method: "POST",
       body: JSON.stringify({
         database: {
@@ -85,7 +105,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
     const msg = String(e?.message || "");
     if (msg.includes("could not apply config without read-write endpoint")) {
       await ensureReadWriteEndpoint(projectId, branch.branch.id);
-      await neonFetch(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
+      await neonFetchWithRetry(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
         method: "POST",
         body: JSON.stringify({
           database: {
@@ -99,7 +119,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
     }
   }
 
-  const conn = await neonFetch(
+  const conn = await neonFetchWithRetry(
     `/projects/${projectId}/connection_uri?database_name=${encodeURIComponent(databaseName)}&role_name=${encodeURIComponent(roleName)}&branch_id=${encodeURIComponent(branch.branch.id)}`
   );
 

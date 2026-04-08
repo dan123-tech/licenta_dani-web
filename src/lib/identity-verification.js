@@ -11,6 +11,21 @@ const AI_TIMEOUT_MS = parseInt(
 );
 const AI_MATCH_THRESHOLD = parseFloat(process.env.AI_FACE_MATCH_THRESHOLD || "0.35");
 
+function buildFaceAuthHeaders() {
+  const headers = {};
+  const auth =
+    process.env.AI_FACE_RECOGNITION_AUTHORIZATION ||
+    process.env.AI_BACKEND_AUTHORIZATION ||
+    "";
+  const bypass =
+    process.env.AI_FACE_RECOGNITION_BYPASS_TOKEN ||
+    process.env.AI_BACKEND_BYPASS_TOKEN ||
+    "";
+  if (auth.trim()) headers.Authorization = auth.trim();
+  if (bypass.trim()) headers["x-vercel-protection-bypass"] = bypass.trim();
+  return headers;
+}
+
 function buildCandidatePaths() {
   const configured = (
     process.env.AI_FACE_RECOGNITION_VERIFY_PATH ||
@@ -63,11 +78,22 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
       form.append("selfie", liveScanPart, liveScan.filename);
       form.append("image", liveScanPart, liveScan.filename);
 
-      const res = await fetch(url, { method: "POST", body: form, signal: controller.signal });
+      const res = await fetch(url, {
+        method: "POST",
+        body: form,
+        signal: controller.signal,
+        headers: buildFaceAuthHeaders(),
+      });
       if (res.status === 404) {
         const text404 = await res.text();
         lastError = new Error(`Face match returned 404 on ${p}: ${text404.slice(0, 200)}`);
         continue;
+      }
+      if (res.status === 401) {
+        const text401 = await res.text();
+        throw new Error(
+          `Face match returned 401 (authentication required). Configure AI_FACE_RECOGNITION_AUTHORIZATION or AI_FACE_RECOGNITION_BYPASS_TOKEN. ${text401.slice(0, 120)}`
+        );
       }
       if (!res.ok) {
         const text = await res.text();

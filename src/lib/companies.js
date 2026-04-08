@@ -187,9 +187,32 @@ export async function createCompanyWithTenant(userId, data) {
       await seedTenantCompanyData({ company, ownerUser: owner });
     }
     console.info("[tenant] provisioning ready", { companyId: company.id, branchId: provisioned.branchId });
-    return company;
+    return { company, tenantStatus: "READY", tenantFallback: false, tenantError: null };
   } catch (error) {
     console.error("[tenant] provisioning failed", { companyId: company.id, error: error?.message });
+    const fallbackDbUrl = process.env.DATABASE_URL?.trim();
+    if (fallbackDbUrl) {
+      await prisma.companyTenant.update({
+        where: { companyId: company.id },
+        data: {
+          provisioningStatus: "READY",
+          databaseUrl: fallbackDbUrl,
+          provisioningError:
+            `FALLBACK_TO_CONTROL_DB: ${error?.message?.slice?.(0, 900) || "Tenant provisioning failed"}`,
+        },
+      });
+      const owner = await prisma.user.findUnique({ where: { id: userId } });
+      if (owner) {
+        await seedTenantCompanyData({ company, ownerUser: owner });
+      }
+      return {
+        company,
+        tenantStatus: "READY",
+        tenantFallback: true,
+        tenantError: error?.message?.slice?.(0, 1000) || "Tenant provisioning failed",
+      };
+    }
+
     await prisma.companyTenant.update({
       where: { companyId: company.id },
       data: {
