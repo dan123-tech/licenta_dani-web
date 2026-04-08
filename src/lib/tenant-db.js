@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS "User" (
   "identityReason" TEXT,
   "fcmToken" TEXT,
   "fcmTokenUpdatedAt" TIMESTAMP(3),
+  "activeWebSessionToken" TEXT,
+  "activeMobileSessionToken" TEXT,
   "mfaEnabled" BOOLEAN NOT NULL DEFAULT false,
   "mustChangePassword" BOOLEAN NOT NULL DEFAULT false,
   "mfaOtpHash" TEXT,
@@ -214,6 +216,33 @@ CREATE TABLE IF NOT EXISTS "AuditLog" (
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "AuditLog_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
+
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "activeWebSessionToken" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "activeMobileSessionToken" TEXT;
+`);
+}
+
+async function ensureTenantSchemaCompatibility(client) {
+  await client.$executeRawUnsafe(`
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "activeWebSessionToken" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "activeMobileSessionToken" TEXT;
+
+CREATE TABLE IF NOT EXISTS "MobileCaptureSession" (
+  "id" TEXT PRIMARY KEY,
+  "token" TEXT NOT NULL UNIQUE,
+  "userId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'PENDING',
+  "expiresAt" TIMESTAMP(3) NOT NULL,
+  "usedAt" TIMESTAMP(3),
+  "emailSentAt" TIMESTAMP(3),
+  "ipAddress" TEXT,
+  "userAgent" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "MobileCaptureSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "MobileCaptureSession_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
 `);
 }
 
@@ -230,6 +259,7 @@ export async function ensureTenantSchema(companyId) {
   if (!Array.isArray(rows) || rows.length === 0) {
     await bootstrapTenantSchema(client);
   }
+  await ensureTenantSchemaCompatibility(client);
   tenantSchemaReady.add(companyId);
 }
 

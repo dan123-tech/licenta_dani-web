@@ -68,6 +68,8 @@ model User {
   email                     String   @unique
   password                  String
   name                      String
+  activeWebSessionToken     String?
+  activeMobileSessionToken  String?
   avatarUrl                 String?
   drivingLicenceUrl         String?
   drivingLicenceStatus      String?
