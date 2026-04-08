@@ -38,6 +38,9 @@ function metadataBaseUrl() {
 
 export const metadata = {
   metadataBase: metadataBaseUrl(),
+  verification: {
+    google: "SR6gnIuidYGoH0BaMGcpdLoT398hHS4JFC9JHVn5AKI",
+  },
   title: "Company Car Sharing",
   description: "Company car sharing – login, reserve cars, manage fleet",
   manifest: "/site.webmanifest",
