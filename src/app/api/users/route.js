@@ -153,11 +153,20 @@ export async function POST(request) {
     return errorResponse(err?.message || "Failed to create user", 500);
   }
 
-  const user = await createUser(
-    { email: data.email, name: data.name, password: data.password || "ChangeMe123!" },
-    { companyId: out.session.companyId, role: data.role, mustChangePassword: true }
-  );
-  const member = await listCompanyMembers(out.session.companyId).then((m) => m.find((x) => x.userId === user.id));
+  let user;
+  let member;
+  try {
+    user = await createUser(
+      { email: data.email, name: data.name, password: data.password || "ChangeMe123!" },
+      { companyId: out.session.companyId, role: data.role, mustChangePassword: true }
+    );
+    member = await listCompanyMembers(out.session.companyId).then((m) =>
+      m.find((x) => x.userId === user.id)
+    );
+  } catch (err) {
+    console.error("POST /api/users (LOCAL create) error:", err);
+    return errorResponse(err?.message || "Failed to create user", 500);
+  }
 
   let provisionEmailSent = false;
   try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import {
   apiMobileCaptureSessionInfo,
@@ -36,9 +37,15 @@ function MobileCapturePageInner() {
   const [captureFile, setCaptureFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   useEffect(() => {
     async function loadSession() {
@@ -75,19 +82,40 @@ function MobileCapturePageInner() {
       if (!navigator?.mediaDevices?.getUserMedia) {
         throw new Error("Camera is not supported in this browser.");
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "user" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+      } catch {
+        // Fallback for browsers that reject advanced constraints.
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch {
+          // Some mobile browsers delay play() until ready; autoPlay + playsInline still work.
+        }
+      }
       setCameraReady(true);
     } catch (e) {
-      setError(e?.message || "Could not open camera.");
+      const msg = String(e?.message || "");
+      if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("denied")) {
+        setError("Camera permission denied. Please allow camera access in browser settings.");
+      } else {
+        setError("Could not open camera.");
+      }
     } finally {
       setCameraOpening(false);
     }
@@ -166,11 +194,6 @@ function MobileCapturePageInner() {
     );
   }
 
-  // Oval dimensions in vmin units — responsive on all devices
-  const ovalW = 62; // vmin (width)
-  const ovalH = 78; // vmin (height)
-  const ovalCY = 44; // % from top
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-slate-100 p-4">
       <div className="max-w-md mx-auto rounded-3xl border border-white/10 bg-black/30 backdrop-blur p-5 shadow-2xl">
@@ -186,183 +209,141 @@ function MobileCapturePageInner() {
           </p>
         )}
 
-        {/* ── CAMERA FULLSCREEN OVERLAY ── */}
-        {cameraReady && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 120,
-              background: "#000",
-            }}
-          >
-            {/* Sharp video — fills entire screen */}
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-
-            {/*
-              SVG overlay:
-              - A <mask> cuts an oval hole so the blurred foreignObject
-                does NOT cover the oval area → sharp video shows through
-              - A glowing <ellipse> border draws the oval ring on top
-            */}
-            <svg
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                pointerEvents: "none",
-              }}
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <defs>
-                {/*
-                  Mask:
-                    white rect  → show blurred overlay
-                    black ellipse → hide blurred overlay (reveal sharp video)
-                */}
-                <mask id="oval-mask">
-                  <rect width="100%" height="100%" fill="white" />
-                  <ellipse
-                    cx="50%"
-                    cy={`${ovalCY}%`}
-                    rx={`${ovalW / 2}vmin`}
-                    ry={`${ovalH / 2}vmin`}
-                    fill="black"
-                  />
-                </mask>
-              </defs>
-
-              {/* Blurred + darkened overlay, with oval hole cut out */}
-              <foreignObject
-                width="100%"
-                height="100%"
-                mask="url(#oval-mask)"
-              >
-                <div
-                  xmlns="http://www.w3.org/1999/xhtml"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    backdropFilter: "blur(20px) brightness(0.4)",
-                    WebkitBackdropFilter: "blur(20px) brightness(0.4)",
-                  }}
-                />
-              </foreignObject>
-
-              {/* Glowing oval border ring */}
-              <ellipse
-                cx="50%"
-                cy={`${ovalCY}%`}
-                rx={`${ovalW / 2}vmin`}
-                ry={`${ovalH / 2}vmin`}
-                fill="none"
-                stroke="rgba(255,255,255,0.92)"
-                strokeWidth="3"
-                style={{
-                  filter:
-                    "drop-shadow(0 0 8px rgba(255,255,255,0.7)) drop-shadow(0 0 20px rgba(255,255,255,0.35))",
-                }}
-              />
-            </svg>
-
-            {/* Instruction label */}
+        {/* Camera overlay is portaled to document.body to guarantee true fullscreen */}
+        {cameraReady &&
+          isMounted &&
+          createPortal(
             <div
               style={{
-                pointerEvents: "none",
-                position: "absolute",
-                top: "6%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                padding: "6px 18px",
-                borderRadius: 999,
-                background: "rgba(0,0,0,0.55)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-                fontSize: 13,
-                color: "#fff",
-                whiteSpace: "nowrap",
-                zIndex: 10,
-              }}
-            >
-              Keep your face inside the oval
-            </div>
-
-            {/* Action buttons */}
-            <div
-              style={{
-                position: "absolute",
-                bottom: 24,
+                position: "fixed",
+                top: 0,
                 left: 0,
                 right: 0,
-                padding: "0 16px",
-                zIndex: 10,
+                bottom: 0,
+                width: "100vw",
+                height: "100dvh",
+                zIndex: 9999,
+                background: "#000",
               }}
             >
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+
               <div
                 style={{
-                  maxWidth: 420,
-                  margin: "0 auto",
-                  borderRadius: 18,
-                  background: "rgba(0,0,0,0.6)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  padding: "14px 16px",
+                  pointerEvents: "none",
+                  position: "absolute",
+                  inset: 0,
                   display: "flex",
-                  flexWrap: "wrap",
-                  gap: 10,
+                  alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <button
-                  type="button"
-                  onClick={captureFrame}
+                <div
                   style={{
-                    padding: "11px 24px",
-                    borderRadius: 12,
-                    background: "#10b981",
-                    color: "#fff",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    border: "none",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 12px rgba(16,185,129,0.4)",
+                    width: "72vw",
+                    maxWidth: 360,
+                    height: "84vw",
+                    maxHeight: 420,
+                    border: "3px solid rgba(255,255,255,0.95)",
+                    borderRadius: "50% / 44%",
+                    boxShadow:
+                      "0 0 0 9999px rgba(0,0,0,0.35), 0 0 8px rgba(255,255,255,0.8), 0 0 20px rgba(255,255,255,0.35)",
                   }}
-                >
-                  📸 Capture photo
-                </button>
-                <button
-                  type="button"
-                  onClick={stopCamera}
-                  style={{
-                    padding: "11px 24px",
-                    borderRadius: 12,
-                    background: "rgba(255,255,255,0.15)",
-                    color: "#f1f5f9",
-                    fontWeight: 600,
-                    fontSize: 15,
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
+                />
               </div>
-            </div>
-          </div>
-        )}
+
+              <div
+                style={{
+                  pointerEvents: "none",
+                  position: "absolute",
+                  top: "7%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  padding: "6px 16px",
+                  borderRadius: 999,
+                  background: "rgba(0,0,0,0.55)",
+                  fontSize: 13,
+                  color: "#fff",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Keep your face inside the oval
+              </div>
+
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  bottom: 24,
+                  padding: "0 16px",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: 420,
+                    margin: "0 auto",
+                    borderRadius: 18,
+                    background: "rgba(0,0,0,0.58)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
+                    padding: "14px 16px",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 10,
+                    justifyContent: "center",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={captureFrame}
+                    style={{
+                      padding: "11px 24px",
+                      borderRadius: 12,
+                      background: "#10b981",
+                      color: "#fff",
+                      fontWeight: 700,
+                      fontSize: 15,
+                      border: "none",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 12px rgba(16,185,129,0.4)",
+                    }}
+                  >
+                    Capture photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={stopCamera}
+                    style={{
+                      padding: "11px 24px",
+                      borderRadius: 12,
+                      background: "rgba(255,255,255,0.15)",
+                      color: "#f1f5f9",
+                      fontWeight: 600,
+                      fontSize: 15,
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
 
         {/* Hidden canvas for frame capture */}
         <canvas ref={canvasRef} className="hidden" />

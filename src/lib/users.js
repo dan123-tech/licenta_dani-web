@@ -26,21 +26,33 @@ export async function findUserByEmail(email) {
  * @returns {Promise<Object>} Created user
  */
 export async function createUser(data, options) {
-  const hashed = await hashPassword(data.password);
   const email = data.email.toLowerCase().trim();
   const mustChangePassword = Boolean(options?.mustChangePassword);
   return prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        email,
-        password: hashed,
-        name: data.name.trim(),
-        ...(mustChangePassword ? { mustChangePassword: true } : {}),
-      },
-    });
-    if (options?.companyId) {
-      await tx.companyMember.create({
+    const existing = await tx.user.findUnique({ where: { email } });
+    let user = existing;
+    if (!user) {
+      const hashed = await hashPassword(data.password);
+      user = await tx.user.create({
         data: {
+          email,
+          password: hashed,
+          name: data.name.trim(),
+          ...(mustChangePassword ? { mustChangePassword: true } : {}),
+        },
+      });
+    } else if (!user.name && data.name?.trim()) {
+      user = await tx.user.update({
+        where: { id: user.id },
+        data: { name: data.name.trim() },
+      });
+    }
+
+    if (options?.companyId) {
+      await tx.companyMember.upsert({
+        where: { userId_companyId: { userId: user.id, companyId: options.companyId } },
+        update: { role: options.role, status: "ENROLLED" },
+        create: {
           userId: user.id,
           companyId: options.companyId,
           role: options.role,
