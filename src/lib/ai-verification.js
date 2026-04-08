@@ -109,6 +109,7 @@ function candidatePaths() {
     process.env.LICENSE_VALIDATOR_ENDPOINT,
     "/validate",
     "/validate-license",
+    "/verify",
   ].filter(Boolean);
   const normalized = raw.map((p) => {
     const t = String(p).trim();
@@ -132,6 +133,7 @@ export async function verifyDrivingLicenceWithAI(imageBuffer, mimeType, filename
   const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
   let res;
   let activeUrl = urls[0];
+  let lastTransientText = "";
   const primaryField = AI_FORM_FIELD;
   const altField = primaryField === "file" ? "image" : "file";
 
@@ -154,6 +156,10 @@ export async function verifyDrivingLicenceWithAI(imageBuffer, mimeType, filename
 
       // Retry next candidate path for wrong route/method.
       if (res.status === 404 || res.status === 405) continue;
+      if ((res.status === 502 || res.status === 503) && url !== urls[urls.length - 1]) {
+        lastTransientText = await res.text();
+        continue;
+      }
       break;
     }
   } catch (err) {
@@ -179,7 +185,7 @@ export async function verifyDrivingLicenceWithAI(imageBuffer, mimeType, filename
       res.status === 401
         ? "AI verification returned 401 (authentication required). Configure AI_DRIVING_LICENCE_AUTHORIZATION or AI_DRIVING_LICENCE_BYPASS_TOKEN in Vercel."
         : res.status === 503 || res.status === 502
-        ? `AI verification service is temporarily unavailable at ${activeUrl}. Your licence is pending manual review.`
+        ? `AI verification service is temporarily unavailable at ${activeUrl}. ${lastTransientText ? `Upstream says: ${lastTransientText.slice(0, 140)}. ` : ""}Your licence is pending manual review.`
         : `AI verification returned ${res.status} at ${activeUrl}: ${text.slice(0, 200)}`
     );
   }

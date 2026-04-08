@@ -6,7 +6,7 @@
 import { prisma } from "@/lib/db";
 import { randomBytes } from "crypto";
 import { provisionNeonTenant } from "@/lib/neon-tenants";
-import { getTenantPrisma } from "@/lib/tenant-db";
+import { ensureTenantSchema, getTenantPrisma } from "@/lib/tenant-db";
 
 const JOIN_CODE_LENGTH = 8;
 const JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0,O,1,I to avoid confusion
@@ -88,6 +88,7 @@ export async function updateCompany(companyId, data) {
 }
 
 async function seedTenantCompanyData({ company, ownerUser }) {
+  await ensureTenantSchema(company.id);
   const tenant = await getTenantPrisma(company.id);
   await tenant.$transaction(async (tx) => {
     await tx.user.upsert({

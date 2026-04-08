@@ -1,8 +1,16 @@
-const DEFAULT_AI_URL =
+function normalizeBaseUrl(raw) {
+  const v = String(raw || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v.replace(/\/$/, "");
+  return `https://${v}`.replace(/\/$/, "");
+}
+
+const DEFAULT_AI_URL = normalizeBaseUrl(
   process.env.AI_FACE_RECOGNITION_URL ||
-  process.env.AI_FACE_MATCH_URL ||
-  process.env.AI_VERIFICATION_URL ||
-  "http://localhost:8080";
+    process.env.AI_FACE_MATCH_URL ||
+    process.env.AI_VERIFICATION_URL ||
+    "http://localhost:8080"
+);
 const AI_TIMEOUT_MS = parseInt(
   process.env.AI_FACE_RECOGNITION_TIMEOUT_MS ||
     process.env.AI_FACE_MATCH_TIMEOUT_MS ||
@@ -32,9 +40,11 @@ function buildCandidatePaths() {
     process.env.AI_FACE_MATCH_PATH ||
     "/verify"
   ).trim();
-  const candidates = [configured];
+  const normalizedConfigured = configured.startsWith("/") ? configured : `/${configured}`;
+  const candidates = [normalizedConfigured];
   if (configured !== "/verify") candidates.push("/verify");
   if (configured !== "/face-match") candidates.push("/face-match");
+  if (configured !== "/match") candidates.push("/match");
   return [...new Set(candidates)];
 }
 
