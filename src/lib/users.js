@@ -6,7 +6,7 @@
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { randomBytes } from "crypto";
-import { getTenantPrisma } from "@/lib/tenant-db";
+import { ensureTenantSchema, getTenantPrisma } from "@/lib/tenant-db";
 
 /**
  * Find user by email (for login).
@@ -47,6 +47,7 @@ export async function createUser(data, options) {
           status: "ENROLLED",
         },
       });
+      await ensureTenantSchema(options.companyId);
       const tenant = await getTenantPrisma(options.companyId);
       await tenant.user.upsert({
         where: { id: user.id },

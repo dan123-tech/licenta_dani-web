@@ -147,13 +147,37 @@ function MobileCapturePageInner() {
         )}
 
         {cameraReady && (
-          <div className="mt-4 relative rounded-2xl overflow-hidden border border-white/15 bg-black">
-            <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto max-h-[26rem] object-cover" />
+          <div className="fixed inset-0 z-[120] bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover"
+            />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="w-64 h-64 rounded-full border-4 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.42)]" />
+              <div className="w-72 h-72 rounded-full border-4 border-white/95 shadow-[0_0_18px_rgba(255,255,255,0.55)]" />
             </div>
-            <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/55 text-xs">
+            <div className="pointer-events-none absolute top-8 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/55 text-xs text-white">
               Keep your face inside the circle
+            </div>
+            <div className="absolute bottom-6 inset-x-0 px-4">
+              <div className="mx-auto max-w-md rounded-2xl bg-black/55 backdrop-blur p-3 flex flex-wrap gap-2 justify-center">
+                <button
+                  type="button"
+                  onClick={captureFrame}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-semibold"
+                >
+                  Capture photo
+                </button>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="px-4 py-2 rounded-xl bg-white/15 text-slate-100 font-semibold"
+                >
+                  Stop camera
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -177,24 +201,7 @@ function MobileCapturePageInner() {
               {cameraOpening ? "Opening camera..." : "Start camera"}
             </button>
           )}
-          {cameraReady && (
-            <>
-              <button
-                type="button"
-                onClick={captureFrame}
-                className="px-4 py-2 rounded-xl bg-emerald-500 text-white font-semibold"
-              >
-                Capture photo
-              </button>
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="px-4 py-2 rounded-xl bg-white/10 text-slate-100 font-semibold"
-              >
-                Stop camera
-              </button>
-            </>
-          )}
+          {cameraReady && null}
           <button
             type="button"
             onClick={submitCapture}
