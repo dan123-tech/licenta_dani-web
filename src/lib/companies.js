@@ -10,6 +10,7 @@ import { getTenantPrisma } from "@/lib/tenant-db";
 
 const JOIN_CODE_LENGTH = 8;
 const JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0,O,1,I to avoid confusion
+const ALLOW_TENANT_FALLBACK = String(process.env.ALLOW_TENANT_FALLBACK || "").toLowerCase() === "true";
 
 function generateJoinCode() {
   const bytes = randomBytes(JOIN_CODE_LENGTH);
@@ -191,7 +192,7 @@ export async function createCompanyWithTenant(userId, data) {
   } catch (error) {
     console.error("[tenant] provisioning failed", { companyId: company.id, error: error?.message });
     const fallbackDbUrl = process.env.DATABASE_URL?.trim();
-    if (fallbackDbUrl) {
+    if (ALLOW_TENANT_FALLBACK && fallbackDbUrl) {
       await prisma.companyTenant.update({
         where: { companyId: company.id },
         data: {

@@ -31,7 +31,18 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function neonFetchWithRetry(path, init = {}, retries = 4) {
+function jitter(ms, pct = 0.25) {
+  const delta = Math.max(1, Math.floor(ms * pct));
+  const min = Math.max(1, ms - delta);
+  const max = ms + delta;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function isConflictErrorMessage(msg) {
+  return msg.includes("Neon API 423") || msg.includes("running conflicting operations");
+}
+
+async function neonFetchWithRetry(path, init = {}, retries = 9) {
   let lastErr = null;
   for (let i = 0; i <= retries; i++) {
     try {
@@ -39,17 +50,25 @@ async function neonFetchWithRetry(path, init = {}, retries = 4) {
     } catch (e) {
       const msg = String(e?.message || "");
       lastErr = e;
-      if (!msg.includes("Neon API 423")) throw e;
+      if (!isConflictErrorMessage(msg)) throw e;
       if (i === retries) throw e;
-      await sleep(1200 * (i + 1));
+      // Exponential backoff (1.2s, 2.4s, 4.8s...) with jitter for Neon project-level operation locks.
+      const baseDelay = Math.min(30000, 1200 * Math.pow(2, i));
+      await sleep(jitter(baseDelay));
     }
   }
   throw lastErr || new Error("Neon request failed");
 }
 
+async function getBranchByName(projectId, branchName) {
+  const list = await neonFetchWithRetry(`/projects/${projectId}/branches`);
+  const branches = Array.isArray(list?.branches) ? list.branches : [];
+  return branches.find((b) => b?.name === branchName) || null;
+}
+
 async function ensureReadWriteEndpoint(projectId, branchId) {
   try {
-    await neonFetch(`/projects/${projectId}/endpoints`, {
+    await neonFetchWithRetry(`/projects/${projectId}/endpoints`, {
       method: "POST",
       body: JSON.stringify({
         endpoint: {
@@ -81,15 +100,28 @@ export async function provisionNeonTenant({ companyId, companyName }) {
   const databaseName = normalizeDatabaseName(companyName || companyId);
   const roleName = required("NEON_ROLE_NAME");
 
-  const branch = await neonFetchWithRetry(`/projects/${projectId}/branches`, {
-    method: "POST",
-    body: JSON.stringify({
-      branch: {
-        name: branchName,
-        parent_id: rootBranchId,
-      },
-    }),
-  });
+  let branch;
+  try {
+    branch = await neonFetchWithRetry(`/projects/${projectId}/branches`, {
+      method: "POST",
+      body: JSON.stringify({
+        branch: {
+          name: branchName,
+          parent_id: rootBranchId,
+        },
+      }),
+    });
+  } catch (e) {
+    const msg = String(e?.message || "");
+    // Idempotency for retries/races: if branch name already exists, reuse it.
+    if (msg.includes("already exists") || msg.includes("Neon API 409")) {
+      const existing = await getBranchByName(projectId, branchName);
+      if (!existing?.id) throw e;
+      branch = { branch: existing };
+    } else {
+      throw e;
+    }
+  }
 
   try {
     await neonFetchWithRetry(`/projects/${projectId}/branches/${branch.branch.id}/databases`, {
