@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   apiMobileCaptureSessionInfo,
@@ -8,6 +8,14 @@ import {
 } from "@/lib/api";
 
 export default function MobileCapturePage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen flex items-center justify-center"><p className="text-slate-600">Loading verification session…</p></main>}>
+      <MobileCapturePageInner />
+    </Suspense>
+  );
+}
+
+function MobileCapturePageInner() {
   const searchParams = useSearchParams();
   const token = useMemo(() => String(searchParams.get("token") || "").trim(), [searchParams]);
   const [loading, setLoading] = useState(true);

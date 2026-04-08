@@ -42,6 +42,13 @@ function isConflictErrorMessage(msg) {
   return msg.includes("Neon API 423") || msg.includes("running conflicting operations");
 }
 
+function isBranchesLimitExceededMessage(msg) {
+  return (
+    msg.includes("BRANCHES_LIMIT_EXCEEDED") ||
+    (msg.includes("Neon API 422") && msg.toLowerCase().includes("branches limit exceeded"))
+  );
+}
+
 async function neonFetchWithRetry(path, init = {}, retries = 9) {
   let lastErr = null;
   for (let i = 0; i <= retries; i++) {
@@ -150,6 +157,7 @@ export async function ensureNeonTenantDatabase({
   existingDatabaseUrl,
 }) {
   const projectId = required("NEON_PROJECT_ID");
+  const rootBranchId = process.env.NEON_ROOT_BRANCH_ID?.trim() || "br-main";
   const resolvedRole =
     roleName ||
     parseRoleFromUrl(existingDatabaseUrl) ||
@@ -158,10 +166,7 @@ export async function ensureNeonTenantDatabase({
   let resolvedBranchId = branchId;
   if (!resolvedBranchId) {
     const branch = await getBranchByName(projectId, `tenant-${companyId}`);
-    if (!branch?.id) {
-      throw new Error(`Could not resolve tenant branch for company ${companyId}`);
-    }
-    resolvedBranchId = branch.id;
+    resolvedBranchId = branch?.id || rootBranchId;
   }
   const resolvedDbName =
     databaseName || parseDatabaseNameFromUrl(existingDatabaseUrl) || normalizeDatabaseName(companyId);
@@ -186,6 +191,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
   const roleName = required("NEON_ROLE_NAME");
 
   let branch;
+  let usingSharedRootBranch = false;
   try {
     branch = await neonFetchWithRetry(`/projects/${projectId}/branches`, {
       method: "POST",
@@ -203,6 +209,11 @@ export async function provisionNeonTenant({ companyId, companyName }) {
       const existing = await getBranchByName(projectId, branchName);
       if (!existing?.id) throw e;
       branch = { branch: existing };
+    } else if (isBranchesLimitExceededMessage(msg)) {
+      // Fallback mode: when project branch quota is exceeded, keep db-per-company by creating
+      // the tenant database on the configured root branch.
+      usingSharedRootBranch = true;
+      branch = { branch: { id: rootBranchId, name: `root-${rootBranchId}` } };
     } else {
       throw e;
     }
@@ -217,7 +228,7 @@ export async function provisionNeonTenant({ companyId, companyName }) {
   return {
     provider: "neon",
     branchId: branch.branch.id,
-    branchName,
+    branchName: usingSharedRootBranch ? `shared-${rootBranchId}` : branchName,
     databaseName,
     databaseUrl: conn.uri,
   };
