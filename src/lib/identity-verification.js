@@ -88,6 +88,85 @@ function makeImagePart(buffer, mimeType, filename) {
   return new Blob([buffer], { type });
 }
 
+function normalizeFaceMatchResult(data) {
+  const rawScore = data?.score ?? data?.similarity ?? data?.matchScore;
+  const score = typeof rawScore === "number" ? rawScore : Number(rawScore);
+  const matchRaw = data?.match ?? data?.faceMatch ?? data?.isMatch;
+  const matchFromService = matchRaw === true || String(matchRaw).toLowerCase() === "true";
+  const livenessRaw = data?.liveness ?? data?.isLive ?? data?.livePassed ?? data?.live;
+  const liveness =
+    livenessRaw == null ? null : livenessRaw === true || String(livenessRaw).toLowerCase() === "true";
+  const thresholdMatch = Number.isFinite(score) ? score >= AI_MATCH_THRESHOLD : false;
+  return {
+    match: matchFromService || thresholdMatch,
+    liveness,
+    score: Number.isFinite(score) ? score : null,
+    faceDetected: data?.faceDetected ?? null,
+    raw: data,
+  };
+}
+
+async function trySessionFlow(base, licence, liveScan, controller) {
+  const createUrl = `${base}/api/session-create`;
+  const createForm = new FormData();
+  const licencePart = makeImagePart(licence.imageBuffer, licence.mimeType, licence.filename);
+  createForm.append("license_image", licencePart, licence.filename);
+  createForm.append("licence", licencePart, licence.filename);
+
+  const createRes = await fetch(createUrl, {
+    method: "POST",
+    body: createForm,
+    signal: controller.signal,
+    headers: buildFaceAuthHeaders(),
+  });
+  if (createRes.status === 404 || createRes.status === 405) {
+    await createRes.text();
+    return null;
+  }
+  if (createRes.status === 401) {
+    const text401 = await createRes.text();
+    throw new Error(
+      `Face session-create returned 401 (authentication required). Configure AI_FACE_RECOGNITION_AUTHORIZATION or AI_FACE_RECOGNITION_BYPASS_TOKEN. ${text401.slice(0, 120)}`
+    );
+  }
+  if (!createRes.ok) {
+    const text = await createRes.text();
+    throw new Error(`Face session-create returned ${createRes.status}: ${text.slice(0, 200)}`);
+  }
+  const created = await createRes.json();
+  const sessionId =
+    created?.session_id || created?.sessionId || created?.id || created?.data?.session_id;
+  if (!sessionId) {
+    throw new Error("Face session-create response missing session_id");
+  }
+
+  const verifyUrl = `${base}/api/session-verify`;
+  const verifyForm = new FormData();
+  const liveScanPart = makeImagePart(liveScan.imageBuffer, liveScan.mimeType, liveScan.filename);
+  verifyForm.append("session_id", String(sessionId));
+  verifyForm.append("selfie_image", liveScanPart, liveScan.filename);
+  verifyForm.append("liveScan", liveScanPart, liveScan.filename);
+  verifyForm.append("selfie", liveScanPart, liveScan.filename);
+  verifyForm.append("image", liveScanPart, liveScan.filename);
+
+  const verifyRes = await fetch(verifyUrl, {
+    method: "POST",
+    body: verifyForm,
+    signal: controller.signal,
+    headers: buildFaceAuthHeaders(),
+  });
+  if (verifyRes.status === 404 || verifyRes.status === 405) {
+    const text = await verifyRes.text();
+    throw new Error(`Face session-verify endpoint unavailable: ${text.slice(0, 200)}`);
+  }
+  if (!verifyRes.ok) {
+    const text = await verifyRes.text();
+    throw new Error(`Face session-verify returned ${verifyRes.status}: ${text.slice(0, 200)}`);
+  }
+  const verified = await verifyRes.json();
+  return normalizeFaceMatchResult(verified);
+}
+
 /**
  * @param {{ imageBuffer: Buffer, mimeType: string, filename: string }} licence
  * @param {{ imageBuffer: Buffer, mimeType: string, filename: string }} liveScan
@@ -136,22 +215,11 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
         throw new Error(`Face match returned ${res.status}: ${text.slice(0, 200)}`);
       }
       const data = await res.json();
-      const rawScore = data?.score ?? data?.similarity ?? data?.matchScore;
-      const score = typeof rawScore === "number" ? rawScore : Number(rawScore);
-      const matchRaw = data?.match ?? data?.faceMatch ?? data?.isMatch;
-      const matchFromService = matchRaw === true || String(matchRaw).toLowerCase() === "true";
-      const livenessRaw = data?.liveness ?? data?.isLive ?? data?.livePassed ?? data?.live;
-      const liveness =
-        livenessRaw == null ? null : livenessRaw === true || String(livenessRaw).toLowerCase() === "true";
-      const thresholdMatch = Number.isFinite(score) ? score >= AI_MATCH_THRESHOLD : false;
-      return {
-        match: matchFromService || thresholdMatch,
-        liveness,
-        score: Number.isFinite(score) ? score : null,
-        faceDetected: data?.faceDetected ?? null,
-        raw: data,
-      };
+      return normalizeFaceMatchResult(data);
     }
+
+    const sessionFlowResult = await trySessionFlow(base, licence, liveScan, controller);
+    if (sessionFlowResult) return sessionFlowResult;
 
     throw new Error(`Face match endpoint not found on ${base} (tried: ${paths.join(", ")})`);
   } catch (err) {
