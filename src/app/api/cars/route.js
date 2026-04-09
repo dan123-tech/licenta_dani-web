@@ -89,26 +89,32 @@ export async function GET(request) {
     return dataSourceNotConfiguredResponse(LAYERS.CARS);
   }
 
-  const cars = await listCars(out.session.companyId, status);
-  return jsonResponse(
-    cars.map((c) => ({
-      id: c.id,
-      brand: c.brand,
-      model: c.model,
-      registrationNumber: c.registrationNumber,
-      km: c.km,
-      status: c.status,
-      fuelType: c.fuelType ?? "Benzine",
-      averageConsumptionL100km: c.averageConsumptionL100km ?? null,
-      averageConsumptionKwh100km: c.averageConsumptionKwh100km ?? null,
-      batteryLevel: c.batteryLevel ?? null,
-      batteryCapacityKwh: c.batteryCapacityKwh ?? null,
-      lastServiceMileage: c.lastServiceMileage ?? null,
-      lastServiceYearMonth: c.lastServiceYearMonth ?? null,
-      itpExpiresAt: c.itpExpiresAt ?? null,
-      _count: c._count,
-    }))
-  );
+  try {
+    const cars = await listCars(out.session.companyId, status);
+    return jsonResponse(
+      cars.map((c) => ({
+        id: c.id,
+        brand: c.brand,
+        model: c.model,
+        registrationNumber: c.registrationNumber,
+        km: c.km,
+        status: c.status,
+        fuelType: c.fuelType ?? "Benzine",
+        averageConsumptionL100km: c.averageConsumptionL100km ?? null,
+        averageConsumptionKwh100km: c.averageConsumptionKwh100km ?? null,
+        batteryLevel: c.batteryLevel ?? null,
+        batteryCapacityKwh: c.batteryCapacityKwh ?? null,
+        lastServiceMileage: c.lastServiceMileage ?? null,
+        lastServiceYearMonth: c.lastServiceYearMonth ?? null,
+        itpExpiresAt: c.itpExpiresAt ?? null,
+        _count: c._count,
+      }))
+    );
+  } catch (err) {
+    console.error("GET /api/cars (LOCAL) error:", err);
+    const msg = err?.message || "Failed to load cars";
+    return errorResponse(msg, 500);
+  }
 }
 
 export async function POST(request) {
