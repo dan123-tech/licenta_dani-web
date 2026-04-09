@@ -19,6 +19,8 @@ import {
   Filter,
   FileText,
   Upload,
+  FolderOpen,
+  FileDown,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -53,6 +55,7 @@ import {
   apiMaintenanceDelete,
   apiIncidentsList,
   apiIncidentAdminUpdate,
+  downloadJourneySheetPdf,
 } from "@/lib/api";
 import DataSourceNotConfiguredEmptyState from "./DataSourceNotConfiguredEmptyState";
 import AuditLogsSection from "./AuditLogsSection";
@@ -224,6 +227,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [verifyResult, setVerifyResult] = useState(null);
   const [verifySubmitting, setVerifySubmitting] = useState(false);
 
+  const [journeyPdfLoadingId, setJourneyPdfLoadingId] = useState(null);
+
   // Car Sharing History filters (all fields except start/end code)
   const [historyFilterCar, setHistoryFilterCar] = useState("");
   const [historyFilterUser, setHistoryFilterUser] = useState("");
@@ -262,6 +267,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [vignetteExpiresInput, setVignetteExpiresInput] = useState("");
   const [gloveboxBusy, setGloveboxBusy] = useState(false);
   const [gloveboxNotice, setGloveboxNotice] = useState(null);
+  const [showGloveboxForm, setShowGloveboxForm] = useState(false);
+  const [gloveboxCarId, setGloveboxCarId] = useState("");
   const [showItpForm, setShowItpForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [itpRowDraft, setItpRowDraft] = useState({});
@@ -366,17 +373,17 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   }, [itpCarId, cars]);
 
   useEffect(() => {
-    if (!itpCarId) {
+    if (!gloveboxCarId) {
       setRcaExpiresInput("");
       setVignetteExpiresInput("");
       return;
     }
-    const car = cars.find((c) => c.id === itpCarId);
+    const car = cars.find((c) => c.id === gloveboxCarId);
     const rca = car?.rcaExpiresAt ? new Date(car.rcaExpiresAt) : null;
     setRcaExpiresInput(rca && !Number.isNaN(rca.getTime()) ? rca.toISOString().slice(0, 10) : "");
     const vig = car?.vignetteExpiresAt ? new Date(car.vignetteExpiresAt) : null;
     setVignetteExpiresInput(vig && !Number.isNaN(vig.getTime()) ? vig.toISOString().slice(0, 10) : "");
-  }, [itpCarId, cars]);
+  }, [gloveboxCarId, cars]);
 
   function formatDate(d) {
     if (!d) return "—";
@@ -2468,7 +2475,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               </button>
             </div>
             <div className="w-full overflow-x-auto rounded-xl border border-slate-200/80 shadow-sm">
-              <table className="w-full min-w-[640px]">
+              <table className="w-full min-w-[780px]">
                 <thead>
                   <tr className="bg-slate-50 text-left">
                     <th className="py-4 px-4 font-semibold text-slate-700">Car</th>
@@ -2476,6 +2483,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                     <th className="py-4 px-4 font-semibold text-slate-700">Reserved at</th>
                     <th className="py-4 px-4 font-semibold text-slate-700">Status</th>
                     <th className="py-4 px-4 font-semibold text-slate-700">Start / End code</th>
+                    <th className="py-4 px-4 font-semibold text-slate-700 whitespace-nowrap">Journey sheet</th>
                     <th className="py-4 px-4 font-semibold text-slate-700">Actions</th>
                   </tr>
                 </thead>
@@ -2515,6 +2523,31 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                         )}
                       </td>
                       <td className="py-4 px-4">
+                        {(r.status || "").toLowerCase() === "completed" ? (
+                          <button
+                            type="button"
+                            disabled={journeyPdfLoadingId === r.id}
+                            onClick={async () => {
+                              setJourneyPdfLoadingId(r.id);
+                              setError("");
+                              try {
+                                await downloadJourneySheetPdf(r.id);
+                              } catch (e) {
+                                setError(e?.message || "Could not download journey sheet");
+                              } finally {
+                                setJourneyPdfLoadingId(null);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                          >
+                            <FileDown className="w-3.5 h-3.5" aria-hidden />
+                            {journeyPdfLoadingId === r.id ? "…" : "PDF"}
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
                         {(r.status || "").toLowerCase() === "active" ? (
                           <button
                             type="button"
@@ -2531,7 +2564,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                     </tr>
                   ))}
                   {filteredHistory.length === 0 && !loading && (
-                    <tr><td colSpan={6} className="py-10 px-4 text-center text-slate-500">{reservations.length === 0 ? "No reservations yet" : "No reservations match the filters"}</td></tr>
+                    <tr><td colSpan={7} className="py-10 px-4 text-center text-slate-500">{reservations.length === 0 ? "No reservations yet" : "No reservations match the filters"}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -2712,13 +2745,17 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
         {section === "maintenance" && (
           <section className="w-full min-w-0 space-y-6">
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-3">{t("maintenanceUi.title")}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2">{t("maintenanceUi.title")}</h2>
+              <p className="text-xs text-slate-500 mb-3 max-w-3xl">
+                Service history, ITP dates, and per-vehicle RCA / vignette files for the driver digital glovebox (PDF or image).
+              </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setShowItpForm((v) => !v);
                     setShowServiceForm(false);
+                    setShowGloveboxForm(false);
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
                 >
@@ -2728,8 +2765,21 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                 <button
                   type="button"
                   onClick={() => {
+                    setShowGloveboxForm((v) => !v);
+                    setShowItpForm(false);
+                    setShowServiceForm(false);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[#0d9488] hover:bg-[#0f766e]"
+                >
+                  <FolderOpen className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+                  {showGloveboxForm ? t("common.hideForm") : t("maintenanceUi.addGlovebox")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     setShowServiceForm((v) => !v);
                     setShowItpForm(false);
+                    setShowGloveboxForm(false);
                   }}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[#1E293B] hover:bg-[#334155]"
                 >
@@ -2822,158 +2872,191 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   </div>
                 )}
               </form>
+            </div>
+            )}
 
-              <div className="border-t border-slate-100 mt-6 pt-5">
-                <h3 className="text-sm font-semibold text-slate-800 mb-1">Digital glovebox (RCA & vignette)</h3>
-                <p className="text-xs text-slate-500 mb-3">
-                  Uses the same vehicle as above. Drivers with an active booking open the RCA file in-app (PDF or image) and see dates here. Upload the RCA PDF or a scan/photo; set expiry dates for admin emails (cron:{" "}
-                  <code className="text-[11px]">/api/cron/rca-expiry-reminders</code>).
-                </p>
-                {process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL ? (
-                  <p className="text-xs text-slate-600 mb-3">
-                    Broker renewal link (optional):{" "}
-                    <a
-                      href={process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="text-sky-700 font-medium underline"
-                    >
-                      Open broker
-                    </a>
-                  </p>
-                ) : null}
-                <form
-                  className="grid gap-3 sm:grid-cols-3 mb-4"
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!itpCarId) {
-                      setError("Select a car.");
-                      return;
-                    }
-                    setGloveboxBusy(true);
-                    setError("");
-                    setGloveboxNotice(null);
-                    try {
-                      const rcaIso =
-                        rcaExpiresInput && rcaExpiresInput.trim()
-                          ? new Date(`${rcaExpiresInput}T00:00:00`).toISOString()
-                          : null;
-                      const vigIso =
-                        vignetteExpiresInput && vignetteExpiresInput.trim()
-                          ? new Date(`${vignetteExpiresInput}T00:00:00`).toISOString()
-                          : null;
-                      await apiUpdateCar(itpCarId, {
-                        rcaExpiresAt: rcaIso,
-                        vignetteExpiresAt: vigIso,
-                      });
-                      await load();
-                      setGloveboxNotice({ type: "success", text: "RCA / vignette dates saved." });
-                    } catch (err) {
-                      setError(err.message || "Failed to save");
-                    } finally {
-                      setGloveboxBusy(false);
-                    }
-                  }}
+            {showGloveboxForm && (
+            <div
+              id="admin-glovebox-card"
+              className="bg-white rounded-xl border border-teal-200/80 shadow-sm p-4 sm:p-6 max-w-3xl ring-1 ring-teal-100"
+            >
+              <h3 className="text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2">
+                <FolderOpen className="w-4 h-4 text-teal-600 shrink-0" aria-hidden />
+                Digital glovebox (RCA & vignette)
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Choose a vehicle, set RCA and vignette expiry dates, and upload the RCA file (PDF or image). Drivers with an active booking see this in their app. Admin emails:{" "}
+                <code className="text-[11px]">/api/cron/rca-expiry-reminders</code>.
+              </p>
+              <label className="block text-xs font-medium text-slate-600 mb-4">
+                Vehicle
+                <select
+                  value={gloveboxCarId}
+                  onChange={(e) => setGloveboxCarId(e.target.value)}
+                  className="mt-1 w-full max-w-md px-3 py-2 rounded-lg border border-slate-200 text-sm"
                 >
-                  <label className="block text-xs font-medium text-slate-600">
-                    RCA (MTPL) expires
-                    <input
-                      type="date"
-                      value={rcaExpiresInput}
-                      onChange={(e) => setRcaExpiresInput(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    />
-                  </label>
-                  <label className="block text-xs font-medium text-slate-600">
-                    Vignette expires
-                    <input
-                      type="date"
-                      value={vignetteExpiresInput}
-                      onChange={(e) => setVignetteExpiresInput(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    />
-                  </label>
-                  <div className="flex items-end">
-                    <button
-                      type="submit"
-                      disabled={gloveboxBusy || !itpCarId}
-                      className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[#1E293B] hover:bg-[#334155] disabled:opacity-50"
-                    >
-                      {gloveboxBusy ? "Saving…" : "Save dates"}
-                    </button>
-                  </div>
-                  {gloveboxNotice && (
-                    <div className="sm:col-span-3 text-xs text-emerald-700">{gloveboxNotice.text}</div>
-                  )}
-                </form>
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-100">
-                    <Upload className="w-4 h-4 shrink-0" aria-hidden />
-                    Upload RCA (PDF or image)
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="hidden"
-                      disabled={!itpCarId || gloveboxBusy}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        e.target.value = "";
-                        if (!file || !itpCarId) return;
-                        setGloveboxBusy(true);
-                        setError("");
-                        setGloveboxNotice(null);
-                        try {
-                          const fd = new FormData();
-                          fd.append("file", file);
-                          const res = await fetch(`/api/cars/${encodeURIComponent(itpCarId)}/rca-document`, {
-                            method: "POST",
-                            body: fd,
-                            credentials: "include",
-                            headers: typeof sessionStorage !== "undefined" ? (() => {
-                              try {
-                                const sid = sessionStorage.getItem("car_sharing_web_tab_sid");
-                                return sid ? { "X-Web-Session-Id": sid } : {};
-                              } catch {
-                                return {};
-                              }
-                            })() : {},
-                          });
-                          const data = await res.json().catch(() => ({}));
-                          if (!res.ok) throw new Error(data.error || "Upload failed");
-                          await load();
-                          setGloveboxNotice({ type: "success", text: "RCA file uploaded." });
-                        } catch (err) {
-                          setError(err.message || "Upload failed");
-                        } finally {
-                          setGloveboxBusy(false);
-                        }
-                      }}
-                    />
-                  </label>
-                  {itpCarId && cars.find((c) => c.id === itpCarId)?.rcaDocumentUrl ? (
-                    <button
-                      type="button"
-                      disabled={gloveboxBusy}
-                      onClick={async () => {
-                        if (!itpCarId) return;
-                        setGloveboxBusy(true);
-                        setError("");
-                        try {
-                          await apiUpdateCar(itpCarId, { rcaDocumentUrl: null });
-                          await load();
-                          setGloveboxNotice({ type: "success", text: "RCA file removed." });
-                        } catch (err) {
-                          setError(err.message || "Failed to remove");
-                        } finally {
-                          setGloveboxBusy(false);
-                        }
-                      }}
-                      className="px-3 py-2 rounded-lg text-sm font-semibold border border-red-200 text-red-800 bg-red-50 hover:bg-red-100 disabled:opacity-50"
-                    >
-                      Remove RCA file
-                    </button>
-                  ) : null}
+                  <option value="">— Select car —</option>
+                  {cars.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.brand} {c.registrationNumber}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL ? (
+                <p className="text-xs text-slate-600 mb-4">
+                  Broker renewal (optional):{" "}
+                  <a
+                    href={process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-sky-700 font-medium underline"
+                  >
+                    Open broker
+                  </a>
+                </p>
+              ) : null}
+              <form
+                className="grid gap-3 sm:grid-cols-3 mb-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!gloveboxCarId) {
+                    setError("Select a car.");
+                    return;
+                  }
+                  setGloveboxBusy(true);
+                  setError("");
+                  setGloveboxNotice(null);
+                  try {
+                    const rcaIso =
+                      rcaExpiresInput && rcaExpiresInput.trim()
+                        ? new Date(`${rcaExpiresInput}T00:00:00`).toISOString()
+                        : null;
+                    const vigIso =
+                      vignetteExpiresInput && vignetteExpiresInput.trim()
+                        ? new Date(`${vignetteExpiresInput}T00:00:00`).toISOString()
+                        : null;
+                    await apiUpdateCar(gloveboxCarId, {
+                      rcaExpiresAt: rcaIso,
+                      vignetteExpiresAt: vigIso,
+                    });
+                    await load();
+                    setGloveboxNotice({ type: "success", text: "RCA / vignette dates saved." });
+                  } catch (err) {
+                    setError(err.message || "Failed to save");
+                  } finally {
+                    setGloveboxBusy(false);
+                  }
+                }}
+              >
+                <label className="block text-xs font-medium text-slate-600">
+                  RCA (MTPL) expires
+                  <input
+                    type="date"
+                    value={rcaExpiresInput}
+                    onChange={(e) => setRcaExpiresInput(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-slate-600">
+                  Vignette expires
+                  <input
+                    type="date"
+                    value={vignetteExpiresInput}
+                    onChange={(e) => setVignetteExpiresInput(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                  />
+                </label>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    disabled={gloveboxBusy || !gloveboxCarId}
+                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[#1E293B] hover:bg-[#334155] disabled:opacity-50"
+                  >
+                    {gloveboxBusy ? "Saving…" : "Save dates"}
+                  </button>
                 </div>
+                {gloveboxNotice && (
+                  <div className="sm:col-span-3 text-xs text-emerald-700">{gloveboxNotice.text}</div>
+                )}
+              </form>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-100">
+                  <Upload className="w-4 h-4 shrink-0" aria-hidden />
+                  Upload RCA (PDF or image)
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    disabled={!gloveboxCarId || gloveboxBusy}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file || !gloveboxCarId) return;
+                      setGloveboxBusy(true);
+                      setError("");
+                      setGloveboxNotice(null);
+                      try {
+                        const fd = new FormData();
+                        fd.append("file", file);
+                        const res = await fetch(`/api/cars/${encodeURIComponent(gloveboxCarId)}/rca-document`, {
+                          method: "POST",
+                          body: fd,
+                          credentials: "include",
+                          headers: typeof sessionStorage !== "undefined" ? (() => {
+                            try {
+                              const sid = sessionStorage.getItem("car_sharing_web_tab_sid");
+                              return sid ? { "X-Web-Session-Id": sid } : {};
+                            } catch {
+                              return {};
+                            }
+                          })() : {},
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || "Upload failed");
+                        await load();
+                        setGloveboxNotice({ type: "success", text: "RCA file uploaded." });
+                      } catch (err) {
+                        setError(err.message || "Upload failed");
+                      } finally {
+                        setGloveboxBusy(false);
+                      }
+                    }}
+                  />
+                </label>
+                {gloveboxCarId && cars.find((c) => c.id === gloveboxCarId)?.rcaDocumentUrl ? (
+                  <a
+                    href={cars.find((c) => c.id === gloveboxCarId)?.rcaDocumentUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 text-sky-800 bg-sky-50 hover:bg-sky-100"
+                  >
+                    Preview file
+                  </a>
+                ) : null}
+                {gloveboxCarId && cars.find((c) => c.id === gloveboxCarId)?.rcaDocumentUrl ? (
+                  <button
+                    type="button"
+                    disabled={gloveboxBusy}
+                    onClick={async () => {
+                      if (!gloveboxCarId) return;
+                      setGloveboxBusy(true);
+                      setError("");
+                      try {
+                        await apiUpdateCar(gloveboxCarId, { rcaDocumentUrl: null });
+                        await load();
+                        setGloveboxNotice({ type: "success", text: "RCA file removed." });
+                      } catch (err) {
+                        setError(err.message || "Failed to remove");
+                      } finally {
+                        setGloveboxBusy(false);
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold border border-red-200 text-red-800 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                  >
+                    Remove RCA file
+                  </button>
+                ) : null}
               </div>
             </div>
             )}
@@ -3417,7 +3500,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
             )}
 
             <div id="itp-overview-table" className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
-              <h3 className="text-sm font-semibold text-slate-800 mb-3">{t("maintenanceUi.itpTableTitle")}</h3>
+              <h3 className="text-sm font-semibold text-slate-800 mb-1">{t("maintenanceUi.complianceTableTitle")}</h3>
+              <p className="text-xs text-slate-500 mb-3">{t("maintenanceUi.itpTableTitle")}</p>
               {(() => {
                 const now = Date.now();
                 const list = (cars || [])
@@ -3443,14 +3527,18 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
 
                 return (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px]">
+                    <table className="w-full min-w-[1080px]">
                       <thead>
                         <tr className="bg-slate-50 text-left">
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColCar")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColExpiry")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColStatus")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColLastNotified")}</th>
+                          <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colRcaExpiry")}</th>
+                          <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colVignetteExpiry")}</th>
+                          <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colRcaFile")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColQuickEdit")}</th>
+                          <th className="py-3 px-4 font-semibold text-slate-700 whitespace-nowrap">{t("maintenanceUi.colGlovebox")}</th>
                         </tr>
                       </thead>
                       <tbody className="text-slate-800">
@@ -3473,6 +3561,11 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                               : days < 0
                                 ? t("maintenanceUi.itpLabelExpiredDaysAgo", { days: Math.abs(days) })
                                 : t("maintenanceUi.itpLabelDaysLeft", { days });
+                          const rcaExp = c.rcaExpiresAt ? new Date(c.rcaExpiresAt) : null;
+                          const rcaOk = rcaExp && !Number.isNaN(rcaExp.getTime());
+                          const vigExp = c.vignetteExpiresAt ? new Date(c.vignetteExpiresAt) : null;
+                          const vigOk = vigExp && !Number.isNaN(vigExp.getTime());
+                          const hasRcaFile = Boolean(c.rcaDocumentUrl);
                           return (
                             <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
                               <td className="py-3 px-4 whitespace-nowrap">{c.brand} {c.registrationNumber}</td>
@@ -3484,6 +3577,21 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                               </td>
                               <td className="py-3 px-4 whitespace-nowrap">
                                 {c.itpLastNotifiedAt ? new Date(c.itpLastNotifiedAt).toLocaleString() : <span className="text-slate-400">—</span>}
+                              </td>
+                              <td className="py-3 px-4 whitespace-nowrap text-sm">
+                                {rcaOk ? rcaExp.toLocaleDateString() : <span className="text-slate-400">—</span>}
+                              </td>
+                              <td className="py-3 px-4 whitespace-nowrap text-sm">
+                                {vigOk ? vigExp.toLocaleDateString() : <span className="text-slate-400">—</span>}
+                              </td>
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <span
+                                  className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${
+                                    hasRcaFile ? "bg-teal-100 text-teal-900" : "bg-slate-100 text-slate-600"
+                                  }`}
+                                >
+                                  {hasRcaFile ? t("maintenanceUi.rcaFileYes") : t("maintenanceUi.rcaFileNo")}
+                                </span>
                               </td>
                               <td className="py-3 px-4 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
@@ -3526,11 +3634,30 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                                   </button>
                                 </div>
                               </td>
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setGloveboxCarId(c.id);
+                                    setShowGloveboxForm(true);
+                                    setShowItpForm(false);
+                                    setShowServiceForm(false);
+                                    requestAnimationFrame(() => {
+                                      document
+                                        .getElementById("admin-glovebox-card")
+                                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    });
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+                                >
+                                  {t("maintenanceUi.openGloveboxForCar")}
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
                         {list.length === 0 && (
-                          <tr><td colSpan={5} className="py-10 px-4 text-center text-slate-500">{t("maintenanceUi.itpNoMatch")}</td></tr>
+                          <tr><td colSpan={9} className="py-10 px-4 text-center text-slate-500">{t("maintenanceUi.itpNoMatch")}</td></tr>
                         )}
                       </tbody>
                     </table>

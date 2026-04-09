@@ -149,7 +149,7 @@ export function checkPageBreak(doc, y, needed = 40) {
 }
 
 // ─── Key-value detail block ───────────────────────────────────────────────────
-function addDetailRow(doc, y, label, value) {
+export function addDetailRow(doc, y, label, value) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(...GREY);

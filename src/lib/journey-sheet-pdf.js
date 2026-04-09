@@ -1,8 +1,18 @@
 /**
  * Romanian-style journey log (foaie de parcurs) — generated from reservation + release data.
- * Not a substitute for legally mandated paper forms where applicable; supports deductibility documentation.
+ * Uses the shared branded PDF style (header, sections, footer) from pdf-report.js.
  */
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import {
+  drawPdfHeader,
+  finalizePdfFooters,
+  addSectionTitle,
+  addDetailRow,
+  checkPageBreak,
+} from "./pdf-report";
+import fs from "fs";
+import path from "path";
 
 function fmtDt(d) {
   if (!d) return "—";
@@ -18,6 +28,16 @@ function fmtDate(d) {
   return x.toLocaleDateString("ro-RO");
 }
 
+function loadLogoDataUrl() {
+  try {
+    const logoPath = path.join(process.cwd(), "public", "icon-512.png");
+    const buf = fs.readFileSync(logoPath);
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * @param {Object} p
  * @returns {Buffer}
@@ -25,70 +45,87 @@ function fmtDate(d) {
 export function buildJourneySheetPdf(p) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
-  const margin = 14;
-  let y = margin;
+  const logoDataUrl = loadLogoDataUrl();
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text("Foaie de parcurs (extras electronic)", margin, y);
-  y += 8;
+  const generatedOn = fmtDt(p.generatedAt || new Date());
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
-  doc.text(
-    "Document generat automat din sistemul de rezervări. Păstrați acest fișier pentru justificarea cheltuielilor (conform legislației fiscale în vigoare).",
-    margin,
-    y,
-    { maxWidth: pageW - margin * 2 }
-  );
-  y += 12;
+  let y = drawPdfHeader(doc, {
+    title: "Foaie de parcurs",
+    subtitle: `${p.vehicleLabel || "—"} · ${p.registrationNumber || "—"}`,
+    company: { name: p.companyName || "" },
+    generatedOn: `Generat: ${generatedOn}`,
+    logoDataUrl,
+  });
 
-  doc.setDrawColor(220, 220, 220);
-  doc.line(margin, y, pageW - margin, y);
-  y += 6;
+  // ── Trip details ──
+  y = addSectionTitle(doc, y, "Detalii deplasare");
+  y = addDetailRow(doc, y, "Companie / operator", p.companyName || "—");
+  y = addDetailRow(doc, y, "Conducător auto", p.driverName || "—");
+  y = addDetailRow(doc, y, "Email conducător", p.driverEmail || "—");
+  y = addDetailRow(doc, y, "Autovehicul", p.vehicleLabel || "—");
+  y = addDetailRow(doc, y, "Nr. înmatriculare", p.registrationNumber || "—");
+  y = addDetailRow(doc, y, "Scop deplasare", p.purpose || "—");
+  y += 4;
 
-  const rows = [
-    ["Companie / operator", p.companyName || "—"],
-    ["Conducător auto", p.driverName || "—"],
-    ["Email conducător", p.driverEmail || "—"],
-    ["Autovehicul", p.vehicleLabel || "—"],
-    ["Număr înmatriculare", p.registrationNumber || "—"],
-    ["Scop deplasare", p.purpose || "—"],
-    ["Data/ora început rezervare", fmtDt(p.startDate)],
-    ["Data/ora sfârșit rezervare (planificat)", fmtDt(p.endDate)],
-    ["Kilometraj la predare (plecare)", p.releasedOdometerStart != null ? `${p.releasedOdometerStart} km` : "—"],
-    ["Kilometraj la returnare (sosire)", p.releasedOdometerEnd != null ? `${p.releasedOdometerEnd} km` : "—"],
-    ["Kilometri parcurși (înregistrat)", p.releasedKmUsed != null ? `${p.releasedKmUsed} km` : "—"],
-    ["Generat la", fmtDt(p.generatedAt)],
-    ["ID rezervare", p.reservationId || "—"],
+  // ── Reservation period ──
+  y = checkPageBreak(doc, y, 40);
+  y = addSectionTitle(doc, y, "Perioadă rezervare");
+  y = addDetailRow(doc, y, "Început (data/ora)", fmtDt(p.startDate));
+  y = addDetailRow(doc, y, "Sfârșit planificat", fmtDt(p.endDate));
+  y += 4;
+
+  // ── Odometer / km ──
+  y = checkPageBreak(doc, y, 40);
+  y = addSectionTitle(doc, y, "Kilometraj");
+
+  const odometerRows = [
+    ["Km la predare (plecare)", p.releasedOdometerStart != null ? `${p.releasedOdometerStart} km` : "—"],
+    ["Km la returnare (sosire)", p.releasedOdometerEnd != null ? `${p.releasedOdometerEnd} km` : "—"],
+    ["Km parcurși", p.releasedKmUsed != null ? `${p.releasedKmUsed} km` : "—"],
   ];
 
-  doc.setFontSize(10);
-  for (const [label, value] of rows) {
-    if (y > 270) {
-      doc.addPage();
-      y = margin;
-    }
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 41, 59);
-    doc.text(`${label}:`, margin, y);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(51, 65, 85);
-    const lines = doc.splitTextToSize(String(value), pageW - margin * 2 - 52);
-    doc.text(lines, margin + 50, y);
-    y += Math.max(6, lines.length * 5);
-  }
+  autoTable(doc, {
+    startY: y,
+    head: [["Indicator", "Valoare"]],
+    body: odometerRows,
+    theme: "grid",
+    headStyles: {
+      fillColor: [24, 95, 165],
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+      fontSize: 9,
+      cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+    },
+    bodyStyles: {
+      fontSize: 8.5,
+      textColor: [30, 41, 59],
+      cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 },
+    },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    margin: { left: 14, right: 14, bottom: 20 },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 70 } },
+  });
+  y = doc.lastAutoTable.finalY + 10;
 
-  y += 4;
-  doc.setFontSize(8);
+  // ── Reservation metadata ──
+  y = checkPageBreak(doc, y, 30);
+  y = addSectionTitle(doc, y, "Metadate");
+  y = addDetailRow(doc, y, "ID rezervare", p.reservationId || "—");
+  y = addDetailRow(doc, y, "Generat la", fmtDt(p.generatedAt));
+  y += 6;
+
+  // ── Disclaimer ──
+  y = checkPageBreak(doc, y, 20);
+  doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
   doc.text(
-    `Rezumat perioadă: ${fmtDate(p.startDate)} – ${fmtDate(p.endDate)}. Acest document nu înlocuiește monitorizarea GPS; datele provin din rezervare și din citirea odometrului la returnare.`,
-    margin,
+    `Rezumat perioadă: ${fmtDate(p.startDate)} – ${fmtDate(p.endDate)}. Acest document nu înlocuiește monitorizarea GPS; datele provin din rezervare și din citirea odometrului la returnare. Document generat automat din sistemul de rezervări — păstrați acest fișier pentru justificarea cheltuielilor (conform legislației fiscale în vigoare).`,
+    14,
     y,
-    { maxWidth: pageW - margin * 2 }
+    { maxWidth: pageW - 28 },
   );
+
+  finalizePdfFooters(doc, p.companyName || "");
 
   const buf = doc.output("arraybuffer");
   return Buffer.from(buf);
