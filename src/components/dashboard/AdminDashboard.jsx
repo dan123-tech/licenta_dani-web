@@ -2522,6 +2522,80 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               </form>
             </div>
 
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
+              <h3 className="text-sm font-semibold text-slate-800 mb-3">ITP overview (all cars)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px]">
+                  <thead>
+                    <tr className="bg-slate-50 text-left">
+                      <th className="py-3 px-4 font-semibold text-slate-700">Car</th>
+                      <th className="py-3 px-4 font-semibold text-slate-700">ITP expiry</th>
+                      <th className="py-3 px-4 font-semibold text-slate-700">Status</th>
+                      <th className="py-3 px-4 font-semibold text-slate-700">Last notified</th>
+                      <th className="py-3 px-4 font-semibold text-slate-700">Quick edit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-slate-800">
+                    {cars
+                      .slice()
+                      .sort((a, b) => {
+                        const ax = a.itpExpiresAt ? new Date(a.itpExpiresAt).getTime() : Number.POSITIVE_INFINITY;
+                        const bx = b.itpExpiresAt ? new Date(b.itpExpiresAt).getTime() : Number.POSITIVE_INFINITY;
+                        if (ax === bx) return String(a.registrationNumber || "").localeCompare(String(b.registrationNumber || ""));
+                        return ax - bx;
+                      })
+                      .map((c) => {
+                        const exp = c.itpExpiresAt ? new Date(c.itpExpiresAt) : null;
+                        const expOk = exp && !Number.isNaN(exp.getTime());
+                        const days = expOk ? Math.ceil((exp.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null;
+                        const badge =
+                          days == null
+                            ? "bg-slate-100 text-slate-800"
+                            : days < 0
+                              ? "bg-red-100 text-red-800"
+                              : days <= 30
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-emerald-100 text-emerald-800";
+                        const label =
+                          days == null ? "Not set" : days < 0 ? `Expired ${Math.abs(days)} day(s) ago` : `${days} day(s) left`;
+                        return (
+                          <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
+                            <td className="py-3 px-4 whitespace-nowrap">{c.brand} {c.registrationNumber}</td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              {expOk ? exp.toLocaleDateString() : <span className="text-slate-400">—</span>}
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${badge}`}>{label}</span>
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              {c.itpLastNotifiedAt ? new Date(c.itpLastNotifiedAt).toLocaleString() : <span className="text-slate-400">—</span>}
+                            </td>
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setItpCarId(c.id);
+                                  // Scroll to the ITP form card for convenience
+                                  try {
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                  } catch {}
+                                }}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    {cars.length === 0 && !loading && (
+                      <tr><td colSpan={5} className="py-10 px-4 text-center text-slate-500">No cars</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 max-w-3xl">
               <h3 className="text-sm font-semibold text-slate-800 mb-3">Add service record</h3>
               <form
