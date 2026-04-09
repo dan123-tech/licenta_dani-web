@@ -46,17 +46,21 @@ export async function POST(request, { params }) {
     if (!buf.length) continue;
     const name = f.name || "file";
     const contentType = f.type || "application/octet-stream";
+    const kind = fileKind(f);
     const stored = await persistIncidentAttachment(buf, {
       incidentId: incident.id,
       filename: name,
       contentType,
+      actorRole: out.session.role,
+      uploadedAt: new Date(),
+      kind,
     });
     const att = await tenant.incidentAttachment.create({
       data: {
         id: `${incident.id}_${Date.now()}_${Math.random().toString(16).slice(2)}`,
         companyId: out.session.companyId,
         incidentId: incident.id,
-        kind: fileKind(f),
+        kind,
         filename: name,
         contentType,
         sizeBytes: buf.length,

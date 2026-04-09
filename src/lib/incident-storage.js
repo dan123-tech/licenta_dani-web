@@ -11,10 +11,10 @@ function blobPutAccess() {
 
 /**
  * @param {Buffer} buffer
- * @param {{ incidentId: string, filename: string, contentType: string }} meta
+ * @param {{ incidentId: string, filename: string, contentType: string, actorRole?: string, uploadedAt?: Date, kind?: string }} meta
  * @returns {Promise<string>} stored DB value (private prefix or local path)
  */
-export async function persistIncidentAttachment(buffer, { incidentId, filename, contentType }) {
+export async function persistIncidentAttachment(buffer, { incidentId, filename, contentType, actorRole, uploadedAt, kind }) {
   const safeName = String(filename || "file").replace(/[^\w.\-() ]+/g, "_").slice(0, 180);
   const basename = `${Date.now()}-${safeName}`;
   const blobToken = resolveBlobReadWriteToken();
@@ -25,7 +25,16 @@ export async function persistIncidentAttachment(buffer, { incidentId, filename, 
   }
 
   if (blobToken) {
-    const pathname = `incidents/${incidentId}/${basename}`;
+    const roleFolder = String(actorRole || "user").toLowerCase() === "admin" ? "admin" : "user";
+    const dt = uploadedAt instanceof Date && !Number.isNaN(uploadedAt.getTime()) ? uploadedAt : new Date();
+    const yyyy = String(dt.getFullYear());
+    const mm = String(dt.getMonth() + 1).padStart(2, "0");
+    const dd = String(dt.getDate()).padStart(2, "0");
+    const hh = String(dt.getHours()).padStart(2, "0");
+    const dateFolder = `${yyyy}-${mm}-${dd}`;
+    const hourFolder = `${hh}h`;
+    const kindFolder = String(kind || "").toLowerCase() === "document" ? "pdf" : String(kind || "").toLowerCase() === "photo" ? "photos" : "files";
+    const pathname = `incident/${roleFolder}/${dateFolder}/${hourFolder}/${incidentId}/${kindFolder}/${basename}`;
     const access = blobPutAccess();
     try {
       const blob = await put(pathname, buffer, {

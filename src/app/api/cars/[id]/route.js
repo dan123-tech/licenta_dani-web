@@ -10,6 +10,8 @@ import { getProvider, LAYERS, PROVIDERS } from "@/lib/data-source-manager";
 import { getSqlServerCarById, updateSqlServerCar, deleteSqlServerCar } from "@/lib/connectors/sql-server-cars";
 import { requireCompany, requireAdmin, jsonResponse, errorResponse, dataSourceNotConfiguredResponse } from "@/lib/api-helpers";
 import { writeAuditLog } from "@/lib/audit";
+import { getTenantPrisma } from "@/lib/tenant-db";
+import { sendItpExpiryAdminEmail } from "@/lib/email";
 
 const FUEL_TYPES = ["Benzine", "Diesel", "Electric", "Hybrid"];
 const YEAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -144,6 +146,56 @@ export async function PATCH(request, { params }) {
   const result = await updateCar(id, out.session.companyId, data);
   if (result.count === 0) return errorResponse("Car not found", 404);
   const car = await getCarById(id, out.session.companyId);
+
+  // If ITP was updated and is due/expired, send email immediately (best-effort).
+  try {
+    if (parsed.data.itpExpiresAt !== undefined) {
+      const exp = car?.itpExpiresAt ? new Date(car.itpExpiresAt) : null;
+      if (exp && !Number.isNaN(exp.getTime())) {
+        const reminderDays = Math.max(0, parseInt(process.env.ITP_REMINDER_DAYS || "30", 10) || 30);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const cutoff = new Date(today.getTime() + reminderDays * 24 * 60 * 60 * 1000);
+        if (exp.getTime() <= cutoff.getTime()) {
+          const tenant = await getTenantPrisma(out.session.companyId);
+          const admins = await tenant.companyMember.findMany({
+            where: { companyId: out.session.companyId, role: "ADMIN", status: "ENROLLED" },
+            include: { user: { select: { email: true } } },
+          });
+          const to = admins.map((m) => m.user?.email).filter(Boolean);
+          if (to.length) {
+            const expDay = new Date(exp);
+            expDay.setHours(0, 0, 0, 0);
+            const daysUntil = Math.ceil((expDay.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+            const sendRes = await sendItpExpiryAdminEmail({
+              to,
+              companyName: out.company?.name || out.session.companyId,
+              cars: [
+                {
+                  carId: car.id,
+                  label: [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" "),
+                  expiresAt: exp.toISOString(),
+                  daysUntil,
+                },
+              ],
+              reminderDays,
+            });
+            if (sendRes?.ok) {
+              await tenant.car.updateMany({
+                where: { id: car.id, companyId: out.session.companyId },
+                data: { itpLastNotifiedAt: new Date() },
+              });
+            } else {
+              console.warn("[itp] immediate email not sent", { companyId: out.session.companyId, carId: car.id, error: sendRes?.error });
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[itp] immediate email threw", { companyId: out.session.companyId, carId: id, error: e?.message || String(e) });
+  }
+
   const action = data.status && carBefore?.status !== data.status ? "CAR_STATUS_CHANGED" : "CAR_UPDATED";
   await writeAuditLog({
     companyId: out.session.companyId,
