@@ -266,6 +266,12 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [incidents, setIncidents] = useState([]);
   const [incidentsLoading, setIncidentsLoading] = useState(false);
   const [incidentSavingId, setIncidentSavingId] = useState(null);
+  const [incidentFilterCarId, setIncidentFilterCarId] = useState("");
+  const [incidentFilterStatus, setIncidentFilterStatus] = useState("");
+  const [incidentFilterDriver, setIncidentFilterDriver] = useState("");
+  const [incidentFilterFrom, setIncidentFilterFrom] = useState("");
+  const [incidentFilterTo, setIncidentFilterTo] = useState("");
+  const [incidentFilterText, setIncidentFilterText] = useState("");
 
   async function loadMaintenance() {
     setMaintenanceLoading(true);
@@ -1977,6 +1983,95 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               Driver-reported accidents/scratches with photos/documents. Admins can track status and add notes.
             </p>
 
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+                <label className="block text-xs font-medium text-slate-600">
+                  Vehicle
+                  <select
+                    value={incidentFilterCarId}
+                    onChange={(e) => setIncidentFilterCarId(e.target.value)}
+                    className="mt-1 w-full lg:w-64 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                  >
+                    <option value="">All</option>
+                    {cars.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.brand} {c.registrationNumber}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block text-xs font-medium text-slate-600">
+                  Status
+                  <select
+                    value={incidentFilterStatus}
+                    onChange={(e) => setIncidentFilterStatus(e.target.value)}
+                    className="mt-1 w-full lg:w-48 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                  >
+                    <option value="">All</option>
+                    <option value="SUBMITTED">SUBMITTED</option>
+                    <option value="IN_REVIEW">IN_REVIEW</option>
+                    <option value="RESOLVED">RESOLVED</option>
+                  </select>
+                </label>
+
+                <label className="block text-xs font-medium text-slate-600">
+                  Driver (email contains)
+                  <input
+                    value={incidentFilterDriver}
+                    onChange={(e) => setIncidentFilterDriver(e.target.value)}
+                    className="mt-1 w-full lg:w-56 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    placeholder="e.g. daniel@"
+                  />
+                </label>
+
+                <label className="block text-xs font-medium text-slate-600">
+                  From
+                  <input
+                    type="date"
+                    value={incidentFilterFrom}
+                    onChange={(e) => setIncidentFilterFrom(e.target.value)}
+                    className="mt-1 w-full lg:w-44 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                  />
+                </label>
+
+                <label className="block text-xs font-medium text-slate-600">
+                  To
+                  <input
+                    type="date"
+                    value={incidentFilterTo}
+                    onChange={(e) => setIncidentFilterTo(e.target.value)}
+                    className="mt-1 w-full lg:w-44 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                  />
+                </label>
+
+                <label className="block text-xs font-medium text-slate-600 flex-1">
+                  Search (title/desc/location)
+                  <input
+                    value={incidentFilterText}
+                    onChange={(e) => setIncidentFilterText(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    placeholder="engine, scratch, parking…"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIncidentFilterCarId("");
+                    setIncidentFilterStatus("");
+                    setIncidentFilterDriver("");
+                    setIncidentFilterFrom("");
+                    setIncidentFilterTo("");
+                    setIncidentFilterText("");
+                  }}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead>
@@ -1996,7 +2091,48 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   ) : incidents.length === 0 ? (
                     <tr><td colSpan={7} className="py-10 px-4 text-center text-slate-500">No incidents reported.</td></tr>
                   ) : (
-                    incidents.map((r) => (
+                    incidents
+                      .filter((r) => (incidentFilterCarId ? r.carId === incidentFilterCarId : true))
+                      .filter((r) => (incidentFilterStatus ? (r.status || "SUBMITTED") === incidentFilterStatus : true))
+                      .filter((r) => {
+                        const q = incidentFilterDriver.trim().toLowerCase();
+                        if (!q) return true;
+                        const email = String(r.user?.email || "").toLowerCase();
+                        const name = String(r.user?.name || "").toLowerCase();
+                        return email.includes(q) || name.includes(q);
+                      })
+                      .filter((r) => {
+                        if (!incidentFilterFrom && !incidentFilterTo) return true;
+                        const d = new Date(r.occurredAt || r.createdAt);
+                        if (Number.isNaN(d.getTime())) return true;
+                        const day = new Date(d);
+                        day.setHours(0, 0, 0, 0);
+                        if (incidentFilterFrom) {
+                          const from = new Date(`${incidentFilterFrom}T00:00:00`);
+                          if (day.getTime() < from.getTime()) return false;
+                        }
+                        if (incidentFilterTo) {
+                          const to = new Date(`${incidentFilterTo}T00:00:00`);
+                          if (day.getTime() > to.getTime()) return false;
+                        }
+                        return true;
+                      })
+                      .filter((r) => {
+                        const q = incidentFilterText.trim().toLowerCase();
+                        if (!q) return true;
+                        const hay = [
+                          r.title,
+                          r.description,
+                          r.location,
+                          r.car?.brand,
+                          r.car?.registrationNumber,
+                        ]
+                          .filter(Boolean)
+                          .join(" ")
+                          .toLowerCase();
+                        return hay.includes(q);
+                      })
+                      .map((r) => (
                       <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50/80 transition-colors align-top">
                         <td className="py-4 px-4 whitespace-nowrap">{formatDate(r.occurredAt || r.createdAt)}</td>
                         <td className="py-4 px-4 whitespace-nowrap">{[r.car?.brand, r.car?.registrationNumber].filter(Boolean).join(" ")}</td>

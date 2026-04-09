@@ -145,6 +145,11 @@ export async function POST(request) {
           where: { id: { in: ids }, companyId: c.id },
           data: { itpLastNotifiedAt: now },
         });
+      } else {
+        errors.push({
+          companyId: c.id,
+          error: `ITP email not sent: ${sendRes?.error || "unknown_error"}`,
+        });
       }
     } catch (err) {
       errors.push({ companyId: c.id, error: err?.message || String(err) });

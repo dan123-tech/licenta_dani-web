@@ -168,6 +168,14 @@ export async function sendIncidentAdminEmail(companyId, { incidentId }) {
     }
   }
 
-  return sendEmail({ to, subject, html, text, attachments: attachmentsForEmail });
+  const res = await sendEmail({ to, subject, html, text, attachments: attachmentsForEmail });
+  if (!res?.ok && res?.error !== "not_configured") {
+    console.warn("[incidents-email] sendIncidentAdminEmail failed", {
+      companyId,
+      incidentId,
+      error: res?.error,
+    });
+  }
+  return res;
 }
 
