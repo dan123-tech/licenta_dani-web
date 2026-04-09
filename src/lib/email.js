@@ -54,7 +54,7 @@ export function escapeEmailText(s) {
  * Wrap inner HTML in a branded layout (logo header, footer with mark + website).
  * @param {{ innerHtml: string, preheader?: string }} opts
  */
-function wrapBrandedEmailHtml({ innerHtml, preheader = "" }) {
+export function wrapBrandedEmailHtml({ innerHtml, preheader = "" }) {
   const base = getPublicBaseUrl();
   const logoOverride = process.env.EMAIL_LOGO_URL?.trim();
   const logoFull = logoOverride || (base ? absoluteUrl(LOGO_PATH_FULL) : null);
@@ -136,10 +136,10 @@ function buttonHtml(href, label) {
 }
 
 /**
- * @param {{ to: string | string[], subject: string, html?: string, text?: string, replyTo?: string }} opts
+ * @param {{ to: string | string[], subject: string, html?: string, text?: string, replyTo?: string, attachments?: Array<{ filename: string, content: string, content_type?: string }> }} opts
  * @returns {Promise<{ ok: boolean, id?: string, error?: string }>}
  */
-export async function sendEmail({ to, subject, html, text, replyTo }) {
+export async function sendEmail({ to, subject, html, text, replyTo, attachments }) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = fromAddress();
 
@@ -156,6 +156,7 @@ export async function sendEmail({ to, subject, html, text, replyTo }) {
     ...(html ? { html } : {}),
     ...(text ? { text } : {}),
     ...(replyTo ? { reply_to: replyTo } : {}),
+    ...(Array.isArray(attachments) && attachments.length ? { attachments } : {}),
   };
 
   if (!body.html && !body.text) {
@@ -301,6 +302,47 @@ export async function sendItpExpiryAdminEmail({ to, companyName, cars, reminderD
   });
 
   return sendEmail({ to, subject, html, text: textLines.join("\n") });
+}
+
+export async function sendItpAutoBlockedAdminEmail({ to, companyName, cars }) {
+  const safeCompany = escapeEmailText(companyName || "your company");
+  const rows = Array.isArray(cars) ? cars : [];
+  const subject = `ITP expired — cars blocked — ${safeCompany}`;
+
+  const text = [
+    `ITP expired — cars blocked (${companyName || "company"})`,
+    "",
+    ...rows.map((c) => {
+      const label = c?.label || c?.carId || "Car";
+      const exp = c?.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-GB") : "—";
+      return `- ${label}: expired on ${exp}`;
+    }),
+    "",
+    "These cars were automatically switched to IN_MAINTENANCE to prevent reservations.",
+    brandedTextFooter(),
+  ].join("\n");
+
+  const listHtml = rows
+    .map((c) => {
+      const label = escapeEmailText(c?.label || c?.carId || "Car");
+      const exp = c?.expiresAt ? escapeEmailText(new Date(c.expiresAt).toLocaleDateString("en-GB")) : "—";
+      return `<li style="margin:0 0 8px;"><strong style="color:#0f172a;">${label}</strong>: expired on ${exp}</li>`;
+    })
+    .join("");
+
+  const innerHtml = `
+    <p style="margin:0 0 12px;font-size:18px;font-weight:700;color:#0f172a;">ITP expired — cars blocked</p>
+    <p style="margin:0 0 16px;color:#334155;">Company: <strong style="color:#0f172a;">${safeCompany}</strong></p>
+    <p style="margin:0 0 12px;color:#334155;">The following cars were automatically switched to <strong>IN_MAINTENANCE</strong> to prevent reservations:</p>
+    <ul style="margin:0;padding-left:18px;color:#334155;">${listHtml || "<li>No cars found.</li>"}</ul>
+  `.trim();
+
+  const html = wrapBrandedEmailHtml({
+    innerHtml,
+    preheader: `ITP expired — cars blocked for ${companyName || "your company"}.`,
+  });
+
+  return sendEmail({ to, subject, html, text });
 }
 
 /**
