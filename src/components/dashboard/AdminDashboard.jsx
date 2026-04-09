@@ -2769,7 +2769,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                     setShowItpForm(false);
                     setShowServiceForm(false);
                   }}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[#0d9488] hover:bg-[#0f766e]"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
                 >
                   <FolderOpen className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
                   {showGloveboxForm ? t("common.hideForm") : t("maintenanceUi.addGlovebox")}
@@ -2878,10 +2878,10 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
             {showGloveboxForm && (
             <div
               id="admin-glovebox-card"
-              className="bg-white rounded-xl border border-teal-200/80 shadow-sm p-4 sm:p-6 max-w-3xl ring-1 ring-teal-100"
+              className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 max-w-3xl ring-1 ring-[var(--primary-ring)]"
             >
               <h3 className="text-sm font-semibold text-slate-800 mb-1 flex items-center gap-2">
-                <FolderOpen className="w-4 h-4 text-teal-600 shrink-0" aria-hidden />
+                <FolderOpen className="w-4 h-4 text-[var(--primary)] shrink-0" aria-hidden />
                 Digital glovebox (RCA & vignette)
               </h3>
               <p className="text-xs text-slate-500 mb-4">
@@ -2986,7 +2986,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   Upload RCA (PDF or image)
                   <input
                     type="file"
-                    accept="image/*,application/pdf"
+                    accept="image/*,.pdf,application/pdf"
                     className="hidden"
                     disabled={!gloveboxCarId || gloveboxBusy}
                     onChange={async (e) => {
@@ -3527,13 +3527,12 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
 
                 return (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1080px]">
+                    <table className="w-full min-w-[960px]">
                       <thead>
                         <tr className="bg-slate-50 text-left">
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColCar")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColExpiry")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColStatus")}</th>
-                          <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColLastNotified")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colRcaExpiry")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colVignetteExpiry")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colRcaFile")}</th>
@@ -3575,9 +3574,6 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                               <td className="py-3 px-4 whitespace-nowrap">
                                 <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${badge}`}>{label}</span>
                               </td>
-                              <td className="py-3 px-4 whitespace-nowrap">
-                                {c.itpLastNotifiedAt ? new Date(c.itpLastNotifiedAt).toLocaleString() : <span className="text-slate-400">—</span>}
-                              </td>
                               <td className="py-3 px-4 whitespace-nowrap text-sm">
                                 {rcaOk ? rcaExp.toLocaleDateString() : <span className="text-slate-400">—</span>}
                               </td>
@@ -3587,7 +3583,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                               <td className="py-3 px-4 whitespace-nowrap">
                                 <span
                                   className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${
-                                    hasRcaFile ? "bg-teal-100 text-teal-900" : "bg-slate-100 text-slate-600"
+                                    hasRcaFile ? "bg-[var(--primary-light)] text-[var(--primary)]" : "bg-slate-100 text-slate-600"
                                   }`}
                                 >
                                   {hasRcaFile ? t("maintenanceUi.rcaFileYes") : t("maintenanceUi.rcaFileNo")}
@@ -3648,7 +3644,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                                         ?.scrollIntoView({ behavior: "smooth", block: "start" });
                                     });
                                   }}
-                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] transition-colors"
                                 >
                                   {t("maintenanceUi.openGloveboxForCar")}
                                 </button>
@@ -3657,7 +3653,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                           );
                         })}
                         {list.length === 0 && (
-                          <tr><td colSpan={9} className="py-10 px-4 text-center text-slate-500">{t("maintenanceUi.itpNoMatch")}</td></tr>
+                          <tr><td colSpan={8} className="py-10 px-4 text-center text-slate-500">{t("maintenanceUi.itpNoMatch")}</td></tr>
                         )}
                       </tbody>
                     </table>
