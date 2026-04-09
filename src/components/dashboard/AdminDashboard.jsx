@@ -1983,14 +1983,14 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               Driver-reported accidents/scratches with photos/documents. Admins can track status and add notes.
             </p>
 
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
-              <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 space-y-3">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 <label className="block text-xs font-medium text-slate-600">
                   Vehicle
                   <select
                     value={incidentFilterCarId}
                     onChange={(e) => setIncidentFilterCarId(e.target.value)}
-                    className="mt-1 w-full lg:w-64 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
                   >
                     <option value="">All</option>
                     {cars.map((c) => (
@@ -2006,7 +2006,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   <select
                     value={incidentFilterStatus}
                     onChange={(e) => setIncidentFilterStatus(e.target.value)}
-                    className="mt-1 w-full lg:w-48 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
                   >
                     <option value="">All</option>
                     <option value="SUBMITTED">SUBMITTED</option>
@@ -2020,32 +2020,34 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   <input
                     value={incidentFilterDriver}
                     onChange={(e) => setIncidentFilterDriver(e.target.value)}
-                    className="mt-1 w-full lg:w-56 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
                     placeholder="e.g. daniel@"
                   />
                 </label>
+              </div>
 
-                <label className="block text-xs font-medium text-slate-600">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                <label className="block text-xs font-medium text-slate-600 lg:col-span-2">
                   From
                   <input
                     type="date"
                     value={incidentFilterFrom}
                     onChange={(e) => setIncidentFilterFrom(e.target.value)}
-                    className="mt-1 w-full lg:w-44 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
                   />
                 </label>
 
-                <label className="block text-xs font-medium text-slate-600">
+                <label className="block text-xs font-medium text-slate-600 lg:col-span-2">
                   To
                   <input
                     type="date"
                     value={incidentFilterTo}
                     onChange={(e) => setIncidentFilterTo(e.target.value)}
-                    className="mt-1 w-full lg:w-44 px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
                   />
                 </label>
 
-                <label className="block text-xs font-medium text-slate-600 flex-1">
+                <label className="block text-xs font-medium text-slate-600 lg:col-span-7">
                   Search (title/desc/location)
                   <input
                     value={incidentFilterText}
@@ -2055,20 +2057,22 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   />
                 </label>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIncidentFilterCarId("");
-                    setIncidentFilterStatus("");
-                    setIncidentFilterDriver("");
-                    setIncidentFilterFrom("");
-                    setIncidentFilterTo("");
-                    setIncidentFilterText("");
-                  }}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
-                >
-                  Clear
-                </button>
+                <div className="lg:col-span-1 flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIncidentFilterCarId("");
+                      setIncidentFilterStatus("");
+                      setIncidentFilterDriver("");
+                      setIncidentFilterFrom("");
+                      setIncidentFilterTo("");
+                      setIncidentFilterText("");
+                    }}
+                    className="w-full px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
+                  >
+                    Clear
+                  </button>
+                </div>
               </div>
             </div>
 

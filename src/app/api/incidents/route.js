@@ -151,9 +151,22 @@ export async function POST(request) {
   }
 
   // Notify admins best-effort.
-  sendIncidentAdminEmail(out.session.companyId, {
-    incidentId: incident.id,
-  }).catch(() => {});
+  try {
+    const mail = await sendIncidentAdminEmail(out.session.companyId, { incidentId: incident.id });
+    if (!mail?.ok) {
+      console.warn("[incidents] admin email not sent", {
+        companyId: out.session.companyId,
+        incidentId: incident.id,
+        error: mail?.error,
+      });
+    }
+  } catch (e) {
+    console.warn("[incidents] admin email threw", {
+      companyId: out.session.companyId,
+      incidentId: incident.id,
+      error: e?.message || String(e),
+    });
+  }
 
   return jsonResponse(
     {
