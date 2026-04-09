@@ -46,6 +46,9 @@ yarn-error.log*
 # Vercel
 .vercel
 
+# Cursor / Claude local worktrees (do not commit)
+.claude/
+
 # IDE / editors
 .idea
 .vscode/*

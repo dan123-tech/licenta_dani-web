@@ -17,9 +17,11 @@ import {
   Wrench,
   Download,
   Filter,
+  FileText,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { fetchLogoDataUrl, drawPdfHeader, finalizePdfFooters, addSectionTitle, checkPageBreak } from "@/lib/pdf-report";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
 import FleetBookingCalendar from "./FleetBookingCalendar";
 import AccessCodeQRButton, { ACCESS_CODE_SLOT_CLASS } from "./AccessCodeQRButton";
@@ -53,6 +55,7 @@ import {
 } from "@/lib/api";
 import DataSourceNotConfiguredEmptyState from "./DataSourceNotConfiguredEmptyState";
 import AuditLogsSection from "./AuditLogsSection";
+import ReportsSection from "./ReportsSection";
 import { getProviderLabelWithTable } from "@/orchestrator/config";
 import { useI18n } from "@/i18n/I18nProvider";
 import LanguageCurrencySwitcher from "@/components/LanguageCurrencySwitcher";
@@ -62,6 +65,7 @@ const ICON = { s: "w-4 h-4 shrink-0 stroke-[1.5]" };
 const ADMIN_PAGE_META_KEYS = {
   company: "company",
   statistics: "statistics",
+  reports: "reports",
   cars: "cars",
   fleetCalendar: "fleetCalendar",
   verifyCode: "verifyCode",
@@ -669,150 +673,88 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     formatDate,
   ]);
 
-  const downloadMaintenancePdf = useCallback(() => {
+  const downloadMaintenancePdf = useCallback(async () => {
     const s = maintenanceStats;
     const events = Array.isArray(filteredMaintenanceEvents) ? filteredMaintenanceEvents : [];
     const locStr = locale === "ro" ? "ro-RO" : "en-GB";
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    let y = 14;
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text(t("maintenanceStats.title"), 14, y);
-    y += 8;
-    if (company?.name) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text(company.name, 14, y);
-      y += 6;
-    }
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(t("stats.pdfGeneratedOn", { datetime: new Date().toLocaleString(locStr) }), 14, y);
-    y += 10;
-    doc.setTextColor(0, 0, 0);
+    const logo = await fetchLogoDataUrl();
 
-    doc.setFont("helvetica", "bold");
-    doc.text(t("maintenanceStats.byYearTitle"), 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const HEAD = { fillColor: [24, 95, 165], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 };
+    const BODY = { fontSize: 8.5 };
+    const ALT = { fillColor: [248, 250, 252] };
+    const MARGIN = { left: 14, right: 14, bottom: 20 };
+
+    const generatedOn = new Date().toLocaleString(locStr, { dateStyle: "short", timeStyle: "short" });
+    let y = drawPdfHeader(doc, {
+      title: t("maintenanceStats.title"),
+      subtitle: events.length > 0 ? `${events.length} records` : undefined,
+      company,
+      generatedOn: t("stats.pdfGeneratedOn", { datetime: generatedOn }),
+      logoDataUrl: logo,
+    });
+
+    y = addSectionTitle(doc, y, t("maintenanceStats.byYearTitle"));
     autoTable(doc, {
       startY: y,
-      head: [
-        [
-          t("maintenanceStats.csvColYear"),
-          t("maintenanceStats.csvColRecords"),
-          t("maintenanceStats.csvColTotalCost"),
-          t("maintenanceStats.csvColRecordsWithCost"),
-        ],
-      ],
-      body: s.yearBuckets.map((row) => [
-        String(row.year),
-        String(row.count),
-        row.totalCost > 0 ? formatCurrency(row.totalCost) : "—",
-        String(row.costCount),
-      ]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [71, 85, 105] },
+      head: [[t("maintenanceStats.csvColYear"), t("maintenanceStats.csvColRecords"), t("maintenanceStats.csvColTotalCost"), t("maintenanceStats.csvColRecordsWithCost")]],
+      body: s.yearBuckets.map((row) => [String(row.year), String(row.count), row.totalCost > 0 ? formatCurrency(row.totalCost) : "—", String(row.costCount)]),
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(t("maintenanceStats.csvSectionSummary"), 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    y = checkPageBreak(doc, y, 40);
+    y = addSectionTitle(doc, y, t("maintenanceStats.csvSectionSummary"));
     autoTable(doc, {
       startY: y,
       head: [[t("maintenanceStats.csvColMetric"), t("maintenanceStats.csvColValue")]],
       body: [
         [t("maintenanceStats.totalRecords"), String(s.totalEvents)],
-        [
-          t("maintenanceStats.totalCost"),
-          s.costCount > 0 ? formatCurrency(s.totalCost) : "—",
-        ],
+        [t("maintenanceStats.totalCost"), s.costCount > 0 ? formatCurrency(s.totalCost) : "—"],
         ...(s.costCount > 0 ? [[t("maintenanceStats.avgCost"), formatCurrency(s.avgCost)]] : []),
         [t("maintenanceStats.last12Title"), String(s.countLast12Months)],
-        [
-          t("maintenanceStats.costLabel"),
-          s.totalCostLast12 > 0 ? formatCurrency(s.totalCostLast12) : "—",
-        ],
+        [t("maintenanceStats.costLabel"), s.totalCostLast12 > 0 ? formatCurrency(s.totalCostLast12) : "—"],
         [t("maintenanceStats.withCost"), `${s.costCount} / ${s.totalEvents}`],
       ],
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [71, 85, 105] },
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 80 } },
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(t("maintenanceStats.csvSectionTopVehicles"), 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    y = checkPageBreak(doc, y, 40);
+    y = addSectionTitle(doc, y, t("maintenanceStats.csvSectionTopVehicles"));
     autoTable(doc, {
       startY: y,
-      head: [
-        [
-          t("maintenanceStats.csvColRank"),
-          t("maintenanceStats.csvColVehicle"),
-          t("maintenanceStats.csvColServiceCount"),
-          t("maintenanceStats.csvColVehicleCostTotal"),
-        ],
-      ],
-      body: s.topCars.map((row, idx) => [
-        String(idx + 1),
-        row.label,
-        String(row.count),
-        row.costSum > 0 ? formatCurrency(row.costSum) : "—",
-      ]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [71, 85, 105] },
+      head: [[t("maintenanceStats.csvColRank"), t("maintenanceStats.csvColVehicle"), t("maintenanceStats.csvColServiceCount"), t("maintenanceStats.csvColVehicleCostTotal")]],
+      body: s.topCars.map((row, idx) => [String(idx + 1), row.label, String(row.count), row.costSum > 0 ? formatCurrency(row.costSum) : "—"]),
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(t("maintenanceStats.csvSectionByMonth"), 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    y = checkPageBreak(doc, y, 40);
+    y = addSectionTitle(doc, y, t("maintenanceStats.csvSectionByMonth"));
     autoTable(doc, {
       startY: y,
       head: [[t("maintenanceStats.csvColMonth"), t("maintenanceStats.csvColCount")]],
       body: s.monthBuckets.map((b) => [b.label, String(b.count)]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [71, 85, 105] },
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
     });
     y = doc.lastAutoTable.finalY + 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(t("maintenanceStats.csvSectionAllRecords"), 14, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, t("maintenanceStats.csvSectionAllRecords"));
     autoTable(doc, {
       startY: y,
-      head: [
-        [
-          t("maintenanceStats.csvColDate"),
-          t("maintenanceStats.csvColVehicle"),
-          t("maintenanceStats.csvColService"),
-          t("maintenanceStats.csvColKm"),
-          t("maintenanceStats.csvColCost"),
-          t("maintenanceStats.csvColNotes"),
-        ],
-      ],
+      head: [[t("maintenanceStats.csvColDate"), t("maintenanceStats.csvColVehicle"), t("maintenanceStats.csvColService"), t("maintenanceStats.csvColKm"), t("maintenanceStats.csvColCost"), t("maintenanceStats.csvColNotes")]],
       body: events.map((ev) => {
         const veh = [ev.car?.brand, ev.car?.registrationNumber].filter(Boolean).join(" ").trim() || "—";
-        const cost =
-          ev.cost != null && !Number.isNaN(Number(ev.cost)) ? formatCurrency(Number(ev.cost)) : "—";
-        return [
-          formatDate(ev.performedAt),
-          veh,
-          ev.serviceType || "—",
-          ev.mileageKm != null ? String(ev.mileageKm) : "—",
-          cost,
-          (ev.notes || "").slice(0, 200),
-        ];
+        const cost = ev.cost != null && !Number.isNaN(Number(ev.cost)) ? formatCurrency(Number(ev.cost)) : "—";
+        return [formatDate(ev.performedAt), veh, ev.serviceType || "—", ev.mileageKm != null ? String(ev.mileageKm) : "—", cost, (ev.notes || "").slice(0, 120)];
       }),
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [71, 85, 105] },
+      theme: "grid", headStyles: HEAD, bodyStyles: { fontSize: 8 }, alternateRowStyles: ALT, margin: MARGIN,
     });
 
+    finalizePdfFooters(doc, company?.name);
     doc.save(`${t("maintenanceStats.exportFilePrefix")}-${new Date().toISOString().slice(0, 10)}.pdf`);
   }, [
     maintenanceStats,
@@ -1046,6 +988,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
         items: [
           { id: "company", label: t("nav.items.company"), icon: <Building2 className={ICON.s} aria-hidden /> },
           { id: "statistics", label: t("nav.items.statistics"), icon: <BarChart2 className={ICON.s} aria-hidden /> },
+          { id: "reports", label: "Reports", icon: <FileText className={ICON.s} aria-hidden /> },
         ],
       },
       {
@@ -1326,6 +1269,15 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
             company={company}
             users={users}
             cars={cars}
+          />
+        )}
+
+        {section === "reports" && (
+          <ReportsSection
+            cars={cars}
+            reservations={reservations}
+            users={users}
+            company={company}
           />
         )}
 

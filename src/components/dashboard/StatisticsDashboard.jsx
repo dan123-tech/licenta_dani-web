@@ -19,6 +19,7 @@ import {
 import { Info } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { fetchLogoDataUrl, drawPdfHeader, finalizePdfFooters, addSectionTitle, checkPageBreak } from "@/lib/pdf-report";
 import FuelTypeBadge from "@/components/FuelTypeBadge";
 import { fuelChartColor } from "@/lib/fuelTheme";
 import { computeStatsForPeriod } from "@/lib/statistics-period";
@@ -153,134 +154,86 @@ export default function StatisticsDashboard({ reservations = [], company, users 
     });
   }
 
-  const handleDownloadPdf = (periodKey) => {
+  const handleDownloadPdf = async (periodKey) => {
     const s = buildStatsSnapshot(periodKey);
     const periodHuman = t(`stats.period.${periodKey}`);
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-    let y = 14;
     const locStr = locale === "ro" ? "ro-RO" : "en-GB";
+    const logo = await fetchLogoDataUrl();
 
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text(t("stats.title"), 14, y);
-    y += 8;
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const HEAD = { fillColor: [24, 95, 165], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 9 };
+    const BODY = { fontSize: 8.5 };
+    const ALT = { fillColor: [248, 250, 252] };
+    const MARGIN = { left: 14, right: 14, bottom: 20 };
 
-    if (company?.name) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text(company.name, 14, y);
-      y += 6;
-    }
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(t("stats.pdfGeneratedOn", { datetime: new Date().toLocaleString(locStr) }), 14, y);
-    y += 6;
-    doc.text(t("stats.pdfPeriodLine", { period: periodHuman }), 14, y);
-    doc.setTextColor(0, 0, 0);
-    y += 12;
+    const generatedOn = new Date().toLocaleString(locStr, { dateStyle: "short", timeStyle: "short" });
+    let y = drawPdfHeader(doc, {
+      title: t("stats.title"),
+      subtitle: t("stats.pdfPeriodLine", { period: periodHuman }),
+      company,
+      generatedOn: t("stats.pdfGeneratedOn", { datetime: generatedOn }),
+      logoDataUrl: logo,
+    });
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(t("stats.pdfSummary"), 14, y);
-    y += 8;
+    y = addSectionTitle(doc, y, t("stats.pdfSummary"));
+    autoTable(doc, {
+      startY: y,
+      head: [["Metric", "Value"]],
+      body: [
+        [t("stats.pdfActive"), String(s.activeCount)],
+        [t("stats.pdfKmRange"), `${s.totalKmPeriod.toLocaleString(locStr)} km`],
+        [t("stats.pdfEstCostRange"), hasFuelPrices ? formatCurrency(s.estimatedFuelCostPeriod) : t("stats.pdfNoPrice")],
+        [t("stats.pdfCo2Range"), `${s.totalCo2Period.toFixed(1)} kg`],
+      ],
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
+      columnStyles: { 0: { fontStyle: "bold", cellWidth: 80 } },
+    });
+    y = doc.lastAutoTable.finalY + 10;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(`${t("stats.pdfActive")}: ${s.activeCount}`, 14, y);
-    y += 6;
-    doc.text(`${t("stats.pdfKmRange")}: ${s.totalKmPeriod.toLocaleString(locStr)} km`, 14, y);
-    y += 6;
-    const fuelStr = hasFuelPrices ? formatCurrency(s.estimatedFuelCostPeriod) : t("stats.pdfNoPrice");
-    doc.text(`${t("stats.pdfEstCostRange")}: ${fuelStr}`, 14, y);
-    y += 6;
-    doc.text(`${t("stats.pdfCo2Range")}: ${s.totalCo2Period.toFixed(1)} kg`, 14, y);
-    y += 14;
-
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, t("stats.colRank") + " — " + t("stats.colName"));
     autoTable(doc, {
       startY: y,
       head: [[t("stats.colRank"), t("stats.colName"), t("stats.colEmail"), t("stats.colReservations")]],
       body: s.topUsers.map((u, i) => [i + 1, u.name, u.email, String(u.count)]),
-      theme: "grid",
-      headStyles: { fillColor: [71, 130, 246], fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
-      margin: { left: 14 },
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
     });
-    y = doc.lastAutoTable.finalY + 12;
+    y = doc.lastAutoTable.finalY + 10;
 
-    if (y > 250) {
-      doc.addPage();
-      y = 14;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(t("stats.pdfCostLeader"), 14, y);
-    y += 8;
-
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, t("stats.pdfCostLeader"));
     autoTable(doc, {
       startY: y,
-      head: [
-        [
-          t("stats.colRank"),
-          t("stats.colMakeModel"),
-          t("stats.colPlate"),
-          t("stats.colKm"),
-          t("stats.colConsumption"),
-          t("stats.colEstCost"),
-        ],
-      ],
+      head: [[t("stats.colRank"), t("stats.colMakeModel"), t("stats.colPlate"), t("stats.colKm"), t("stats.colConsumption"), t("stats.colEstCost")]],
       body: s.efficiencyLeaderboard.map((row, i) => [
-        i + 1,
-        row.brandModel,
-        row.registrationNumber,
-        `${row.km.toLocaleString(locStr)} km`,
-        row.consumptionDisplay,
+        i + 1, row.brandModel, row.registrationNumber,
+        `${row.km.toLocaleString(locStr)} km`, row.consumptionDisplay,
         hasFuelPrices ? formatCurrency(row.fuelCost) : "—",
       ]),
-      theme: "grid",
-      headStyles: { fillColor: [71, 130, 246], fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
-      margin: { left: 14 },
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
     });
-    y = doc.lastAutoTable.finalY + 12;
+    y = doc.lastAutoTable.finalY + 10;
 
-    if (y > 250) {
-      doc.addPage();
-      y = 14;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(t("stats.pdfCarUsage"), 14, y);
-    y += 8;
-
+    y = checkPageBreak(doc, y, 30);
+    y = addSectionTitle(doc, y, t("stats.pdfCarUsage"));
     autoTable(doc, {
       startY: y,
       head: [[t("stats.colMakeModel"), t("stats.colPlate"), t("stats.colKm"), t("stats.colReservations")]],
-      body: s.carUsage.map((row) => [
-        row.brandModel,
-        row.plate,
-        `${row.km.toLocaleString(locStr)} km`,
-        String(row.reservations),
-      ]),
-      theme: "grid",
-      headStyles: { fillColor: [71, 130, 246], fontSize: 9 },
-      bodyStyles: { fontSize: 9 },
-      margin: { left: 14 },
+      body: s.carUsage.map((row) => [row.brandModel, row.plate, `${row.km.toLocaleString(locStr)} km`, String(row.reservations)]),
+      theme: "grid", headStyles: HEAD, bodyStyles: BODY, alternateRowStyles: ALT, margin: MARGIN,
     });
     y = doc.lastAutoTable.finalY + 10;
 
     const totalFuelTrend = s.fuelTrend.reduce((acc, d) => acc + d.fuelCost, 0);
-    if (hasFuelPrices && (totalFuelTrend > 0 || y < 260)) {
-      if (y > 255) {
-        doc.addPage();
-        y = 14;
-      }
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(`${t("stats.pdfFuelTrendTotal")}: ${formatCurrency(totalFuelTrend)}`, 14, y);
+    if (hasFuelPrices && totalFuelTrend > 0) {
+      y = checkPageBreak(doc, y, 15);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(30, 41, 59);
+      doc.text(`${t("stats.pdfFuelTrendTotal")}: ${formatCurrency(totalFuelTrend)}`, 16, y);
     }
 
+    finalizePdfFooters(doc, company?.name);
     doc.save(`statistics-${periodKey}-${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 

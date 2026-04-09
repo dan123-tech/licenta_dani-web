@@ -288,6 +288,7 @@
   "pageMeta": {
     "company": { "title": "Company", "sub": "Settings, pricing & fleet defaults" },
     "statistics": { "title": "Statistics & reports", "sub": "Analytics and cost breakdown" },
+    "reports": { "title": "Reports", "sub": "Generate detailed PDF reports" },
     "cars": { "title": "Manage cars", "sub": "Fleet overview" },
     "fleetCalendar": { "title": "Fleet calendar", "sub": "Cars vs time — see bookings and free slots" },
     "maintenance": { "title": "Maintenance log", "sub": "Service history per vehicle" },

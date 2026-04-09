@@ -288,6 +288,7 @@
   "pageMeta": {
     "company": { "title": "Companie", "sub": "Setări, prețuri și valori implicite flotă" },
     "statistics": { "title": "Statistici și rapoarte", "sub": "Analize și defalcare costuri" },
+    "reports": { "title": "Rapoarte", "sub": "Generează rapoarte PDF detaliate" },
     "cars": { "title": "Gestionare mașini", "sub": "Prezentare flotă" },
     "fleetCalendar": { "title": "Calendar flotă", "sub": "Mașini în timp — rezervări și sloturi libere" },
     "maintenance": { "title": "Jurnal întreținere", "sub": "Istoric service pe vehicul" },
