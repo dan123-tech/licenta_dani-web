@@ -2037,18 +2037,18 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                         </td>
                         <td className="py-4 px-4">
                           <textarea
-                            defaultValue={r.adminNotes || \"\"}
-                            placeholder=\"Optional\"
+                            defaultValue={r.adminNotes || ""}
+                            placeholder="Optional"
                             rows={2}
-                            className=\"w-full min-w-[240px] px-3 py-2 rounded-lg border border-slate-200 text-sm\"
+                            className="w-full min-w-[240px] px-3 py-2 rounded-lg border border-slate-200 text-sm"
                             onBlur={async (e) => {
-                              const adminNotes = e.target.value || \"\";
+                              const adminNotes = e.target.value || "";
                               setIncidentSavingId(r.id);
-                              setError(\"\");
+                              setError("");
                               try {
                                 await apiIncidentAdminUpdate(r.id, { adminNotes });
                               } catch (err) {
-                                setError(err.message || \"Failed to update notes\");
+                                setError(err.message || "Failed to update notes");
                               } finally {
                                 setIncidentSavingId(null);
                               }
