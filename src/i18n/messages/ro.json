@@ -216,6 +216,7 @@
   },
   "maintenanceUi": {
     "title": "Întreținere",
+    "addItp": "Adaugă ITP",
     "addEditItp": "Adaugă / editează ITP",
     "closeItpForm": "Închide formular ITP",
     "addServiceRecord": "Adaugă înregistrare service",

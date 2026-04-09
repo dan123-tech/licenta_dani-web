@@ -255,6 +255,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [itpNotice, setItpNotice] = useState(null);
   const [showItpForm, setShowItpForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [itpRowDraft, setItpRowDraft] = useState({});
+  const [itpRowSavingId, setItpRowSavingId] = useState(null);
   const [itpFilterStatus, setItpFilterStatus] = useState("");
   const [itpFilterCarId, setItpFilterCarId] = useState("");
   const [maintFilterCarId, setMaintFilterCarId] = useState("");
@@ -2451,9 +2453,10 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                     setShowItpForm((v) => !v);
                     setShowServiceForm(false);
                   }}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
                 >
-                  {showItpForm ? t("maintenanceUi.closeItpForm") : t("maintenanceUi.addEditItp")}
+                  <Plus className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+                  {showItpForm ? t("common.hideForm") : t("maintenanceUi.addItp")}
                 </button>
                 <button
                   type="button"
@@ -2461,9 +2464,10 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                     setShowServiceForm((v) => !v);
                     setShowItpForm(false);
                   }}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 bg-[#1E293B] text-white hover:bg-[#334155]"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-white px-3.5 py-2 rounded-md shadow-sm transition-colors bg-[#1E293B] hover:bg-[#334155]"
                 >
-                  {showServiceForm ? t("maintenanceUi.closeServiceForm") : t("maintenanceUi.addServiceRecord")}
+                  <Plus className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} aria-hidden />
+                  {showServiceForm ? t("common.hideForm") : t("maintenanceUi.addServiceRecord")}
                 </button>
               </div>
             </div>
@@ -3034,6 +3038,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                           const exp = c.itpExpiresAt ? new Date(c.itpExpiresAt) : null;
                           const expOk = exp && !Number.isNaN(exp.getTime());
                           const days = expOk ? Math.ceil((exp.getTime() - now) / (24 * 60 * 60 * 1000)) : null;
+                          const draft = itpRowDraft[c.id] ?? (expOk ? exp.toISOString().slice(0, 10) : "");
                           const badge =
                             days == null
                               ? "bg-slate-100 text-slate-800"
@@ -3061,20 +3066,45 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                                 {c.itpLastNotifiedAt ? new Date(c.itpLastNotifiedAt).toLocaleString() : <span className="text-slate-400">—</span>}
                               </td>
                               <td className="py-3 px-4 whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setItpCarId(c.id);
-                                    setShowItpForm(true);
-                                    setShowServiceForm(false);
-                                    try {
-                                      window.scrollTo({ top: 0, behavior: "smooth" });
-                                    } catch {}
-                                  }}
-                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
-                                >
-                                  {t("maintenanceUi.edit")}
-                                </button>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="date"
+                                    value={draft}
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      setItpRowDraft((prev) => ({ ...prev, [c.id]: v }));
+                                    }}
+                                    className="w-[140px] px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs"
+                                  />
+                                  <button
+                                    type="button"
+                                    disabled={itpRowSavingId === c.id}
+                                    onClick={async () => {
+                                      setItpRowSavingId(c.id);
+                                      setError("");
+                                      try {
+                                        const iso =
+                                          draft && String(draft).trim()
+                                            ? new Date(`${draft}T00:00:00`).toISOString()
+                                            : null;
+                                        await apiUpdateCar(c.id, { itpExpiresAt: iso });
+                                        setItpRowDraft((prev) => {
+                                          const next = { ...prev };
+                                          delete next[c.id];
+                                          return next;
+                                        });
+                                        await load();
+                                      } catch (err) {
+                                        setError(err?.message || "Failed to save ITP expiry");
+                                      } finally {
+                                        setItpRowSavingId(null);
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100 disabled:opacity-50"
+                                  >
+                                    {itpRowSavingId === c.id ? t("common.saving") : t("common.save")}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );

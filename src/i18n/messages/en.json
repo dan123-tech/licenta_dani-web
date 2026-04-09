@@ -216,6 +216,7 @@
   },
   "maintenanceUi": {
     "title": "Maintenance",
+    "addItp": "Add ITP",
     "addEditItp": "Add / edit ITP",
     "closeItpForm": "Close ITP form",
     "addServiceRecord": "Add service record",
