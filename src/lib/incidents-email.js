@@ -103,9 +103,9 @@ export async function sendIncidentAdminEmail(companyId, { incidentId }) {
     url: incidentAttachmentUrlForApi(a.blobUrl, a.id),
   }));
 
-  const subject = `New incident report — ${company?.name || companyId}`;
+  const subject = `New incident report`;
   const text = [
-    `New incident report — ${company?.name || companyId}`,
+    `New incident report`,
     "",
     `Title: ${incident.title || "—"}`,
     `Occurred: ${occurred}`,
@@ -162,7 +162,7 @@ export async function sendIncidentAdminEmail(companyId, { incidentId }) {
 
   const html = wrapBrandedEmailHtml({
     innerHtml,
-    preheader: `New incident: ${incident.title || "Incident"} — ${carLabel}`,
+    preheader: `New incident: ${incident.title || "Incident"} (${carLabel})`,
   });
 
   // Attach files as real email attachments (optional).
