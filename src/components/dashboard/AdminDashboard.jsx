@@ -2023,13 +2023,12 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                         </td>
                         <td className="py-4 px-4 whitespace-nowrap">
                           {(r.attachments || []).length ? (
-                            <div className="flex flex-col gap-1">
-                              {r.attachments.slice(0, 3).map((a) => (
+                            <div className="flex flex-col gap-1 max-h-28 overflow-auto pr-1">
+                              {r.attachments.map((a) => (
                                 <a key={a.id} href={a.url} target="_blank" rel="noreferrer noopener" className="text-xs text-sky-700 hover:underline">
                                   {a.filename}
                                 </a>
                               ))}
-                              {r.attachments.length > 3 && <span className="text-xs text-slate-500">+{r.attachments.length - 3} more</span>}
                             </div>
                           ) : (
                             <span className="text-xs text-slate-400">—</span>

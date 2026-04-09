@@ -20,6 +20,7 @@ import {
   apiCreateMobileCaptureSession,
   apiIncidentsList,
   apiIncidentCreate,
+  apiIncidentAddAttachments,
   apiUserMfaUpdate,
   apiUserEmailNotifications,
   apiUserCalendarFeedUrl,
@@ -1410,7 +1411,8 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                         <th className="py-2 pr-3">Car</th>
                         <th className="py-2 pr-3">Title</th>
                         <th className="py-2 pr-3">Status</th>
-                        <th className="py-2 pr-3">Files</th>
+                        <th className="py-2 pr-3">Attachments</th>
+                        <th className="py-2 pr-3">Add more</th>
                       </tr>
                     </thead>
                     <tbody className="text-sm text-slate-800">
@@ -1424,12 +1426,50 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                               {r.status || "SUBMITTED"}
                             </span>
                           </td>
-                          <td className="py-3 pr-3 whitespace-nowrap">
+                          <td className="py-3 pr-3">
                             {(r.attachments || []).length ? (
-                              <span className="text-xs text-slate-600">{r.attachments.length}</span>
+                              <div className="flex flex-col gap-1">
+                                {r.attachments.map((a) => (
+                                  <a
+                                    key={a.id}
+                                    href={a.url}
+                                    target="_blank"
+                                    rel="noreferrer noopener"
+                                    className="text-xs text-sky-700 hover:underline"
+                                  >
+                                    {a.filename}
+                                  </a>
+                                ))}
+                              </div>
                             ) : (
                               <span className="text-xs text-slate-400">—</span>
                             )}
+                          </td>
+                          <td className="py-3 pr-3 whitespace-nowrap">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="file"
+                                multiple
+                                className="hidden"
+                                accept="image/*,.pdf,.doc,.docx"
+                                onChange={async (e) => {
+                                  const files = Array.from(e.target.files || []);
+                                  // allow re-selecting same file later
+                                  e.target.value = "";
+                                  if (!files.length) return;
+                                  setError("");
+                                  try {
+                                    await apiIncidentAddAttachments(r.id, files);
+                                    await loadIncidents();
+                                  } catch (err) {
+                                    setError(err.message || "Failed to upload attachments");
+                                  }
+                                }}
+                              />
+                              <span className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 cursor-pointer">
+                                Upload files
+                              </span>
+                            </label>
                           </td>
                         </tr>
                       ))}

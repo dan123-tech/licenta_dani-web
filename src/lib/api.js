@@ -303,6 +303,21 @@ export async function apiIncidentCreate(payload) {
   return data;
 }
 
+export async function apiIncidentAddAttachments(incidentId, files) {
+  const form = new FormData();
+  for (const f of files || []) form.append("files", f);
+  const res = await fetch(`/api/incidents/${encodeURIComponent(incidentId)}/attachments`, {
+    method: "POST",
+    cache: "no-store",
+    body: form,
+    credentials: "include",
+    headers: { ...getWebTabSidHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Failed to upload attachments");
+  return data;
+}
+
 export async function apiIncidentAdminUpdate(id, patch) {
   const res = await fetch(`/api/incidents/${encodeURIComponent(id)}`, getOpts("PATCH", patch));
   const data = await res.json().catch(() => ({}));
