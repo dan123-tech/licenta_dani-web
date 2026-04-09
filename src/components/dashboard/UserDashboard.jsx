@@ -130,6 +130,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
   const [incidentDescription, setIncidentDescription] = useState("");
   const [incidentFiles, setIncidentFiles] = useState([]);
   const [incidentSubmitting, setIncidentSubmitting] = useState(false);
+  const [incidentFilesInputKey, setIncidentFilesInputKey] = useState(0);
   const dlStatus = user?.drivingLicenceStatus ?? null;
   const identityStatus = user?.identityStatus ?? null;
   const canReserve = dlStatus === "APPROVED";
@@ -1307,6 +1308,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                     setIncidentDescription("");
                     setIncidentOccurredAt("");
                     setIncidentFiles([]);
+                    setIncidentFilesInputKey((k) => k + 1);
                     await loadIncidents();
                   } catch (err) {
                     setError(err.message || "Failed to submit incident");
@@ -1373,13 +1375,62 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                 </label>
                 <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
                   Photos / documents
-                  <input
-                    type="file"
-                    multiple
-                    onChange={(e) => setIncidentFiles(Array.from(e.target.files || []))}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
-                    accept="image/*,.pdf,.doc,.docx"
-                  />
+                  <div className="mt-1 flex flex-col gap-2">
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        key={incidentFilesInputKey}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx"
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          // allow re-selecting same file later
+                          e.target.value = "";
+                          if (!files.length) return;
+                          setIncidentFiles((prev) => [...(prev || []), ...files]);
+                          setIncidentFilesInputKey((k) => k + 1);
+                        }}
+                      />
+                      <span className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 cursor-pointer">
+                        Add files
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        You can add more files multiple times (previous selections are kept).
+                      </span>
+                    </label>
+
+                    {incidentFiles.length > 0 && (
+                      <div className="rounded-lg border border-slate-200 bg-white p-2">
+                        <p className="text-[11px] font-semibold text-slate-600 mb-1">
+                          Selected ({incidentFiles.length})
+                        </p>
+                        <ul className="space-y-1">
+                          {incidentFiles.map((f, idx) => (
+                            <li key={`${f.name}_${f.size}_${idx}`} className="flex items-center justify-between gap-2">
+                              <span className="text-xs text-slate-700 truncate">{f.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => setIncidentFiles((prev) => prev.filter((_, i) => i !== idx))}
+                                className="px-2 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setIncidentFiles([])}
+                            className="px-2.5 py-1.5 rounded-md text-[11px] font-semibold border border-slate-200 bg-white hover:bg-slate-50"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <p className="mt-1 text-[11px] text-slate-500">
                     Suggested: car damage photos, licence plate photos, insurance docs, police report PDF.
                   </p>
@@ -1451,7 +1502,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                                 type="file"
                                 multiple
                                 className="hidden"
-                                accept="image/*,.pdf,.doc,.docx"
+                                accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx"
                                 onChange={async (e) => {
                                   const files = Array.from(e.target.files || []);
                                   // allow re-selecting same file later

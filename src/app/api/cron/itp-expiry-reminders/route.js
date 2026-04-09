@@ -47,105 +47,110 @@ export async function POST(request) {
   let emailedCompanies = 0;
   let carsFlagged = 0;
   let carsAutoBlocked = 0;
+  const errors = [];
 
   for (const c of companies) {
-    const tenant = await getTenantPrisma(c.id);
-    const cars = await tenant.car.findMany({
-      where: {
-        companyId: c.id,
-        itpExpiresAt: { not: null, lte: cutoff },
-      },
-      select: {
-        id: true,
-        brand: true,
-        model: true,
-        registrationNumber: true,
-        status: true,
-        itpExpiresAt: true,
-        itpLastNotifiedAt: true,
-      },
-      orderBy: { itpExpiresAt: "asc" },
-    });
-
-    if (!cars.length) continue;
-
-    const expiredNow = cars.filter((car) => {
-      if (!autoBlock) return false;
-      if (!car.itpExpiresAt) return false;
-      const exp = dayStart(new Date(car.itpExpiresAt));
-      return exp.getTime() < today.getTime();
-    });
-
-    const toNotify = cars.filter((car) => {
-      if (!car.itpExpiresAt) return false;
-      // Send at most once per day per car.
-      if (!car.itpLastNotifiedAt) return true;
-      return dayStart(car.itpLastNotifiedAt).getTime() < today.getTime();
-    });
-
-    const admins = await tenant.companyMember.findMany({
-      where: {
-        companyId: c.id,
-        role: "ADMIN",
-        status: "ENROLLED",
-      },
-      include: { user: { select: { email: true, name: true } } },
-    });
-    const to = admins.map((m) => m.user?.email).filter(Boolean);
-    if (!to.length) continue;
-
-    // Auto-block expired ITP cars by switching them to IN_MAINTENANCE.
-    // Only block cars that are currently AVAILABLE so we don't break active bookings.
-    const toBlock = expiredNow.filter((x) => (x.status || "").toUpperCase() === "AVAILABLE");
-    if (toBlock.length) {
-      const ids = toBlock.map((x) => x.id);
-      await tenant.car.updateMany({
-        where: { id: { in: ids }, companyId: c.id, status: "AVAILABLE" },
-        data: { status: "IN_MAINTENANCE" },
+    try {
+      const tenant = await getTenantPrisma(c.id);
+      const cars = await tenant.car.findMany({
+        where: {
+          companyId: c.id,
+          itpExpiresAt: { not: null, lte: cutoff },
+        },
+        select: {
+          id: true,
+          brand: true,
+          model: true,
+          registrationNumber: true,
+          status: true,
+          itpExpiresAt: true,
+          itpLastNotifiedAt: true,
+        },
+        orderBy: { itpExpiresAt: "asc" },
       });
-      carsAutoBlocked += toBlock.length;
-      await sendItpAutoBlockedAdminEmail({
-        to,
-        companyName: c.name,
-        cars: toBlock.map((car) => ({
+
+      if (!cars.length) continue;
+
+      const expiredNow = cars.filter((car) => {
+        if (!autoBlock) return false;
+        if (!car.itpExpiresAt) return false;
+        const exp = dayStart(new Date(car.itpExpiresAt));
+        return exp.getTime() < today.getTime();
+      });
+
+      const toNotify = cars.filter((car) => {
+        if (!car.itpExpiresAt) return false;
+        // Send at most once per day per car.
+        if (!car.itpLastNotifiedAt) return true;
+        return dayStart(car.itpLastNotifiedAt).getTime() < today.getTime();
+      });
+
+      const admins = await tenant.companyMember.findMany({
+        where: {
+          companyId: c.id,
+          role: "ADMIN",
+          status: "ENROLLED",
+        },
+        include: { user: { select: { email: true, name: true } } },
+      });
+      const to = admins.map((m) => m.user?.email).filter(Boolean);
+      if (!to.length) continue;
+
+      // Auto-block expired ITP cars by switching them to IN_MAINTENANCE.
+      // Only block cars that are currently AVAILABLE so we don't break active bookings.
+      const toBlock = expiredNow.filter((x) => (x.status || "").toUpperCase() === "AVAILABLE");
+      if (toBlock.length) {
+        const ids = toBlock.map((x) => x.id);
+        await tenant.car.updateMany({
+          where: { id: { in: ids }, companyId: c.id, status: "AVAILABLE" },
+          data: { status: "IN_MAINTENANCE" },
+        });
+        carsAutoBlocked += toBlock.length;
+        await sendItpAutoBlockedAdminEmail({
+          to,
+          companyName: c.name,
+          cars: toBlock.map((car) => ({
+            carId: car.id,
+            label: [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" "),
+            expiresAt: new Date(car.itpExpiresAt).toISOString(),
+          })),
+        }).catch(() => {});
+      }
+
+      if (!toNotify.length) continue;
+
+      const payloadCars = toNotify.map((car) => {
+        const exp = new Date(car.itpExpiresAt);
+        const days = Math.ceil((dayStart(exp).getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+        return {
           carId: car.id,
           label: [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" "),
-          expiresAt: new Date(car.itpExpiresAt).toISOString(),
-        })),
-      }).catch(() => {});
-    }
-
-    if (!toNotify.length) continue;
-
-    const payloadCars = toNotify.map((car) => {
-      const exp = new Date(car.itpExpiresAt);
-      const days = Math.ceil((dayStart(exp).getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-      return {
-        carId: car.id,
-        label: [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" "),
-        expiresAt: exp.toISOString(),
-        daysUntil: days,
-      };
-    });
-
-    const sendRes = await sendItpExpiryAdminEmail({
-      to,
-      companyName: c.name,
-      cars: payloadCars,
-      reminderDays,
-    });
-
-    if (sendRes?.ok) {
-      emailedCompanies += 1;
-      carsFlagged += payloadCars.length;
-      const ids = toNotify.map((x) => x.id);
-      await tenant.car.updateMany({
-        where: { id: { in: ids }, companyId: c.id },
-        data: { itpLastNotifiedAt: now },
+          expiresAt: exp.toISOString(),
+          daysUntil: days,
+        };
       });
+
+      const sendRes = await sendItpExpiryAdminEmail({
+        to,
+        companyName: c.name,
+        cars: payloadCars,
+        reminderDays,
+      });
+
+      if (sendRes?.ok) {
+        emailedCompanies += 1;
+        carsFlagged += payloadCars.length;
+        const ids = toNotify.map((x) => x.id);
+        await tenant.car.updateMany({
+          where: { id: { in: ids }, companyId: c.id },
+          data: { itpLastNotifiedAt: now },
+        });
+      }
+    } catch (err) {
+      errors.push({ companyId: c.id, error: err?.message || String(err) });
     }
   }
 
-  return Response.json({ ok: true, reminderDays, emailedCompanies, carsFlagged, carsAutoBlocked, autoBlock });
+  return Response.json({ ok: true, reminderDays, emailedCompanies, carsFlagged, carsAutoBlocked, autoBlock, errors });
 }
 

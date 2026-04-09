@@ -153,8 +153,6 @@ export async function POST(request) {
   // Notify admins best-effort.
   sendIncidentAdminEmail(out.session.companyId, {
     incidentId: incident.id,
-    carLabel: [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" "),
-    title: incident.title,
   }).catch(() => {});
 
   return jsonResponse(

@@ -439,6 +439,22 @@ CREATE INDEX IF NOT EXISTS "IncidentAttachment_companyId_createdAt_idx" ON "Inci
 `);
 }
 
+async function ensureTenantSchemaWithClient(companyId, client) {
+  if (!companyId) throw new Error("companyId is required");
+  if (tenantSchemaReady.has(companyId)) return;
+  const rows = await client.$queryRawUnsafe(`
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'User'
+    LIMIT 1
+  `);
+  if (!Array.isArray(rows) || rows.length === 0) {
+    await bootstrapTenantSchema(client);
+  }
+  await ensureTenantSchemaCompatibility(client);
+  tenantSchemaReady.add(companyId);
+}
+
 async function autoProvisionMissingTenant(companyId) {
   const existing = await controlPrisma.companyTenant.findUnique({ where: { companyId } });
   if (existing) return existing;
@@ -554,17 +570,7 @@ export async function ensureTenantSchema(companyId) {
   if (!companyId) throw new Error("companyId is required");
   if (tenantSchemaReady.has(companyId)) return;
   const client = await getTenantPrisma(companyId);
-  const rows = await client.$queryRawUnsafe(`
-    SELECT 1
-    FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'User'
-    LIMIT 1
-  `);
-  if (!Array.isArray(rows) || rows.length === 0) {
-    await bootstrapTenantSchema(client);
-  }
-  await ensureTenantSchemaCompatibility(client);
-  tenantSchemaReady.add(companyId);
+  await ensureTenantSchemaWithClient(companyId, client);
 }
 
 export async function getTenantConfig(companyId) {
@@ -618,6 +624,9 @@ export async function getTenantPrisma(companyId) {
   if (tenantClients.has(companyId)) {
     const client = tenantClients.get(companyId);
     touchClient(companyId, client);
+    if (!tenantSchemaReady.has(companyId)) {
+      await ensureTenantSchemaWithClient(companyId, client);
+    }
     return client;
   }
   const cfg = await getTenantConfig(companyId);
@@ -651,6 +660,9 @@ export async function getTenantPrisma(companyId) {
     }
   }
   touchClient(companyId, client);
+  if (!tenantSchemaReady.has(companyId)) {
+    await ensureTenantSchemaWithClient(companyId, client);
+  }
   return client;
 }
 
