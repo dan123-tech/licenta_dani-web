@@ -107,7 +107,7 @@ export async function POST(request) {
       { imageBuffer: liveScanBuffer, mimeType: liveMime, filename: `live-scan-${session.userId}.jpg` }
     );
 
-    if (result.match && result.liveness === true) {
+    if (result.match && (result.liveness === true || result.provider === "rekognition")) {
       await setUserIdentityStatus(session.userId, "VERIFIED", {
         verifiedBy: "AI",
         score: result.score,

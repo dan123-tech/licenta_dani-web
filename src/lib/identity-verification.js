@@ -25,6 +25,22 @@ const USE_SESSION_FLOW_FALLBACK =
   (SESSION_FLOW_MODE !== "false" &&
     /ai-face-recognition(-nine)?\.vercel\.app/i.test(DEFAULT_AI_URL));
 
+function shouldTryRekognitionFallback(err) {
+  const m = String(err?.message || "").toLowerCase();
+  if (m.includes("abort") || m.includes("timed out")) return false;
+  if (m.includes("401") && m.includes("authentication")) return false;
+  return (
+    m.includes("atob()") ||
+    m.includes("invalid base64") ||
+    m.includes("session-verify retries failed") ||
+    m.includes("face session-verify returned") ||
+    m.includes("face match endpoint not found") ||
+    m.includes("not reachable") ||
+    m.includes("fetch failed") ||
+    m.includes("econnrefused")
+  );
+}
+
 function buildFaceAuthHeaders() {
   const headers = {};
   const auth =
@@ -163,16 +179,36 @@ async function trySessionFlow(base, licence, liveScan, controller) {
   const mime = liveScan.mimeType || "image/jpeg";
   const liveScanDataUrl = `data:${mime};base64,${liveScanB64}`;
   const createUrl = `${base}/api/session-create`;
-  const createForm = new FormData();
   const licencePart = makeImagePart(licence.imageBuffer, licence.mimeType, licence.filename);
+  const createForm = new FormData();
   createForm.append("license_image", licencePart, licence.filename);
   createForm.append("licence", licencePart, licence.filename);
-  const createRes = await fetch(createUrl, {
-    method: "POST",
-    body: createForm,
-    signal: controller.signal,
-    headers,
-  });
+
+  // Prefer JSON session-create when we have clean base64 — avoids rare multipart corruption on some hosts.
+  let createRes;
+  if (licenceB64) {
+    createRes = await fetch(createUrl, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        license_image_base64: licenceB64,
+        license_mime: licence.mimeType || "image/jpeg",
+      }),
+    });
+  }
+  if (!createRes?.ok) {
+    if (createRes && !createRes.ok) await createRes.text().catch(() => "");
+    createRes = await fetch(createUrl, {
+      method: "POST",
+      body: createForm,
+      signal: controller.signal,
+      headers,
+    });
+  }
   if (createRes.status === 404 || createRes.status === 405) {
     await createRes.text();
     return null;
@@ -209,7 +245,7 @@ async function trySessionFlow(base, licence, liveScan, controller) {
         method: "POST",
         body: JSON.stringify({
           session_id: String(sid),
-          image: liveScanB64,
+          selfie_image_base64: liveScanB64,
         }),
         signal: controller.signal,
         headers: {
@@ -318,56 +354,74 @@ export async function verifyIdentityFaceMatch(licence, liveScan) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
   try {
-    const paths = buildCandidatePaths(base);
+    const runExternal = async () => {
+      const paths = buildCandidatePaths(base);
 
-    for (const p of paths) {
-      const url = p === "" || p === "/" ? base : `${base}${p}`;
-      const form = new FormData();
-      const licencePart = makeImagePart(licence.imageBuffer, licence.mimeType, licence.filename);
-      const liveScanPart = makeImagePart(liveScan.imageBuffer, liveScan.mimeType, liveScan.filename);
-      form.append("licence", licencePart, licence.filename);
-      // Keep multiple field names for broad backend compatibility.
-      form.append("liveScan", liveScanPart, liveScan.filename);
-      form.append("selfie", liveScanPart, liveScan.filename);
-      form.append("image", liveScanPart, liveScan.filename);
+      for (const p of paths) {
+        const url = p === "" || p === "/" ? base : `${base}${p}`;
+        const form = new FormData();
+        const licencePart = makeImagePart(licence.imageBuffer, licence.mimeType, licence.filename);
+        const liveScanPart = makeImagePart(liveScan.imageBuffer, liveScan.mimeType, liveScan.filename);
+        form.append("licence", licencePart, licence.filename);
+        // Keep multiple field names for broad backend compatibility.
+        form.append("liveScan", liveScanPart, liveScan.filename);
+        form.append("selfie", liveScanPart, liveScan.filename);
+        form.append("image", liveScanPart, liveScan.filename);
 
-      const res = await fetch(url, {
-        method: "POST",
-        body: form,
-        signal: controller.signal,
-        headers: buildFaceAuthHeaders(),
-      });
-      if (res.status === 404 || res.status === 405) {
-        await res.text();
-        continue;
+        const res = await fetch(url, {
+          method: "POST",
+          body: form,
+          signal: controller.signal,
+          headers: buildFaceAuthHeaders(),
+        });
+        if (res.status === 404 || res.status === 405) {
+          await res.text();
+          continue;
+        }
+        if (res.status === 401) {
+          const text401 = await res.text();
+          throw new Error(
+            `Face match returned 401 (authentication required). Configure AI_FACE_RECOGNITION_AUTHORIZATION or AI_FACE_RECOGNITION_BYPASS_TOKEN. ${text401.slice(0, 120)}`
+          );
+        }
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Face match returned ${res.status}: ${text.slice(0, 200)}`);
+        }
+        const data = await res.json();
+        return normalizeFaceMatchResult(data);
       }
-      if (res.status === 401) {
-        const text401 = await res.text();
+
+      if (USE_SESSION_FLOW_FALLBACK) {
+        const sessionFlowResult = await trySessionFlow(base, licence, liveScan, controller);
+        if (sessionFlowResult) return sessionFlowResult;
+      }
+
+      if (!USE_SESSION_FLOW_FALLBACK) {
         throw new Error(
-          `Face match returned 401 (authentication required). Configure AI_FACE_RECOGNITION_AUTHORIZATION or AI_FACE_RECOGNITION_BYPASS_TOKEN. ${text401.slice(0, 120)}`
+          `Face match endpoint not found on ${base} (tried: ${paths.join(
+            ", "
+          )}). Session flow fallback is disabled (no Upstash mode).`
         );
       }
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Face match returned ${res.status}: ${text.slice(0, 200)}`);
+      throw new Error(`Face match endpoint not found on ${base} (tried: ${paths.join(", ")})`);
+    };
+
+    try {
+      return await runExternal();
+    } catch (err) {
+      if (shouldTryRekognitionFallback(err)) {
+        const { compareLicenceSelfieWithRekognition, isRekognitionFaceCompareConfigured } =
+          await import("./rekognition-face-compare.js");
+        if (isRekognitionFaceCompareConfigured()) {
+          return await compareLicenceSelfieWithRekognition(licence.imageBuffer, liveScan.imageBuffer);
+        }
+        const hint =
+          "Tip: the hosted face session API is failing; set AWS_REGION + AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY (and optional AWS_REKOGNITION_MIN_SIMILARITY, default 80) to enable Amazon Rekognition CompareFaces fallback, or fix session-verify on your face service.";
+        throw new Error(`${err?.message || String(err)} ${hint}`);
       }
-      const data = await res.json();
-      return normalizeFaceMatchResult(data);
+      throw err;
     }
-
-    if (USE_SESSION_FLOW_FALLBACK) {
-      const sessionFlowResult = await trySessionFlow(base, licence, liveScan, controller);
-      if (sessionFlowResult) return sessionFlowResult;
-    }
-
-    if (!USE_SESSION_FLOW_FALLBACK) {
-      throw new Error(
-        `Face match endpoint not found on ${base} (tried: ${paths.join(
-          ", "
-        )}). Session flow fallback is disabled (no Upstash mode).`
-      );
-    }
-    throw new Error(`Face match endpoint not found on ${base} (tried: ${paths.join(", ")})`);
   } catch (err) {
     if (err?.name === "AbortError") {
       throw new Error("Identity verification timed out.");
