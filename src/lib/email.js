@@ -256,7 +256,8 @@ export async function sendMobileCaptureLinkEmail({ to, name, captureUrl, expires
 }
 
 export async function sendItpExpiryAdminEmail({ to, companyName, cars, reminderDays }) {
-  const safeCompany = escapeEmailText(companyName || "your company");
+  const hasCompanyName = Boolean(String(companyName || "").trim());
+  const safeCompany = escapeEmailText(hasCompanyName ? String(companyName).trim() : "your company");
   const rows = Array.isArray(cars) ? cars : [];
   const subject =
     rows.some((c) => typeof c?.daysUntil === "number" && c.daysUntil < 0)
@@ -291,7 +292,7 @@ export async function sendItpExpiryAdminEmail({ to, companyName, cars, reminderD
 
   const innerHtml = `
     <p style="margin:0 0 12px;font-size:18px;font-weight:700;color:#0f172a;">ITP reminder</p>
-    <p style="margin:0 0 16px;color:#334155;">Company: <strong style="color:#0f172a;">${safeCompany}</strong></p>
+    ${hasCompanyName ? `<p style="margin:0 0 16px;color:#334155;">Company: <strong style="color:#0f172a;">${safeCompany}</strong></p>` : ""}
     <p style="margin:0 0 12px;color:#334155;">Cars with ITP expiring within <strong>${escapeEmailText(String(reminderDays))}</strong> day(s):</p>
     <ul style="margin:0;padding-left:18px;color:#334155;">${listHtml || "<li>No cars found.</li>"}</ul>
   `.trim();
@@ -305,7 +306,8 @@ export async function sendItpExpiryAdminEmail({ to, companyName, cars, reminderD
 }
 
 export async function sendItpAutoBlockedAdminEmail({ to, companyName, cars }) {
-  const safeCompany = escapeEmailText(companyName || "your company");
+  const hasCompanyName = Boolean(String(companyName || "").trim());
+  const safeCompany = escapeEmailText(hasCompanyName ? String(companyName).trim() : "your company");
   const rows = Array.isArray(cars) ? cars : [];
   const subject = `ITP expired — cars blocked — ${safeCompany}`;
 
@@ -332,7 +334,7 @@ export async function sendItpAutoBlockedAdminEmail({ to, companyName, cars }) {
 
   const innerHtml = `
     <p style="margin:0 0 12px;font-size:18px;font-weight:700;color:#0f172a;">ITP expired — cars blocked</p>
-    <p style="margin:0 0 16px;color:#334155;">Company: <strong style="color:#0f172a;">${safeCompany}</strong></p>
+    ${hasCompanyName ? `<p style="margin:0 0 16px;color:#334155;">Company: <strong style="color:#0f172a;">${safeCompany}</strong></p>` : ""}
     <p style="margin:0 0 12px;color:#334155;">The following cars were automatically switched to <strong>IN_MAINTENANCE</strong> to prevent reservations:</p>
     <ul style="margin:0;padding-left:18px;color:#334155;">${listHtml || "<li>No cars found.</li>"}</ul>
   `.trim();
