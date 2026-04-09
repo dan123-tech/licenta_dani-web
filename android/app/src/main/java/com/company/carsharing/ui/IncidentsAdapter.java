@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.company.carsharing.R;
 import com.company.carsharing.models.IncidentReport;
+import com.company.carsharing.util.DateTimeUi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,8 @@ public class IncidentsAdapter extends RecyclerView.Adapter<IncidentsAdapter.VH> 
                 ? (safe(r.getCar().getBrand()) + " " + safe(r.getCar().getRegistrationNumber())).trim()
                 : safe(r.getCarId());
         String status = safe(r.getStatus());
-        String when = safe(r.getOccurredAt() != null ? r.getOccurredAt() : r.getCreatedAt());
+        String whenRaw = safe(r.getOccurredAt() != null ? r.getOccurredAt() : r.getCreatedAt());
+        String when = DateTimeUi.format(whenRaw);
         h.sub.setText((car.isEmpty() ? "—" : car) + " • " + (status.isEmpty() ? "SUBMITTED" : status) + " • " + (when.isEmpty() ? "—" : when));
     }
 

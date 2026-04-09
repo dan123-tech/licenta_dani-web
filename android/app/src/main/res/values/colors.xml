@@ -7,6 +7,7 @@
     <color name="brand_primary_dark">#1E40AF</color>
     <color name="brand_icon_fg">#BFDBFE</color>
     <color name="brand_share_accent">#38BDF8</color>
+    <color name="brand_orange">#F5A623</color>
 
     <!-- Sidebar (-sidebar-bg) -->
     <color name="sidebar_bg">#0C1220</color>

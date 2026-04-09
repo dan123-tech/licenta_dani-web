@@ -2,13 +2,16 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="@color/surface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:paddingBottom="28dp">
 
         <TextView
             android:layout_width="match_parent"
@@ -23,7 +26,10 @@
             android:layout_height="wrap_content"
             app:cardUseCompatPadding="true"
             app:cardCornerRadius="14dp"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="12dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"

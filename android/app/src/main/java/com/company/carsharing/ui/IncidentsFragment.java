@@ -48,12 +48,14 @@ public class IncidentsFragment extends Fragment {
     private final ActivityResultLauncher<String[]> pickFilesLauncher =
             registerForActivityResult(new ActivityResultContracts.OpenMultipleDocuments(), uris -> {
                 if (uris == null) return;
-                pickedFiles.clear();
-                pickedFiles.addAll(uris);
+                // Allow adding files in multiple sessions without losing previous selection.
+                for (Uri u : uris) {
+                    if (u != null && !pickedFiles.contains(u)) pickedFiles.add(u);
+                }
                 if (binding != null) {
-                    binding.incFilesLabel.setText(uris.isEmpty()
+                    binding.incFilesLabel.setText(pickedFiles.isEmpty()
                             ? getString(R.string.incidents_no_files)
-                            : getString(R.string.incidents_files_count, uris.size()));
+                            : getString(R.string.incidents_files_count, pickedFiles.size()));
                 }
             });
 
