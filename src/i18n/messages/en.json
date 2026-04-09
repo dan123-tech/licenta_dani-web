@@ -262,6 +262,7 @@
     "cars": { "title": "Manage cars", "sub": "Fleet overview" },
     "fleetCalendar": { "title": "Fleet calendar", "sub": "Cars vs time — see bookings and free slots" },
     "maintenance": { "title": "Maintenance log", "sub": "Service history per vehicle" },
+    "incidents": { "title": "Incidents", "sub": "Accidents, damage reports & attachments" },
     "verifyCode": { "title": "Verify pickup code", "sub": "Validate reservation pickup codes" },
     "users": { "title": "Manage users", "sub": "Roles and driving licences" },
     "invites": { "title": "Invites", "sub": "Pending and accepted invitations" },
@@ -277,7 +278,8 @@
     "userBookingCalendar": { "title": "Booking calendar", "sub": "Plan trips on a visual timeline" },
     "userAvailableCars": { "title": "Available cars", "sub": "Reserve a vehicle" },
     "userUnavailableCars": { "title": "Unavailable cars", "sub": "Reserved or in maintenance" },
-    "userHistory": { "title": "History", "sub": "Past reservations" }
+    "userHistory": { "title": "History", "sub": "Past reservations" },
+    "userIncidents": { "title": "Incidents", "sub": "Report damage and upload photos/documents" }
   },
   "stats": {
     "title": "Statistics & Reports",
