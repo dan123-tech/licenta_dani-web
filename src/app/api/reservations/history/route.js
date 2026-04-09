@@ -32,6 +32,8 @@ export async function GET(request) {
       code_valid_from: r.code_valid_from,
       release_code: r.release_code,
       releasedKmUsed: r.releasedKmUsed,
+      releasedOdometerStart: r.releasedOdometerStart ?? null,
+      releasedOdometerEnd: r.releasedOdometerEnd ?? null,
       releasedExceededReason: r.releasedExceededReason,
       releasedExceededStatus: r.releasedExceededStatus,
       releasedExceededAdminComment: r.releasedExceededAdminComment,

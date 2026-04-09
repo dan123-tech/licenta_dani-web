@@ -541,6 +541,46 @@ export async function apiReservationHistory() {
   return data;
 }
 
+/** Active reservation vehicle documents (RCA QR, expiries) for the driver. */
+export async function apiGloveboxActive() {
+  const res = await fetch("/api/glovebox/active", {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+    headers: { ...getWebTabSidHeaders() },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed to load glovebox");
+  return data;
+}
+
+/** Download Romanian journey sheet PDF for a completed reservation. */
+export async function downloadJourneySheetPdf(reservationId) {
+  const res = await fetch(`/api/reservations/${encodeURIComponent(reservationId)}/journey-sheet`, {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store",
+    headers: { ...getWebTabSidHeaders() },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data?.error === "string" ? data.error : "Failed to download journey sheet");
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `foaie-parcurs-${String(reservationId).slice(0, 8)}.pdf`;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /** Create a reservation. Omit startDate/endDate for instant (until released). Use ISO 8601 for startDate/endDate to book in advance. */
 export async function apiCreateReservation(carId, purpose, startDate, endDate) {
   const body = { carId, purpose: purpose || null };

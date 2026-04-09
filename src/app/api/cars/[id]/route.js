@@ -11,7 +11,7 @@ import { getSqlServerCarById, updateSqlServerCar, deleteSqlServerCar } from "@/l
 import { requireCompany, requireAdmin, jsonResponse, errorResponse, dataSourceNotConfiguredResponse } from "@/lib/api-helpers";
 import { writeAuditLog } from "@/lib/audit";
 import { getTenantPrisma } from "@/lib/tenant-db";
-import { sendItpExpiryAdminEmail } from "@/lib/email";
+import { sendItpExpiryAdminEmail, sendRcaExpiryAdminEmail } from "@/lib/email";
 
 const FUEL_TYPES = ["Benzine", "Diesel", "Electric", "Hybrid"];
 const YEAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -39,6 +39,22 @@ const patchSchema = z.object({
   itpExpiresAt: z.preprocess(
     (v) => (v === "" || v === undefined ? undefined : v === null ? null : String(v)),
     z.union([z.null(), z.string().datetime()]).optional(),
+  ),
+  rcaExpiresAt: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v === null ? null : String(v)),
+    z.union([z.null(), z.string().datetime()]).optional(),
+  ),
+  vignetteExpiresAt: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v === null ? null : String(v)),
+    z.union([z.null(), z.string().datetime()]).optional(),
+  ),
+  rcaDocumentUrl: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v === null ? null : String(v).trim()),
+    z.union([z.null(), z.string().max(4000)]).optional(),
+  ),
+  rcaDocumentContentType: z.preprocess(
+    (v) => (v === "" || v === undefined ? undefined : v === null ? null : String(v).trim()),
+    z.union([z.null(), z.string().max(120)]).optional(),
   ),
 });
 
@@ -89,6 +105,10 @@ export async function GET(_request, { params }) {
     lastServiceMileage: car.lastServiceMileage ?? null,
     lastServiceYearMonth: car.lastServiceYearMonth ?? null,
       itpExpiresAt: car.itpExpiresAt ?? null,
+      rcaExpiresAt: car.rcaExpiresAt ?? null,
+      rcaDocumentUrl: car.rcaDocumentUrl ?? null,
+      rcaDocumentContentType: car.rcaDocumentContentType ?? null,
+      vignetteExpiresAt: car.vignetteExpiresAt ?? null,
     ...(canSeeHistory && {
       reservations: car.reservations.map((r) => ({
         id: r.id,
@@ -112,6 +132,21 @@ export async function PATCH(request, { params }) {
     ...parsed.data,
     ...(parsed.data.itpExpiresAt !== undefined && {
       itpExpiresAt: parsed.data.itpExpiresAt == null ? null : new Date(parsed.data.itpExpiresAt),
+    }),
+    ...(parsed.data.rcaExpiresAt !== undefined && {
+      rcaExpiresAt: parsed.data.rcaExpiresAt == null ? null : new Date(parsed.data.rcaExpiresAt),
+    }),
+    ...(parsed.data.vignetteExpiresAt !== undefined && {
+      vignetteExpiresAt: parsed.data.vignetteExpiresAt == null ? null : new Date(parsed.data.vignetteExpiresAt),
+    }),
+    ...(parsed.data.rcaDocumentUrl !== undefined && {
+      rcaDocumentUrl: parsed.data.rcaDocumentUrl == null || parsed.data.rcaDocumentUrl === "" ? null : parsed.data.rcaDocumentUrl,
+    }),
+    ...(parsed.data.rcaDocumentContentType !== undefined && {
+      rcaDocumentContentType:
+        parsed.data.rcaDocumentContentType == null || parsed.data.rcaDocumentContentType === ""
+          ? null
+          : parsed.data.rcaDocumentContentType,
     }),
   };
 
@@ -194,6 +229,54 @@ export async function PATCH(request, { params }) {
     }
   } catch (e) {
     console.warn("[itp] immediate email threw", { companyId: out.session.companyId, carId: id, error: e?.message || String(e) });
+  }
+
+  try {
+    if (parsed.data.rcaExpiresAt !== undefined) {
+      const exp = car?.rcaExpiresAt ? new Date(car.rcaExpiresAt) : null;
+      if (exp && !Number.isNaN(exp.getTime())) {
+        const reminderDays = Math.max(0, parseInt(process.env.RCA_REMINDER_DAYS || process.env.ITP_REMINDER_DAYS || "30", 10) || 30);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const cutoff = new Date(today.getTime() + reminderDays * 24 * 60 * 60 * 1000);
+        if (exp.getTime() <= cutoff.getTime()) {
+          const tenant = await getTenantPrisma(out.session.companyId);
+          const admins = await tenant.companyMember.findMany({
+            where: { companyId: out.session.companyId, role: "ADMIN", status: "ENROLLED" },
+            include: { user: { select: { email: true } } },
+          });
+          const to = admins.map((m) => m.user?.email).filter(Boolean);
+          if (to.length) {
+            const expDay = new Date(exp);
+            expDay.setHours(0, 0, 0, 0);
+            const daysUntil = Math.ceil((expDay.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+            const sendRes = await sendRcaExpiryAdminEmail({
+              to,
+              companyName: out.company?.name || out.session.companyId,
+              cars: [
+                {
+                  carId: car.id,
+                  label: [car.brand, car.model, car.registrationNumber].filter(Boolean).join(" "),
+                  expiresAt: exp.toISOString(),
+                  daysUntil,
+                },
+              ],
+              reminderDays,
+            });
+            if (sendRes?.ok) {
+              await tenant.car.updateMany({
+                where: { id: car.id, companyId: out.session.companyId },
+                data: { rcaLastNotifiedAt: new Date() },
+              });
+            } else {
+              console.warn("[rca] immediate email not sent", { companyId: out.session.companyId, carId: car.id, error: sendRes?.error });
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[rca] immediate email threw", { companyId: out.session.companyId, carId: id, error: e?.message || String(e) });
   }
 
   const action = data.status && carBefore?.status !== data.status ? "CAR_STATUS_CHANGED" : "CAR_UPDATED";

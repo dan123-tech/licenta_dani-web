@@ -281,7 +281,8 @@
       "availableCars": "Mașini disponibile",
       "unavailableCars": "Mașini indisponibile",
       "myReservations": "Rezervările mele",
-      "bookingCalendar": "Calendar rezervări"
+      "bookingCalendar": "Calendar rezervări",
+      "glovebox": "Torpedou digital"
     },
     "joinCode": "Cod invitație:"
   },
@@ -309,7 +310,8 @@
     "userAvailableCars": { "title": "Mașini disponibile", "sub": "Rezervă un vehicul" },
     "userUnavailableCars": { "title": "Mașini indisponibile", "sub": "Rezervate sau în mentenanță" },
     "userHistory": { "title": "Istoric", "sub": "Rezervări anterioare" },
-    "userIncidents": { "title": "Incidente", "sub": "Raportează daune și încarcă poze/documente" }
+    "userIncidents": { "title": "Incidente", "sub": "Raportează daune și încarcă poze/documente" },
+    "userGlovebox": { "title": "Torpedou digital", "sub": "RCA, rovinietă și ITP pentru mașina curentă" }
   },
   "stats": {
     "title": "Statistici și rapoarte",

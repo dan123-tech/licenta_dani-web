@@ -18,6 +18,7 @@ import {
   Download,
   Filter,
   FileText,
+  Upload,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -257,6 +258,10 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [itpExpiresAt, setItpExpiresAt] = useState("");
   const [itpSaving, setItpSaving] = useState(false);
   const [itpNotice, setItpNotice] = useState(null);
+  const [rcaExpiresInput, setRcaExpiresInput] = useState("");
+  const [vignetteExpiresInput, setVignetteExpiresInput] = useState("");
+  const [gloveboxBusy, setGloveboxBusy] = useState(false);
+  const [gloveboxNotice, setGloveboxNotice] = useState(null);
   const [showItpForm, setShowItpForm] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [itpRowDraft, setItpRowDraft] = useState({});
@@ -358,6 +363,19 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
     const raw = car?.itpExpiresAt ? new Date(car.itpExpiresAt) : null;
     if (raw && !Number.isNaN(raw.getTime())) setItpExpiresAt(raw.toISOString().slice(0, 10));
     else setItpExpiresAt("");
+  }, [itpCarId, cars]);
+
+  useEffect(() => {
+    if (!itpCarId) {
+      setRcaExpiresInput("");
+      setVignetteExpiresInput("");
+      return;
+    }
+    const car = cars.find((c) => c.id === itpCarId);
+    const rca = car?.rcaExpiresAt ? new Date(car.rcaExpiresAt) : null;
+    setRcaExpiresInput(rca && !Number.isNaN(rca.getTime()) ? rca.toISOString().slice(0, 10) : "");
+    const vig = car?.vignetteExpiresAt ? new Date(car.vignetteExpiresAt) : null;
+    setVignetteExpiresInput(vig && !Number.isNaN(vig.getTime()) ? vig.toISOString().slice(0, 10) : "");
   }, [itpCarId, cars]);
 
   function formatDate(d) {
@@ -2804,6 +2822,159 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   </div>
                 )}
               </form>
+
+              <div className="border-t border-slate-100 mt-6 pt-5">
+                <h3 className="text-sm font-semibold text-slate-800 mb-1">Digital glovebox (RCA & vignette)</h3>
+                <p className="text-xs text-slate-500 mb-3">
+                  Uses the same vehicle as above. Drivers with an active booking open the RCA file in-app (PDF or image) and see dates here. Upload the RCA PDF or a scan/photo; set expiry dates for admin emails (cron:{" "}
+                  <code className="text-[11px]">/api/cron/rca-expiry-reminders</code>).
+                </p>
+                {process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL ? (
+                  <p className="text-xs text-slate-600 mb-3">
+                    Broker renewal link (optional):{" "}
+                    <a
+                      href={process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-sky-700 font-medium underline"
+                    >
+                      Open broker
+                    </a>
+                  </p>
+                ) : null}
+                <form
+                  className="grid gap-3 sm:grid-cols-3 mb-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!itpCarId) {
+                      setError("Select a car.");
+                      return;
+                    }
+                    setGloveboxBusy(true);
+                    setError("");
+                    setGloveboxNotice(null);
+                    try {
+                      const rcaIso =
+                        rcaExpiresInput && rcaExpiresInput.trim()
+                          ? new Date(`${rcaExpiresInput}T00:00:00`).toISOString()
+                          : null;
+                      const vigIso =
+                        vignetteExpiresInput && vignetteExpiresInput.trim()
+                          ? new Date(`${vignetteExpiresInput}T00:00:00`).toISOString()
+                          : null;
+                      await apiUpdateCar(itpCarId, {
+                        rcaExpiresAt: rcaIso,
+                        vignetteExpiresAt: vigIso,
+                      });
+                      await load();
+                      setGloveboxNotice({ type: "success", text: "RCA / vignette dates saved." });
+                    } catch (err) {
+                      setError(err.message || "Failed to save");
+                    } finally {
+                      setGloveboxBusy(false);
+                    }
+                  }}
+                >
+                  <label className="block text-xs font-medium text-slate-600">
+                    RCA (MTPL) expires
+                    <input
+                      type="date"
+                      value={rcaExpiresInput}
+                      onChange={(e) => setRcaExpiresInput(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Vignette expires
+                    <input
+                      type="date"
+                      value={vignetteExpiresInput}
+                      onChange={(e) => setVignetteExpiresInput(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    />
+                  </label>
+                  <div className="flex items-end">
+                    <button
+                      type="submit"
+                      disabled={gloveboxBusy || !itpCarId}
+                      className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[#1E293B] hover:bg-[#334155] disabled:opacity-50"
+                    >
+                      {gloveboxBusy ? "Saving…" : "Save dates"}
+                    </button>
+                  </div>
+                  {gloveboxNotice && (
+                    <div className="sm:col-span-3 text-xs text-emerald-700">{gloveboxNotice.text}</div>
+                  )}
+                </form>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-100">
+                    <Upload className="w-4 h-4 shrink-0" aria-hidden />
+                    Upload RCA (PDF or image)
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      disabled={!itpCarId || gloveboxBusy}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file || !itpCarId) return;
+                        setGloveboxBusy(true);
+                        setError("");
+                        setGloveboxNotice(null);
+                        try {
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          const res = await fetch(`/api/cars/${encodeURIComponent(itpCarId)}/rca-document`, {
+                            method: "POST",
+                            body: fd,
+                            credentials: "include",
+                            headers: typeof sessionStorage !== "undefined" ? (() => {
+                              try {
+                                const sid = sessionStorage.getItem("car_sharing_web_tab_sid");
+                                return sid ? { "X-Web-Session-Id": sid } : {};
+                              } catch {
+                                return {};
+                              }
+                            })() : {},
+                          });
+                          const data = await res.json().catch(() => ({}));
+                          if (!res.ok) throw new Error(data.error || "Upload failed");
+                          await load();
+                          setGloveboxNotice({ type: "success", text: "RCA file uploaded." });
+                        } catch (err) {
+                          setError(err.message || "Upload failed");
+                        } finally {
+                          setGloveboxBusy(false);
+                        }
+                      }}
+                    />
+                  </label>
+                  {itpCarId && cars.find((c) => c.id === itpCarId)?.rcaDocumentUrl ? (
+                    <button
+                      type="button"
+                      disabled={gloveboxBusy}
+                      onClick={async () => {
+                        if (!itpCarId) return;
+                        setGloveboxBusy(true);
+                        setError("");
+                        try {
+                          await apiUpdateCar(itpCarId, { rcaDocumentUrl: null });
+                          await load();
+                          setGloveboxNotice({ type: "success", text: "RCA file removed." });
+                        } catch (err) {
+                          setError(err.message || "Failed to remove");
+                        } finally {
+                          setGloveboxBusy(false);
+                        }
+                      }}
+                      className="px-3 py-2 rounded-lg text-sm font-semibold border border-red-200 text-red-800 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                    >
+                      Remove RCA file
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             </div>
             )}
 

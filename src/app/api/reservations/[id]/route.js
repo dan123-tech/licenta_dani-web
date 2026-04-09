@@ -70,6 +70,8 @@ export async function GET(_request, { params }) {
     code_valid_from: showCodes ? reservation.code_valid_from : undefined,
     release_code: showCodes ? reservation.release_code : undefined,
     releasedKmUsed: reservation.releasedKmUsed,
+    releasedOdometerStart: reservation.releasedOdometerStart ?? null,
+    releasedOdometerEnd: reservation.releasedOdometerEnd ?? null,
     releasedExceededReason: reservation.releasedExceededReason,
     releasedExceededStatus: reservation.releasedExceededStatus,
     releasedExceededAdminComment: reservation.releasedExceededAdminComment,
@@ -173,6 +175,8 @@ export async function PATCH(request, { params }) {
     }
     await completeReservation(id, {
       releasedKmUsed: kmUsed,
+      releasedOdometerStart: currentKm,
+      releasedOdometerEnd: newKm,
       ...(exceededReason && {
         releasedExceededReason: exceededReason,
         releasedExceededStatus: "PENDING_APPROVAL",

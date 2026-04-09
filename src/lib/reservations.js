@@ -290,6 +290,8 @@ export async function completeReservation(reservationId, data = {}) {
   const release_code = generateSixDigitCode();
   const update = { status: "COMPLETED", release_code };
   if (data.releasedKmUsed != null) update.releasedKmUsed = data.releasedKmUsed;
+  if (data.releasedOdometerStart != null) update.releasedOdometerStart = data.releasedOdometerStart;
+  if (data.releasedOdometerEnd != null) update.releasedOdometerEnd = data.releasedOdometerEnd;
   if (data.releasedExceededReason != null) update.releasedExceededReason = data.releasedExceededReason;
   if (data.releasedExceededStatus != null) update.releasedExceededStatus = data.releasedExceededStatus;
   return prisma.reservation.update({

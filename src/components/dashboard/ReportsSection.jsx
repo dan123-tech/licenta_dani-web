@@ -321,20 +321,6 @@ export default function ReportsSection({ cars = [], reservations = [], users = [
             </p>
           )}
         </div>
-
-        {/* ── Info card ── */}
-        <div className="flex items-start gap-2.5 p-4 bg-blue-50 border border-blue-100 rounded-xl text-sm text-slate-600">
-          <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-          <div>
-            <p className="font-semibold text-slate-700 mb-0.5">What&apos;s included in PDFs</p>
-            <ul className="list-disc list-inside space-y-0.5 text-xs text-slate-500">
-              <li>Company logo and branding</li>
-              <li>Page numbers and generation timestamp</li>
-              <li>Filterable data tables with full history</li>
-              <li>Cost and mileage summaries</li>
-            </ul>
-          </div>
-        </div>
       </div>
     </section>
   );

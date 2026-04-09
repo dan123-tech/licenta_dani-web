@@ -1,7 +1,24 @@
 "use client";
 
 import { useState, useEffect, Fragment, useMemo } from "react";
-import { LayoutGrid, IdCard, Car, Wrench, Calendar, History, CalendarDays, Shield, Info, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import {
+  LayoutGrid,
+  IdCard,
+  Car,
+  Wrench,
+  Calendar,
+  History,
+  CalendarDays,
+  Shield,
+  Info,
+  AlertTriangle,
+  FolderOpen,
+  FileDown,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
 import FleetBookingCalendar from "./FleetBookingCalendar";
@@ -26,6 +43,8 @@ import {
   apiUserCalendarFeedUrl,
   apiUserCalendarFeedRotate,
   apiUserCalendarFeedDisable,
+  apiGloveboxActive,
+  downloadJourneySheetPdf,
 } from "@/lib/api";
 import { useI18n } from "@/i18n/I18nProvider";
 import LanguageCurrencySwitcher from "@/components/LanguageCurrencySwitcher";
@@ -42,6 +61,7 @@ const USER_PAGE_META_KEYS = {
   unavailableCars: "userUnavailableCars",
   history: "userHistory",
   incidents: "userIncidents",
+  glovebox: "userGlovebox",
 };
 
 function formatDate(d) {
@@ -129,9 +149,15 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
   const [incidentTitle, setIncidentTitle] = useState("");
   const [incidentLocation, setIncidentLocation] = useState("");
   const [incidentDescription, setIncidentDescription] = useState("");
-  const [incidentFiles, setIncidentFiles] = useState([]);
   const [incidentSubmitting, setIncidentSubmitting] = useState(false);
-  const [incidentFilesInputKey, setIncidentFilesInputKey] = useState(0);
+  const [incidentStep, setIncidentStep] = useState(0);
+  const [incidentSceneFiles, setIncidentSceneFiles] = useState([]);
+  const [incidentOwnFiles, setIncidentOwnFiles] = useState([]);
+  const [incidentOtherFiles, setIncidentOtherFiles] = useState([]);
+  const [incidentPlateFiles, setIncidentPlateFiles] = useState([]);
+  const [glovebox, setGlovebox] = useState(null);
+  const [gloveboxLoading, setGloveboxLoading] = useState(false);
+  const [journeyPdfLoadingId, setJourneyPdfLoadingId] = useState(null);
   const dlStatus = user?.drivingLicenceStatus ?? null;
   const identityStatus = user?.identityStatus ?? null;
   const canReserve = dlStatus === "APPROVED";
@@ -174,6 +200,26 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
 
   useEffect(() => {
     if (section === "incidents") loadIncidents();
+  }, [section]);
+
+  useEffect(() => {
+    if (section !== "glovebox") return undefined;
+    let cancelled = false;
+    (async () => {
+      setGloveboxLoading(true);
+      setError("");
+      try {
+        const data = await apiGloveboxActive();
+        if (!cancelled) setGlovebox(data);
+      } catch (e) {
+        if (!cancelled) setError(e?.message || "Failed to load glovebox");
+      } finally {
+        if (!cancelled) setGloveboxLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [section]);
 
   useEffect(() => {
@@ -476,6 +522,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
           { id: "myReservations", label: t("nav.items.myReservations"), icon: <Calendar className={UICON.s} aria-hidden /> },
           { id: "bookingCalendar", label: t("nav.items.bookingCalendar"), icon: <CalendarDays className={UICON.s} aria-hidden /> },
           { id: "history", label: t("nav.items.history"), icon: <History className={UICON.s} aria-hidden /> },
+          { id: "glovebox", label: t("nav.items.glovebox"), icon: <FolderOpen className={UICON.s} aria-hidden /> },
           { id: "incidents", label: "Incidents", icon: <AlertTriangle className={UICON.s} aria-hidden /> },
         ],
       },
@@ -1233,6 +1280,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                     <th className="py-4 px-4 font-semibold text-slate-700">Status</th>
                     <th className="py-4 px-4 font-semibold text-slate-700 min-w-[10rem]">Start / end code</th>
                     <th className="py-4 px-4 font-semibold text-slate-700">Admin note</th>
+                    <th className="py-4 px-4 font-semibold text-slate-700 whitespace-nowrap">Journey sheet</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-800">
@@ -1267,10 +1315,35 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                           "—"
                         )}
                       </td>
+                      <td className="py-4 px-4">
+                        {(r.status || "").toLowerCase() === "completed" ? (
+                          <button
+                            type="button"
+                            disabled={journeyPdfLoadingId === r.id}
+                            onClick={async () => {
+                              setJourneyPdfLoadingId(r.id);
+                              setError("");
+                              try {
+                                await downloadJourneySheetPdf(r.id);
+                              } catch (e) {
+                                setError(e?.message || "Could not download PDF");
+                              } finally {
+                                setJourneyPdfLoadingId(null);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                          >
+                            <FileDown className="w-3.5 h-3.5" aria-hidden />
+                            {journeyPdfLoadingId === r.id ? "…" : "PDF"}
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 text-xs">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                   {history.length === 0 && !loading && (
-                    <tr><td colSpan={6} className="py-10 px-4 text-center text-slate-500">No history</td></tr>
+                    <tr><td colSpan={7} className="py-10 px-4 text-center text-slate-500">No history</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1278,188 +1351,325 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
           </section>
         )}
 
+        {section === "glovebox" && (
+          <section className="w-full min-w-0 space-y-4 max-w-2xl">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800">{t("nav.items.glovebox")}</h2>
+            <p className="text-sm text-slate-500">
+              With an active booking, open your RCA file (PDF or image) in full screen from here, and check ITP / RCA / vignette dates for roadside use.
+            </p>
+            {gloveboxLoading ? (
+              <p className="text-sm text-slate-500">{t("common.loading")}</p>
+            ) : !glovebox?.active ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm p-4">
+                You do not have an active reservation. Reserve a vehicle to see documents for that car here.
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 space-y-4">
+                <div>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Current vehicle</p>
+                  <p className="text-lg font-bold text-slate-900">{glovebox.car?.label || "—"}</p>
+                </div>
+                <ul className="text-sm text-slate-700 space-y-1">
+                  <li>
+                    <span className="text-slate-500">ITP: </span>
+                    {glovebox.car?.itpExpiresAt
+                      ? new Date(glovebox.car.itpExpiresAt).toLocaleDateString()
+                      : "—"}
+                  </li>
+                  <li>
+                    <span className="text-slate-500">RCA: </span>
+                    {glovebox.car?.rcaExpiresAt
+                      ? new Date(glovebox.car.rcaExpiresAt).toLocaleDateString()
+                      : "—"}
+                  </li>
+                  <li>
+                    <span className="text-slate-500">Rovinietă: </span>
+                    {glovebox.car?.vignetteExpiresAt
+                      ? new Date(glovebox.car.vignetteExpiresAt).toLocaleDateString()
+                      : "—"}
+                  </li>
+                </ul>
+                {glovebox.car?.rcaDocumentUrl ? (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 mb-2">RCA document</p>
+                    <Link
+                      href="/glovebox/rca"
+                      className="inline-flex items-center justify-center gap-2 w-full max-w-sm px-4 py-3 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm"
+                    >
+                      <FileText className="w-4 h-4 shrink-0" aria-hidden />
+                      Open RCA (PDF / image)
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No RCA file on file for this vehicle yet.</p>
+                )}
+                {glovebox.brokerRenewalUrl ? (
+                  <a
+                    href={glovebox.brokerRenewalUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex text-sm font-semibold text-sky-700 hover:underline"
+                  >
+                    Insurance renewal offers (broker) →
+                  </a>
+                ) : null}
+              </div>
+            )}
+          </section>
+        )}
+
         {section === "incidents" && (
           <section className="w-full min-w-0 space-y-6">
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 max-w-3xl">
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2">Report an incident</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2">I had an incident</h2>
               <p className="text-sm text-slate-500 mb-4">
-                If you had an accident, scratch, damage, or any issue, submit details here and upload photos/documents. Admins will be notified.
+                Step-by-step: add photos in the suggested order, then details. Admins are notified automatically. For a road collision, complete an amicable finding (constatare amiabilă) with the other driver when safe to do so, or follow police instructions.
               </p>
-              <form
-                className="grid gap-3 sm:grid-cols-2"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!incidentCarId || !incidentTitle.trim()) {
-                    setError("Select a car and enter a short title.");
-                    return;
-                  }
-                  setIncidentSubmitting(true);
-                  setError("");
-                  try {
-                    const form = new FormData();
-                    form.append("carId", incidentCarId);
-                    if (incidentOccurredAt) form.append("occurredAt", new Date(incidentOccurredAt).toISOString());
-                    form.append("severity", incidentSeverity);
-                    form.append("title", incidentTitle.trim());
-                    if (incidentLocation.trim()) form.append("location", incidentLocation.trim());
-                    if (incidentDescription.trim()) form.append("description", incidentDescription.trim());
-                    for (const f of incidentFiles || []) form.append("files", f);
-                    await apiIncidentCreate(form);
-                    setIncidentTitle("");
-                    setIncidentSeverity("C");
-                    setIncidentLocation("");
-                    setIncidentDescription("");
-                    setIncidentOccurredAt("");
-                    setIncidentFiles([]);
-                    setIncidentFilesInputKey((k) => k + 1);
-                    await loadIncidents();
-                  } catch (err) {
-                    setError(err.message || "Failed to submit incident");
-                  } finally {
-                    setIncidentSubmitting(false);
-                  }
-                }}
-              >
-                <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
-                  Vehicle
-                  <select
-                    value={incidentCarId}
-                    onChange={(e) => setIncidentCarId(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    required
+              <div className="flex flex-wrap gap-2 mb-6">
+                {[0, 1, 2, 3].map((i) => (
+                  <span
+                    key={i}
+                    className={`inline-flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold ${
+                      incidentStep === i ? "bg-[var(--primary)] text-white" : "bg-slate-100 text-slate-500"
+                    }`}
                   >
-                    <option value="">—</option>
-                    {cars.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.brand} {c.registrationNumber}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block text-xs font-medium text-slate-600">
-                  Date & time (optional)
-                  <input
-                    type="datetime-local"
-                    value={incidentOccurredAt}
-                    onChange={(e) => setIncidentOccurredAt(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                  />
-                </label>
-                <label className="block text-xs font-medium text-slate-600">
-                  Gravity
-                  <select
-                    value={incidentSeverity}
-                    onChange={(e) => setIncidentSeverity(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
-                  >
-                    <option value="A">A — Critical / High (car becomes unavailable)</option>
-                    <option value="B">B — Medium (repair needed, car may still be usable)</option>
-                    <option value="C">C — Low (minor issue / cosmetic)</option>
-                  </select>
-                </label>
-                <label className="block text-xs font-medium text-slate-600">
-                  Location (optional)
-                  <input
-                    type="text"
-                    value={incidentLocation}
-                    onChange={(e) => setIncidentLocation(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    placeholder="e.g. Parking lot, street"
-                  />
-                </label>
-                <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
-                  Title
-                  <input
-                    type="text"
-                    value={incidentTitle}
-                    onChange={(e) => setIncidentTitle(e.target.value)}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    placeholder="e.g. Scratch on rear bumper"
-                    required
-                  />
-                </label>
-                <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
-                  Description (optional)
-                  <textarea
-                    value={incidentDescription}
-                    onChange={(e) => setIncidentDescription(e.target.value)}
-                    rows={4}
-                    className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    placeholder="What happened? Any third-party info? Police report? Was anyone injured?"
-                  />
-                </label>
-                <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
-                  Photos / documents
-                  <div className="mt-1 flex flex-col gap-2">
-                    <label className="inline-flex items-center gap-2">
-                      <input
-                        key={incidentFilesInputKey}
-                        type="file"
-                        multiple
-                        className="hidden"
-                        accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files || []);
-                          // allow re-selecting same file later
-                          e.target.value = "";
-                          if (!files.length) return;
-                          setIncidentFiles((prev) => [...(prev || []), ...files]);
-                          setIncidentFilesInputKey((k) => k + 1);
-                        }}
-                      />
-                      <span className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 cursor-pointer">
-                        Add files
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        You can add more files multiple times (previous selections are kept).
-                      </span>
-                    </label>
+                    {i + 1}
+                  </span>
+                ))}
+              </div>
 
-                    {incidentFiles.length > 0 && (
-                      <div className="rounded-lg border border-slate-200 bg-white p-2">
-                        <p className="text-[11px] font-semibold text-slate-600 mb-1">
-                          Selected ({incidentFiles.length})
-                        </p>
-                        <ul className="space-y-1">
-                          {incidentFiles.map((f, idx) => (
-                            <li key={`${f.name}_${f.size}_${idx}`} className="flex items-center justify-between gap-2">
-                              <span className="text-xs text-slate-700 truncate">{f.name}</span>
+              {incidentStep === 0 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                    Vehicle
+                    <select
+                      value={incidentCarId}
+                      onChange={(e) => setIncidentCarId(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    >
+                      <option value="">—</option>
+                      {cars.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.brand} {c.registrationNumber}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                    Severity
+                    <select
+                      value={incidentSeverity}
+                      onChange={(e) => setIncidentSeverity(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
+                    >
+                      <option value="A">A — Critical / High (car becomes unavailable)</option>
+                      <option value="B">B — Medium</option>
+                      <option value="C">C — Low / cosmetic</option>
+                    </select>
+                  </label>
+                  <div className="sm:col-span-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!incidentCarId) {
+                          setError("Select the vehicle involved.");
+                          return;
+                        }
+                        setError("");
+                        setIncidentStep(1);
+                      }}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
+                    >
+                      Next <ChevronRight className="w-4 h-4" aria-hidden />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {incidentStep === 1 && (
+                <div className="space-y-4">
+                  <p className="text-sm text-slate-700">
+                    Add photos when it is safe. None are required, but scene + plates help a lot.
+                  </p>
+                  {[
+                    ["Scene / context", incidentSceneFiles, setIncidentSceneFiles, "image/*"],
+                    ["Your vehicle damage", incidentOwnFiles, setIncidentOwnFiles, "image/*"],
+                    ["Other vehicle (if any)", incidentOtherFiles, setIncidentOtherFiles, "image/*"],
+                    ["Licence plates", incidentPlateFiles, setIncidentPlateFiles, "image/*"],
+                  ].map(([label, files, setFiles, accept]) => (
+                    <div key={label} className="rounded-lg border border-slate-200 p-3">
+                      <p className="text-xs font-semibold text-slate-700 mb-2">{label}</p>
+                      <label className="inline-flex items-center gap-2 text-xs text-sky-700 font-medium cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          accept={accept}
+                          className="hidden"
+                          onChange={(e) => {
+                            const picked = Array.from(e.target.files || []);
+                            e.target.value = "";
+                            if (picked.length) setFiles((prev) => [...prev, ...picked]);
+                          }}
+                        />
+                        + Add photos
+                      </label>
+                      {files.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {files.map((f, idx) => (
+                            <li key={`${label}_${f.name}_${idx}`} className="flex justify-between gap-2 text-xs text-slate-600">
+                              <span className="truncate">{f.name}</span>
                               <button
                                 type="button"
-                                onClick={() => setIncidentFiles((prev) => prev.filter((_, i) => i !== idx))}
-                                className="px-2 py-1 rounded-md text-[11px] font-semibold border border-slate-200 bg-slate-50 hover:bg-slate-100"
+                                className="shrink-0 text-red-600 font-medium"
+                                onClick={() => setFiles((prev) => prev.filter((_, i) => i !== idx))}
                               >
                                 Remove
                               </button>
                             </li>
                           ))}
                         </ul>
-                        <div className="mt-2">
-                          <button
-                            type="button"
-                            onClick={() => setIncidentFiles([])}
-                            className="px-2.5 py-1.5 rounded-md text-[11px] font-semibold border border-slate-200 bg-white hover:bg-slate-50"
-                          >
-                            Clear all
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  ))}
+                  <div className="flex justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setIncidentStep(0)}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-800"
+                    >
+                      <ChevronLeft className="w-4 h-4" aria-hidden /> Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIncidentStep(2)}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
+                    >
+                      Next <ChevronRight className="w-4 h-4" aria-hidden />
+                    </button>
                   </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    Suggested: car damage photos, licence plate photos, insurance docs, police report PDF.
-                  </p>
-                </label>
-                <div className="sm:col-span-2">
-                  <button
-                    type="submit"
-                    disabled={incidentSubmitting}
-                    className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
-                  >
-                    {incidentSubmitting ? "Submitting…" : "Submit incident"}
-                  </button>
                 </div>
-              </form>
+              )}
+
+              {incidentStep === 2 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-slate-600">
+                    When (optional)
+                    <input
+                      type="datetime-local"
+                      value={incidentOccurredAt}
+                      onChange={(e) => setIncidentOccurredAt(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                    Location (optional)
+                    <input
+                      type="text"
+                      value={incidentLocation}
+                      onChange={(e) => setIncidentLocation(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      placeholder="Address, landmark, parking…"
+                    />
+                  </label>
+                  <div className="sm:col-span-2 flex justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setIncidentStep(1)}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-800"
+                    >
+                      <ChevronLeft className="w-4 h-4" aria-hidden /> Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIncidentStep(3)}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)]"
+                    >
+                      Next <ChevronRight className="w-4 h-4" aria-hidden />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {incidentStep === 3 && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                    Short title
+                    <input
+                      type="text"
+                      value={incidentTitle}
+                      onChange={(e) => setIncidentTitle(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      placeholder="e.g. Rear bumper scratch in parking"
+                    />
+                  </label>
+                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                    What happened? (optional)
+                    <textarea
+                      value={incidentDescription}
+                      onChange={(e) => setIncidentDescription(e.target.value)}
+                      rows={4}
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      placeholder="Other party, injuries, police, towing…"
+                    />
+                  </label>
+                  <div className="sm:col-span-2 rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
+                    <strong className="text-slate-800">Amicable finding:</strong> in Romania, minor crashes are often documented with a constatare amiabilă agreed with the other driver. If anyone is hurt, traffic is blocked, or you are unsure, call emergency services and follow their instructions.
+                  </div>
+                  <div className="sm:col-span-2 flex justify-between flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIncidentStep(2)}
+                      className="inline-flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 text-slate-800"
+                    >
+                      <ChevronLeft className="w-4 h-4" aria-hidden /> Back
+                    </button>
+                    <button
+                      type="button"
+                      disabled={incidentSubmitting}
+                      onClick={async () => {
+                        if (!incidentCarId || !incidentTitle.trim()) {
+                          setError("Select a vehicle and enter a short title.");
+                          return;
+                        }
+                        setIncidentSubmitting(true);
+                        setError("");
+                        try {
+                          const form = new FormData();
+                          form.append("carId", incidentCarId);
+                          if (incidentOccurredAt) form.append("occurredAt", new Date(incidentOccurredAt).toISOString());
+                          form.append("severity", incidentSeverity);
+                          form.append("title", incidentTitle.trim());
+                          if (incidentLocation.trim()) form.append("location", incidentLocation.trim());
+                          if (incidentDescription.trim()) form.append("description", incidentDescription.trim());
+                          for (const f of incidentSceneFiles) form.append("file_scene", f);
+                          for (const f of incidentOwnFiles) form.append("file_own", f);
+                          for (const f of incidentOtherFiles) form.append("file_other", f);
+                          for (const f of incidentPlateFiles) form.append("file_plate", f);
+                          await apiIncidentCreate(form);
+                          setIncidentStep(0);
+                          setIncidentTitle("");
+                          setIncidentSeverity("C");
+                          setIncidentLocation("");
+                          setIncidentDescription("");
+                          setIncidentOccurredAt("");
+                          setIncidentSceneFiles([]);
+                          setIncidentOwnFiles([]);
+                          setIncidentOtherFiles([]);
+                          setIncidentPlateFiles([]);
+                          await loadIncidents();
+                        } catch (err) {
+                          setError(err.message || "Failed to submit incident");
+                        } finally {
+                          setIncidentSubmitting(false);
+                        }
+                      }}
+                      className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] disabled:opacity-50"
+                    >
+                      {incidentSubmitting ? "Submitting…" : "Submit report"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6">

@@ -281,7 +281,8 @@
       "availableCars": "Available cars",
       "unavailableCars": "Unavailable cars",
       "myReservations": "My reservations",
-      "bookingCalendar": "Booking calendar"
+      "bookingCalendar": "Booking calendar",
+      "glovebox": "Digital glovebox"
     },
     "joinCode": "Join code:"
   },
@@ -309,7 +310,8 @@
     "userAvailableCars": { "title": "Available cars", "sub": "Reserve a vehicle" },
     "userUnavailableCars": { "title": "Unavailable cars", "sub": "Reserved or in maintenance" },
     "userHistory": { "title": "History", "sub": "Past reservations" },
-    "userIncidents": { "title": "Incidents", "sub": "Report damage and upload photos/documents" }
+    "userIncidents": { "title": "Incidents", "sub": "Report damage and upload photos/documents" },
+    "userGlovebox": { "title": "Digital glovebox", "sub": "RCA QR and expiry dates for your current vehicle" }
   },
   "stats": {
     "title": "Statistics & Reports",

@@ -251,6 +251,11 @@ model Car {
   lastServiceYearMonth       String?    @db.VarChar(7) // "YYYY-MM" when last service was done (optional)
   itpExpiresAt               DateTime?
   itpLastNotifiedAt          DateTime?
+  rcaExpiresAt               DateTime?
+  rcaDocumentUrl             String?    @db.Text
+  rcaDocumentContentType     String?    @db.VarChar(120)
+  rcaLastNotifiedAt          DateTime?
+  vignetteExpiresAt          DateTime?
   createdAt                  DateTime   @default(now())
   updatedAt                  DateTime   @updatedAt
 
@@ -347,6 +352,8 @@ model Reservation {
   code_valid_from         DateTime?            // when set (e.g. admin refresh), 30-min pickup window starts here
   release_code            String?              // 6-digit code for release verification
   releasedKmUsed             Int?                 // km driven when released
+  releasedOdometerStart      Int?                 // odometer (km) before trip end / at handover (RO journey sheet)
+  releasedOdometerEnd        Int?                 // odometer (km) when vehicle returned
   releasedExceededReason      String?              // reason when km exceeded company default
   releasedExceededStatus      ExceededApprovalStatus? // PENDING_APPROVAL | APPROVED | REJECTED
   releasedExceededAdminComment String?             // admin observations (visible to user)

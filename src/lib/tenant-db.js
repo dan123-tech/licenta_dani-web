@@ -255,6 +255,11 @@ CREATE TABLE IF NOT EXISTS "Car" (
   "lastServiceYearMonth" VARCHAR(7),
   "itpExpiresAt" TIMESTAMP(3),
   "itpLastNotifiedAt" TIMESTAMP(3),
+  "rcaExpiresAt" TIMESTAMP(3),
+  "rcaDocumentUrl" TEXT,
+  "rcaDocumentContentType" VARCHAR(120),
+  "rcaLastNotifiedAt" TIMESTAMP(3),
+  "vignetteExpiresAt" TIMESTAMP(3),
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "Car_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -287,6 +292,8 @@ CREATE TABLE IF NOT EXISTS "Reservation" (
   "code_valid_from" TIMESTAMP(3),
   "release_code" TEXT,
   "releasedKmUsed" INTEGER,
+  "releasedOdometerStart" INTEGER,
+  "releasedOdometerEnd" INTEGER,
   "releasedExceededReason" TEXT,
   "releasedExceededStatus" "ExceededApprovalStatus",
   "releasedExceededAdminComment" TEXT,
@@ -380,6 +387,13 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "activeWebSessionToken" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "activeMobileSessionToken" TEXT;
 ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "itpExpiresAt" TIMESTAMP(3);
 ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "itpLastNotifiedAt" TIMESTAMP(3);
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaExpiresAt" TIMESTAMP(3);
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaDocumentUrl" TEXT;
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaDocumentContentType" VARCHAR(120);
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaLastNotifiedAt" TIMESTAMP(3);
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "vignetteExpiresAt" TIMESTAMP(3);
+ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "releasedOdometerStart" INTEGER;
+ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "releasedOdometerEnd" INTEGER;
 ALTER TABLE "IncidentReport" ADD COLUMN IF NOT EXISTS "severity" VARCHAR(1) NOT NULL DEFAULT 'C';
 
 CREATE TABLE IF NOT EXISTS "MobileCaptureSession" (

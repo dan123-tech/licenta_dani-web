@@ -96,6 +96,7 @@ model User {
   companyMembers CompanyMember[]
   mobileCaptureSessions MobileCaptureSession[]
   auditLogs AuditLog[]
+  incidentReports IncidentReport[]
 }
 
 model Company {
@@ -120,6 +121,7 @@ model Company {
   invites Invite[]
   cars Car[]
   maintenanceEvents MaintenanceEvent[]
+  incidentReports IncidentReport[]
 }
 
 model CompanyMember {
@@ -187,6 +189,11 @@ model Car {
   lastServiceYearMonth       String?    @db.VarChar(7)
   itpExpiresAt               DateTime?
   itpLastNotifiedAt          DateTime?
+  rcaExpiresAt               DateTime?
+  rcaDocumentUrl             String?    @db.Text
+  rcaDocumentContentType     String?    @db.VarChar(120)
+  rcaLastNotifiedAt          DateTime?
+  vignetteExpiresAt          DateTime?
   createdAt                  DateTime   @default(now())
   updatedAt                  DateTime   @updatedAt
 
@@ -224,6 +231,8 @@ model Reservation {
   code_valid_from             DateTime?
   release_code                String?
   releasedKmUsed              Int?
+  releasedOdometerStart       Int?
+  releasedOdometerEnd         Int?
   releasedExceededReason      String?
   releasedExceededStatus      ExceededApprovalStatus?
   releasedExceededAdminComment String?
@@ -235,6 +244,7 @@ model Reservation {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   car  Car  @relation(fields: [carId], references: [id], onDelete: Cascade)
+  incidentReports IncidentReport[]
 }
 
 model IncidentReport {
@@ -244,6 +254,7 @@ model IncidentReport {
   userId      String
   reservationId String?
   occurredAt  DateTime
+  severity    String   @default("C") @db.VarChar(1)
   title       String   @db.VarChar(140)
   description String?  @db.Text
   location    String?  @db.VarChar(200)

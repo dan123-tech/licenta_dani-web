@@ -179,6 +179,20 @@ export async function updateCar(carId, companyId, data) {
       itpExpiresAt: data.itpExpiresAt,
       itpLastNotifiedAt: null, // reset reminders when expiry changes
     }),
+    ...(data.rcaExpiresAt !== undefined && {
+      rcaExpiresAt: data.rcaExpiresAt,
+      rcaLastNotifiedAt: null,
+    }),
+    ...(data.vignetteExpiresAt !== undefined && {
+      vignetteExpiresAt: data.vignetteExpiresAt,
+    }),
+    ...(data.rcaDocumentUrl !== undefined && {
+      rcaDocumentUrl: data.rcaDocumentUrl,
+      ...(data.rcaDocumentUrl == null ? { rcaDocumentContentType: null } : {}),
+    }),
+    ...(data.rcaDocumentContentType !== undefined && {
+      rcaDocumentContentType: data.rcaDocumentContentType,
+    }),
   };
   return prisma.car.updateMany({
     where: { id: carId, companyId },

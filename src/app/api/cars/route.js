@@ -107,6 +107,10 @@ export async function GET(request) {
         lastServiceMileage: c.lastServiceMileage ?? null,
         lastServiceYearMonth: c.lastServiceYearMonth ?? null,
         itpExpiresAt: c.itpExpiresAt ?? null,
+        rcaExpiresAt: c.rcaExpiresAt ?? null,
+        rcaDocumentUrl: c.rcaDocumentUrl ?? null,
+        rcaDocumentContentType: c.rcaDocumentContentType ?? null,
+        vignetteExpiresAt: c.vignetteExpiresAt ?? null,
         _count: c._count,
       }))
     );

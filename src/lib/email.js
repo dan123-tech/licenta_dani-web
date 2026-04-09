@@ -305,6 +305,56 @@ export async function sendItpExpiryAdminEmail({ to, companyName, cars, reminderD
   return sendEmail({ to, subject, html, text: textLines.join("\n") });
 }
 
+/** RCA (MTPL) expiry reminder — same shape as ITP email payload. */
+export async function sendRcaExpiryAdminEmail({ to, companyName, cars, reminderDays }) {
+  const hasCompanyName = Boolean(String(companyName || "").trim());
+  const safeCompany = escapeEmailText(hasCompanyName ? String(companyName).trim() : "your company");
+  const rows = Array.isArray(cars) ? cars : [];
+  const subject = rows.some((c) => typeof c?.daysUntil === "number" && c.daysUntil < 0)
+    ? `RCA expirat — ${safeCompany}`
+    : `RCA expiră curând — ${safeCompany}`;
+
+  const textLines = [
+    `RCA (asigurare auto) — ${companyName || "company"}`,
+    "",
+    `Vehicule cu RCA în următoarele ${Number(reminderDays) || 0} zile:`,
+    "",
+    ...rows.map((c) => {
+      const label = c?.label || c?.carId || "Car";
+      const exp = c?.expiresAt ? new Date(c.expiresAt).toLocaleDateString("ro-RO") : "—";
+      const d = typeof c?.daysUntil === "number" ? c.daysUntil : null;
+      const suffix = d == null ? "" : d < 0 ? ` (expirat acum ${Math.abs(d)} zile)` : ` (${d} zile rămase)`;
+      return `- ${label}: ${exp}${suffix}`;
+    }),
+    "",
+    brandedTextFooter(),
+  ];
+
+  const listHtml = rows
+    .map((c) => {
+      const label = escapeEmailText(c?.label || c?.carId || "Car");
+      const exp = c?.expiresAt ? escapeEmailText(new Date(c.expiresAt).toLocaleDateString("ro-RO")) : "—";
+      const d = typeof c?.daysUntil === "number" ? c.daysUntil : null;
+      const suffix = d == null ? "" : d < 0 ? ` (expirat ${Math.abs(d)} zile)` : ` (${d} zile)`;
+      return `<li style="margin:0 0 8px;"><strong style="color:#0f172a;">${label}</strong>: ${exp}${escapeEmailText(suffix)}</li>`;
+    })
+    .join("");
+
+  const innerHtml = `
+    <p style="margin:0 0 12px;font-size:18px;font-weight:700;color:#0f172a;">Reminder RCA (MTPL)</p>
+    ${hasCompanyName ? `<p style="margin:0 0 16px;color:#334155;">Companie: <strong style="color:#0f172a;">${safeCompany}</strong></p>` : ""}
+    <p style="margin:0 0 12px;color:#334155;">Vehicule cu RCA care expiră în următoarele <strong>${escapeEmailText(String(reminderDays))}</strong> zile:</p>
+    <ul style="margin:0;padding-left:18px;color:#334155;">${listHtml || "<li>Niciun vehicul.</li>"}</ul>
+  `.trim();
+
+  const html = wrapBrandedEmailHtml({
+    innerHtml,
+    preheader: `Reminder RCA pentru ${companyName || "companie"}.`,
+  });
+
+  return sendEmail({ to, subject, html, text: textLines.join("\n") });
+}
+
 export async function sendItpAutoBlockedAdminEmail({ to, companyName, cars }) {
   const hasCompanyName = Boolean(String(companyName || "").trim());
   const safeCompany = escapeEmailText(hasCompanyName ? String(companyName).trim() : "your company");
