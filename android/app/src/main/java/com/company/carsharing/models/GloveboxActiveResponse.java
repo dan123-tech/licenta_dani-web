@@ -59,6 +59,12 @@ public class GloveboxActiveResponse {
         @SerializedName("vignetteExpiresAt")
         private String vignetteExpiresAt;
 
+        @SerializedName("vignetteDocumentUrl")
+        private String vignetteDocumentUrl;
+
+        @SerializedName("vignetteDocumentContentType")
+        private String vignetteDocumentContentType;
+
         public String getId() {
             return id;
         }
@@ -93,6 +99,14 @@ public class GloveboxActiveResponse {
 
         public String getVignetteExpiresAt() {
             return vignetteExpiresAt;
+        }
+
+        public String getVignetteDocumentUrl() {
+            return vignetteDocumentUrl;
+        }
+
+        public String getVignetteDocumentContentType() {
+            return vignetteDocumentContentType;
         }
     }
 }

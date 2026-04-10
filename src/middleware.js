@@ -47,7 +47,9 @@ export function middleware(request) {
   if (process.env.NODE_ENV !== "production") return res;
 
   /** Same-origin iframe (e.g. /glovebox/rca) must be allowed to embed this PDF/image stream. */
-  const isGloveboxDocumentRoute = /^\/api\/cars\/[^/]+\/glovebox-document$/.test(pathname);
+  const isGloveboxDocumentRoute =
+    /^\/api\/cars\/[^/]+\/glovebox-document$/.test(pathname) ||
+    /^\/api\/cars\/[^/]+\/vignette-document$/.test(pathname);
 
   const cspBase = [
     "default-src 'self'",

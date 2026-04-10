@@ -1420,6 +1420,20 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                 ) : (
                   <p className="text-sm text-slate-500">No RCA document uploaded for this vehicle.</p>
                 )}
+                {glovebox.car?.vignetteDocumentUrl ? (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-600 mb-2">Rovinietă / vignette</p>
+                    <Link
+                      href="/glovebox/vignette"
+                      className="inline-flex items-center justify-center gap-2 w-full max-w-sm px-4 py-3 rounded-xl text-sm font-semibold text-white bg-[#1E293B] hover:bg-[#334155] shadow-sm"
+                    >
+                      <FileText className="w-4 h-4 shrink-0" aria-hidden />
+                      View vignette document
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No vignette document uploaded for this vehicle.</p>
+                )}
                 {glovebox.brokerRenewalUrl ? (
                   <a
                     href={glovebox.brokerRenewalUrl}

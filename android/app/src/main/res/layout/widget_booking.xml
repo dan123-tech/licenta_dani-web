@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_booking_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_booking_bg"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_booking_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/on_surface"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:text="@string/widget_idle_title" />
+
+    <TextView
+        android:id="@+id/widget_booking_subtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/on_surface"
+        android:textSize="13sp"
+        android:alpha="0.85"
+        android:text="@string/widget_idle_subtitle" />
+</LinearLayout>

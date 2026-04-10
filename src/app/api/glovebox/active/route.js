@@ -3,7 +3,7 @@
  */
 import { requireCompany, jsonResponse } from "@/lib/api-helpers";
 import { getTenantPrisma } from "@/lib/tenant-db";
-import { rcaDocumentUrlForClient } from "@/lib/glovebox-ref";
+import { rcaDocumentUrlForClient, vignetteDocumentUrlForClient } from "@/lib/glovebox-ref";
 
 export async function GET() {
   const out = await requireCompany();
@@ -30,6 +30,8 @@ export async function GET() {
           rcaDocumentUrl: true,
           rcaDocumentContentType: true,
           vignetteExpiresAt: true,
+          vignetteDocumentUrl: true,
+          vignetteDocumentContentType: true,
         },
       },
     },
@@ -53,6 +55,8 @@ export async function GET() {
       rcaDocumentUrl: rcaDocumentUrlForClient(c.id, c.rcaDocumentUrl),
       rcaDocumentContentType: c.rcaDocumentContentType ?? null,
       vignetteExpiresAt: c.vignetteExpiresAt,
+      vignetteDocumentUrl: vignetteDocumentUrlForClient(c.id, c.vignetteDocumentUrl),
+      vignetteDocumentContentType: c.vignetteDocumentContentType ?? null,
     },
     brokerRenewalUrl: process.env.NEXT_PUBLIC_INSURANCE_BROKER_URL?.trim() || null,
   });

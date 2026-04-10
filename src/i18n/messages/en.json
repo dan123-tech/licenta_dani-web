@@ -242,6 +242,7 @@
     "colRcaExpiry": "RCA expiry",
     "colVignetteExpiry": "Vignette",
     "colRcaFile": "RCA file",
+    "colVignetteFile": "Vignette file",
     "colGlovebox": "Glovebox",
     "rcaFileYes": "Uploaded",
     "rcaFileNo": "None",
@@ -291,7 +292,8 @@
       "unavailableCars": "Unavailable cars",
       "myReservations": "My reservations",
       "bookingCalendar": "Booking calendar",
-      "glovebox": "Digital glovebox"
+      "glovebox": "Digital glovebox",
+      "complianceAlerts": "Compliance alerts"
     },
     "joinCode": "Join code:"
   },
@@ -311,6 +313,7 @@
     "aiVerification": { "title": "AI verification", "sub": "Driving licence checks" },
     "databaseSettings": { "title": "Database settings", "sub": "External data sources" },
     "auditLogs": { "title": "Audit logs", "sub": "Immutable record of all important actions" },
+    "complianceAlerts": { "title": "Compliance alerts", "sub": "ITP, RCA, and vignette expiring within N days — schedule cron jobs for admin emails" },
     "userDashboard": { "title": "Dashboard", "sub": "Your fleet activity at a glance" },
     "userDrivingLicence": { "title": "Driving licence", "sub": "Upload and validation status" },
     "userSecurity": { "title": "Security", "sub": "Email sign-in code after password" },

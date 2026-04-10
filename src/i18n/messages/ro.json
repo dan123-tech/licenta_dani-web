@@ -242,6 +242,7 @@
     "colRcaExpiry": "Expirare RCA",
     "colVignetteExpiry": "Rovinietă",
     "colRcaFile": "Fișier RCA",
+    "colVignetteFile": "Fișier rovinietă",
     "colGlovebox": "Torpedou",
     "rcaFileYes": "Încărcat",
     "rcaFileNo": "Lipsește",
@@ -291,7 +292,8 @@
       "unavailableCars": "Mașini indisponibile",
       "myReservations": "Rezervările mele",
       "bookingCalendar": "Calendar rezervări",
-      "glovebox": "Torpedou digital"
+      "glovebox": "Torpedou digital",
+      "complianceAlerts": "Alerte conformitate"
     },
     "joinCode": "Cod invitație:"
   },
@@ -311,6 +313,7 @@
     "aiVerification": { "title": "Verificare AI", "sub": "Verificări permis de conducere" },
     "databaseSettings": { "title": "Setări bază de date", "sub": "Surse externe de date" },
     "auditLogs": { "title": "Jurnal audit", "sub": "Înregistrare imuabilă a acțiunilor importante" },
+    "complianceAlerts": { "title": "Alerte conformitate", "sub": "ITP, RCA și rovinietă care expiră în N zile — programează cron pentru e-mailuri admin" },
     "userDashboard": { "title": "Panou", "sub": "Activitatea flotei tale pe scurt" },
     "userDrivingLicence": { "title": "Permis de conducere", "sub": "Încărcare și stare validare" },
     "userSecurity": { "title": "Securitate", "sub": "Cod prin e-mail după parolă" },

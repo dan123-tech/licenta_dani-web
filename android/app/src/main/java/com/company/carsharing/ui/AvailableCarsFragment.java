@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import com.company.carsharing.R;
+import com.company.carsharing.data.OfflineReadCache;
 import com.company.carsharing.data.SessionHolder;
 import com.company.carsharing.data.repository.AuthRepository;
 import com.company.carsharing.databinding.FragmentAvailableCarsBinding;
@@ -43,6 +44,7 @@ public class AvailableCarsFragment extends Fragment {
             public void onResponse(Call<List<Car>> call, Response<List<Car>> response) {
                 if (binding == null) return;
                 if (response.isSuccessful() && response.body() != null) {
+                    OfflineReadCache.saveAvailableCars(requireContext(), response.body());
                     adapter.setCars(response.body());
                     boolean empty = response.body().isEmpty();
                     binding.availableCarsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
@@ -56,6 +58,14 @@ public class AvailableCarsFragment extends Fragment {
             @Override
             public void onFailure(Call<List<Car>> call, Throwable t) {
                 if (binding == null || getActivity() == null) return;
+                List<Car> cached = OfflineReadCache.loadAvailableCars(requireContext());
+                if (!cached.isEmpty()) {
+                    adapter.setCars(cached);
+                    binding.availableCarsEmpty.setVisibility(View.GONE);
+                    binding.availableCarsList.setVisibility(View.VISIBLE);
+                    Toast.makeText(requireContext(), getString(R.string.offline_showing_cached), Toast.LENGTH_LONG).show();
+                    return;
+                }
                 binding.availableCarsEmpty.setText(getString(R.string.network_error_fmt,
                         t.getMessage() != null ? t.getMessage() : getString(R.string.check_connection)));
                 binding.availableCarsEmpty.setVisibility(View.VISIBLE);

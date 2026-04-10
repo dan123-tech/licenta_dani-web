@@ -21,6 +21,7 @@ import {
   Upload,
   FolderOpen,
   FileDown,
+  Bell,
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -56,6 +57,7 @@ import {
   apiIncidentsList,
   apiIncidentAdminUpdate,
   downloadJourneySheetPdf,
+  apiComplianceAlertsGet,
 } from "@/lib/api";
 import DataSourceNotConfiguredEmptyState from "./DataSourceNotConfiguredEmptyState";
 import AuditLogsSection from "./AuditLogsSection";
@@ -80,6 +82,7 @@ const ADMIN_PAGE_META_KEYS = {
   auditLogs: "auditLogs",
   maintenance: "maintenance",
   incidents: "incidents",
+  complianceAlerts: "complianceAlerts",
 };
 
 function needsService(car) {
@@ -291,6 +294,10 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [incidentFilterTo, setIncidentFilterTo] = useState("");
   const [incidentFilterText, setIncidentFilterText] = useState("");
   const [incidentFilterSeverity, setIncidentFilterSeverity] = useState("");
+  const [complianceAlertsLoading, setComplianceAlertsLoading] = useState(false);
+  const [complianceAlertsData, setComplianceAlertsData] = useState(null);
+  const [complianceAlertsError, setComplianceAlertsError] = useState("");
+  const [complianceWindowDays, setComplianceWindowDays] = useState(30);
 
   async function loadMaintenance() {
     setMaintenanceLoading(true);
@@ -360,7 +367,18 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
         .catch((e) => setError(e instanceof Error ? e.message : "Failed to load incidents"))
         .finally(() => setIncidentsLoading(false));
     }
-  }, [section]);
+    if (section === "complianceAlerts") {
+      setComplianceAlertsLoading(true);
+      setComplianceAlertsError("");
+      apiComplianceAlertsGet(complianceWindowDays)
+        .then((d) => setComplianceAlertsData(d))
+        .catch((e) => {
+          setComplianceAlertsData(null);
+          setComplianceAlertsError(e instanceof Error ? e.message : "Failed to load alerts");
+        })
+        .finally(() => setComplianceAlertsLoading(false));
+    }
+  }, [section, complianceWindowDays]);
 
   useEffect(() => {
     if (!itpCarId) {
@@ -1028,6 +1046,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
           { id: "incidents", label: "Incidents", icon: <AlertTriangle className={ICON.s} aria-hidden /> },
           { id: "history", label: t("nav.items.history"), icon: <History className={ICON.s} aria-hidden /> },
           { id: "verifyCode", label: t("nav.items.verifyCode"), icon: <KeyRound className={ICON.s} aria-hidden /> },
+          { id: "complianceAlerts", label: t("nav.items.complianceAlerts"), icon: <Bell className={ICON.s} aria-hidden /> },
         ],
       },
       {
@@ -1751,6 +1770,102 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                 variant="fleet"
                 className="flex-1 min-h-0"
               />
+            )}
+          </section>
+        )}
+
+        {section === "complianceAlerts" && (
+          <section className="w-full min-w-0 space-y-6 max-w-5xl">
+            <div className="flex flex-wrap items-end gap-4">
+              <label className="block text-sm font-medium text-slate-700">
+                Due within (days)
+                <input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={complianceWindowDays}
+                  onChange={(e) => setComplianceWindowDays(Math.min(365, Math.max(1, parseInt(e.target.value, 10) || 30)))}
+                  className="mt-1 block w-28 px-3 py-2 rounded-lg border border-slate-200 text-slate-900"
+                />
+              </label>
+              <p className="text-xs text-slate-500 max-w-xl pb-1">
+                Lists cars whose ITP, RCA (MTPL), or rovinietă expiry falls on or before the end of this window (includes already expired).
+                Daily emails use separate cron routes with <code className="text-[11px]">CRON_SECRET</code> and env{" "}
+                <code className="text-[11px]">ITP_REMINDER_DAYS</code>, <code className="text-[11px]">RCA_REMINDER_DAYS</code>,{" "}
+                <code className="text-[11px]">VIGNETTE_REMINDER_DAYS</code>.
+              </p>
+            </div>
+            {complianceAlertsLoading && <p className="text-slate-500">Loading…</p>}
+            {!complianceAlertsLoading && complianceAlertsError && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-sm p-4">{complianceAlertsError}</div>
+            )}
+            {!complianceAlertsLoading && complianceAlertsData && (
+              <div className="space-y-6">
+                {complianceAlertsData.cronHints && (
+                  <p className="text-xs text-slate-500">
+                    Cron examples:{" "}
+                    <code className="text-[11px]">{complianceAlertsData.cronHints.itp}</code>,{" "}
+                    <code className="text-[11px]">{complianceAlertsData.cronHints.rca}</code>,{" "}
+                    <code className="text-[11px]">{complianceAlertsData.cronHints.vignette}</code>
+                  </p>
+                )}
+                {["itp", "rca", "vignette"].map((key) => {
+                  const rows = complianceAlertsData[key] || [];
+                  const title =
+                    key === "itp" ? "ITP" : key === "rca" ? "RCA (MTPL)" : "Rovinietă / vignette";
+                  return (
+                    <div key={key} className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+                        <p className="text-xs text-slate-500">{rows.length} vehicle(s)</p>
+                      </div>
+                      {rows.length === 0 ? (
+                        <p className="p-4 text-sm text-slate-500">None in this window.</p>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[520px] text-sm">
+                            <thead>
+                              <tr className="text-left bg-white border-b border-slate-100">
+                                <th className="py-2 px-4 font-semibold text-slate-600">Vehicle</th>
+                                <th className="py-2 px-4 font-semibold text-slate-600">Expires</th>
+                                <th className="py-2 px-4 font-semibold text-slate-600">Days</th>
+                                <th className="py-2 px-4 font-semibold text-slate-600">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {rows.map((r) => {
+                                const d = typeof r.daysUntil === "number" ? r.daysUntil : null;
+                                const badge =
+                                  d == null
+                                    ? "bg-slate-100 text-slate-700"
+                                    : d < 0
+                                      ? "bg-red-100 text-red-800"
+                                      : d <= 7
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-slate-100 text-slate-700";
+                                const dayLabel =
+                                  d == null ? "—" : d < 0 ? `Expired ${Math.abs(d)}d ago` : `${d}d left`;
+                                return (
+                                  <tr key={`${key}-${r.carId}`} className="border-t border-slate-100">
+                                    <td className="py-2 px-4 font-medium text-slate-900">{r.label || r.carId}</td>
+                                    <td className="py-2 px-4 text-slate-700">
+                                      {r.expiresAt ? new Date(r.expiresAt).toLocaleDateString() : "—"}
+                                    </td>
+                                    <td className="py-2 px-4">
+                                      <span className={`px-2 py-0.5 rounded-md text-xs font-semibold ${badge}`}>{dayLabel}</span>
+                                    </td>
+                                    <td className="py-2 px-4 text-slate-600">{r.status || "—"}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </section>
         )}
@@ -2923,8 +3038,9 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                 Digital glovebox (RCA & vignette)
               </h3>
               <p className="text-xs text-slate-500 mb-4">
-                Choose a vehicle, set RCA and vignette expiry dates, and upload the RCA file (PDF or image). Drivers with an active booking see this in their app. Admin emails:{" "}
-                <code className="text-[11px]">/api/cron/rca-expiry-reminders</code>.
+                Choose a vehicle, set RCA and vignette expiry dates, and upload RCA and rovinietă PDFs (or images). Drivers with an active booking see these in the app. Cron email routes:{" "}
+                <code className="text-[11px]">/api/cron/rca-expiry-reminders</code>,{" "}
+                <code className="text-[11px]">/api/cron/vignette-expiry-reminders</code>.
               </p>
               <label className="block text-xs font-medium text-slate-600 mb-4">
                 Vehicle
@@ -3093,6 +3209,84 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                     className="px-3 py-2 rounded-lg text-sm font-semibold border border-red-200 text-red-800 bg-red-50 hover:bg-red-100 disabled:opacity-50"
                   >
                     Remove RCA file
+                  </button>
+                ) : null}
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+                <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-100">
+                  <Upload className="w-4 h-4 shrink-0" aria-hidden />
+                  Upload vignette (PDF or image)
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,application/pdf"
+                    className="hidden"
+                    disabled={!gloveboxCarId || gloveboxBusy}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!file || !gloveboxCarId) return;
+                      setGloveboxBusy(true);
+                      setError("");
+                      setGloveboxNotice(null);
+                      try {
+                        const fd = new FormData();
+                        fd.append("file", file);
+                        const res = await fetch(`/api/cars/${encodeURIComponent(gloveboxCarId)}/vignette-document`, {
+                          method: "POST",
+                          body: fd,
+                          credentials: "include",
+                          headers: typeof sessionStorage !== "undefined" ? (() => {
+                            try {
+                              const sid = sessionStorage.getItem("car_sharing_web_tab_sid");
+                              return sid ? { "X-Web-Session-Id": sid } : {};
+                            } catch {
+                              return {};
+                            }
+                          })() : {},
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || "Upload failed");
+                        await load();
+                        setGloveboxNotice({ type: "success", text: "Vignette file uploaded." });
+                      } catch (err) {
+                        setError(err.message || "Upload failed");
+                      } finally {
+                        setGloveboxBusy(false);
+                      }
+                    }}
+                  />
+                </label>
+                {gloveboxCarId && cars.find((c) => c.id === gloveboxCarId)?.vignetteDocumentUrl ? (
+                  <a
+                    href={cars.find((c) => c.id === gloveboxCarId)?.vignetteDocumentUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-200 text-sky-800 bg-sky-50 hover:bg-sky-100"
+                  >
+                    Preview vignette
+                  </a>
+                ) : null}
+                {gloveboxCarId && cars.find((c) => c.id === gloveboxCarId)?.vignetteDocumentUrl ? (
+                  <button
+                    type="button"
+                    disabled={gloveboxBusy}
+                    onClick={async () => {
+                      if (!gloveboxCarId) return;
+                      setGloveboxBusy(true);
+                      setError("");
+                      try {
+                        await apiUpdateCar(gloveboxCarId, { vignetteDocumentUrl: null });
+                        await load();
+                        setGloveboxNotice({ type: "success", text: "Vignette file removed." });
+                      } catch (err) {
+                        setError(err.message || "Failed to remove");
+                      } finally {
+                        setGloveboxBusy(false);
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-semibold border border-red-200 text-red-800 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                  >
+                    Remove vignette file
                   </button>
                 ) : null}
               </div>
@@ -3574,6 +3768,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colRcaExpiry")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colVignetteExpiry")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colRcaFile")}</th>
+                          <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.colVignetteFile")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700">{t("maintenanceUi.itpColQuickEdit")}</th>
                           <th className="py-3 px-4 font-semibold text-slate-700 whitespace-nowrap">{t("maintenanceUi.colGlovebox")}</th>
                         </tr>
@@ -3603,6 +3798,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                           const vigExp = c.vignetteExpiresAt ? new Date(c.vignetteExpiresAt) : null;
                           const vigOk = vigExp && !Number.isNaN(vigExp.getTime());
                           const hasRcaFile = Boolean(c.rcaDocumentUrl);
+                          const hasVignetteFile = Boolean(c.vignetteDocumentUrl);
                           return (
                             <tr key={c.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors">
                               <td className="py-3 px-4 whitespace-nowrap">{c.brand} {c.registrationNumber}</td>
@@ -3625,6 +3821,15 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                                   }`}
                                 >
                                   {hasRcaFile ? t("maintenanceUi.rcaFileYes") : t("maintenanceUi.rcaFileNo")}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <span
+                                  className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${
+                                    hasVignetteFile ? "bg-[var(--primary-light)] text-[var(--primary)]" : "bg-slate-100 text-slate-600"
+                                  }`}
+                                >
+                                  {hasVignetteFile ? t("maintenanceUi.rcaFileYes") : t("maintenanceUi.rcaFileNo")}
                                 </span>
                               </td>
                               <td className="py-3 px-4 whitespace-nowrap">
@@ -3691,7 +3896,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                           );
                         })}
                         {list.length === 0 && (
-                          <tr><td colSpan={8} className="py-10 px-4 text-center text-slate-500">{t("maintenanceUi.itpNoMatch")}</td></tr>
+                          <tr><td colSpan={9} className="py-10 px-4 text-center text-slate-500">{t("maintenanceUi.itpNoMatch")}</td></tr>
                         )}
                       </tbody>
                     </table>

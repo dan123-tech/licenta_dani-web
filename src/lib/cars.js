@@ -188,6 +188,14 @@ export async function updateCar(carId, companyId, data) {
     }),
     ...(data.vignetteExpiresAt !== undefined && {
       vignetteExpiresAt: data.vignetteExpiresAt,
+      vignetteLastNotifiedAt: null,
+    }),
+    ...(data.vignetteDocumentUrl !== undefined && {
+      vignetteDocumentUrl: data.vignetteDocumentUrl,
+      ...(data.vignetteDocumentUrl == null ? { vignetteDocumentContentType: null } : {}),
+    }),
+    ...(data.vignetteDocumentContentType !== undefined && {
+      vignetteDocumentContentType: data.vignetteDocumentContentType,
     }),
     ...(data.rcaDocumentUrl !== undefined && {
       rcaDocumentUrl: data.rcaDocumentUrl,

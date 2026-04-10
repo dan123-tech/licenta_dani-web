@@ -16,7 +16,7 @@ import {
   requireTrustedOriginForMutation,
 } from "@/lib/api-helpers";
 import { writeAuditLog } from "@/lib/audit";
-import { rcaDocumentUrlForClient } from "@/lib/glovebox-ref";
+import { rcaDocumentUrlForClient, vignetteDocumentUrlForClient } from "@/lib/glovebox-ref";
 
 const FUEL_TYPES = ["Benzine", "Diesel", "Electric", "Hybrid"];
 const VEHICLE_CATEGORIES = [
@@ -130,6 +130,8 @@ export async function GET(request) {
         rcaDocumentUrl: rcaDocumentUrlForClient(c.id, c.rcaDocumentUrl),
         rcaDocumentContentType: c.rcaDocumentContentType ?? null,
         vignetteExpiresAt: c.vignetteExpiresAt ?? null,
+        vignetteDocumentUrl: vignetteDocumentUrlForClient(c.id, c.vignetteDocumentUrl),
+        vignetteDocumentContentType: c.vignetteDocumentContentType ?? null,
         _count: c._count,
       }))
     );

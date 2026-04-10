@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 
 import com.company.carsharing.ui.MainActivity;
 import com.company.carsharing.R;
+import com.company.carsharing.data.OfflineReadCache;
 import com.company.carsharing.data.SessionHolder;
 import com.company.carsharing.models.Car;
 import com.company.carsharing.models.Company;
@@ -75,6 +76,7 @@ public class DashboardFragment extends Fragment {
             public void onResponse(@NonNull Call<List<Car>> call, @NonNull Response<List<Car>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Car> cars = response.body();
+                    OfflineReadCache.saveAllCars(requireContext(), cars);
                     int total = cars.size();
                     int available = 0;
                     for (Car c : cars) {
@@ -86,6 +88,17 @@ public class DashboardFragment extends Fragment {
             }
             @Override
             public void onFailure(@NonNull Call<List<Car>> call, @NonNull Throwable t) {
+                List<Car> cached = OfflineReadCache.loadAllCars(requireContext());
+                if (!cached.isEmpty()) {
+                    int total = cached.size();
+                    int available = 0;
+                    for (Car c : cached) {
+                        if (c != null && "AVAILABLE".equalsIgnoreCase(c.getStatus())) available++;
+                    }
+                    totalCarsView.setText(String.valueOf(total));
+                    availableCarsView.setText(String.valueOf(available));
+                    return;
+                }
                 totalCarsView.setText(getString(R.string.em_dash));
                 availableCarsView.setText(getString(R.string.em_dash));
             }
@@ -95,8 +108,10 @@ public class DashboardFragment extends Fragment {
             @Override
             public void onResponse(@NonNull Call<List<Reservation>> call, @NonNull Response<List<Reservation>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    List<Reservation> list = response.body();
+                    OfflineReadCache.saveAllReservations(requireContext(), list);
                     int active = 0;
-                    for (Reservation r : response.body()) {
+                    for (Reservation r : list) {
                         if (r != null && "ACTIVE".equalsIgnoreCase(r.getStatus())) active++;
                     }
                     activeReservationsView.setText(String.valueOf(active));
@@ -104,6 +119,15 @@ public class DashboardFragment extends Fragment {
             }
             @Override
             public void onFailure(@NonNull Call<List<Reservation>> call, @NonNull Throwable t) {
+                List<Reservation> cached = OfflineReadCache.loadAllReservations(requireContext());
+                if (!cached.isEmpty()) {
+                    int active = 0;
+                    for (Reservation r : cached) {
+                        if (r != null && "ACTIVE".equalsIgnoreCase(r.getStatus())) active++;
+                    }
+                    activeReservationsView.setText(String.valueOf(active));
+                    return;
+                }
                 activeReservationsView.setText(getString(R.string.em_dash));
             }
         });

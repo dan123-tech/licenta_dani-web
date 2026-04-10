@@ -49,6 +49,7 @@ public class GloveboxFragment extends Fragment {
 
         binding.gloveboxRefresh.setOnRefreshListener(this::load);
         binding.gloveboxOpenRca.setOnClickListener(v -> openRca());
+        binding.gloveboxOpenVignette.setOnClickListener(v -> openVignette());
         binding.gloveboxOpenBroker.setOnClickListener(v -> openBroker());
 
         load();
@@ -148,6 +149,10 @@ public class GloveboxFragment extends Fragment {
         binding.gloveboxOpenRca.setEnabled(hasRca);
         binding.gloveboxOpenRca.setAlpha(hasRca ? 1f : 0.6f);
 
+        boolean hasVig = c.getVignetteDocumentUrl() != null && !c.getVignetteDocumentUrl().trim().isEmpty();
+        binding.gloveboxOpenVignette.setEnabled(hasVig);
+        binding.gloveboxOpenVignette.setAlpha(hasVig ? 1f : 0.6f);
+
         boolean hasBroker = data.getBrokerRenewalUrl() != null && !data.getBrokerRenewalUrl().trim().isEmpty();
         binding.gloveboxOpenBroker.setEnabled(hasBroker);
         binding.gloveboxOpenBroker.setAlpha(hasBroker ? 1f : 0.6f);
@@ -203,6 +208,61 @@ public class GloveboxFragment extends Fragment {
             public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
                 if (!isAdded()) return;
                 binding.gloveboxOpenRca.setEnabled(true);
+                Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void openVignette() {
+        if (last == null || last.getCar() == null) {
+            Toast.makeText(requireContext(), getString(R.string.glovebox_missing_doc), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String rel = last.getCar().getVignetteDocumentUrl();
+        if (rel == null || rel.trim().isEmpty()) {
+            Toast.makeText(requireContext(), getString(R.string.glovebox_missing_doc), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String base = CarSharingApplication.getApiBaseUrl();
+        String abs = rel.startsWith("/") ? base.replaceAll("/+$", "") + rel : base + rel;
+
+        binding.gloveboxOpenVignette.setEnabled(false);
+        api().downloadFile(abs).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
+                if (!isAdded()) return;
+                binding.gloveboxOpenVignette.setEnabled(true);
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String mime = null;
+                try {
+                    mime = response.headers().get("Content-Type");
+                } catch (Exception ignored) {
+                }
+                if (mime == null || mime.trim().isEmpty()) {
+                    mime = last.getCar().getVignetteDocumentContentType();
+                }
+
+                String ext = (mime != null && mime.toLowerCase().contains("pdf")) ? ".pdf" : "";
+                String carId = last.getCar().getId() != null ? last.getCar().getId() : "car";
+                String filename = "vignette-" + carId + ext;
+
+                try {
+                    File f = FileOpenUtil.writeResponseBodyToCache(requireContext(), response.body(), filename);
+                    FileOpenUtil.openFile(requireContext(), f, mime, getString(R.string.open_document));
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
+                if (!isAdded()) return;
+                binding.gloveboxOpenVignette.setEnabled(true);
                 Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
             }
         });

@@ -554,6 +554,17 @@ export async function apiGloveboxActive() {
   return data;
 }
 
+/** Admin: ITP / RCA / vignette due within windowDays (built-in cars source only). */
+export async function apiComplianceAlertsGet(windowDays = 30) {
+  const params = new URLSearchParams();
+  params.set("windowDays", String(Math.min(365, Math.max(1, Number(windowDays) || 30))));
+  const res = await fetch(`/api/compliance-alerts?${params}`, getOpts("GET"));
+  const data = await res.json().catch(() => ({}));
+  throwIfDataSourceNotConfigured(res, data);
+  if (!res.ok) throw new Error(typeof data?.error === "string" ? data.error : "Failed to load compliance alerts");
+  return data;
+}
+
 /** Download journey sheet PDF for a completed reservation. */
 export async function downloadJourneySheetPdf(reservationId) {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Bucharest";

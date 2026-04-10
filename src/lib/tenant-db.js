@@ -269,6 +269,9 @@ CREATE TABLE IF NOT EXISTS "Car" (
   "rcaDocumentContentType" VARCHAR(120),
   "rcaLastNotifiedAt" TIMESTAMP(3),
   "vignetteExpiresAt" TIMESTAMP(3),
+  "vignetteDocumentUrl" TEXT,
+  "vignetteDocumentContentType" VARCHAR(120),
+  "vignetteLastNotifiedAt" TIMESTAMP(3),
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "Car_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -401,6 +404,9 @@ ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaDocumentUrl" TEXT;
 ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaDocumentContentType" VARCHAR(120);
 ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "rcaLastNotifiedAt" TIMESTAMP(3);
 ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "vignetteExpiresAt" TIMESTAMP(3);
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "vignetteDocumentUrl" TEXT;
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "vignetteDocumentContentType" VARCHAR(120);
+ALTER TABLE "Car" ADD COLUMN IF NOT EXISTS "vignetteLastNotifiedAt" TIMESTAMP(3);
 ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "releasedOdometerStart" INTEGER;
 ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "releasedOdometerEnd" INTEGER;
 ALTER TABLE "IncidentReport" ADD COLUMN IF NOT EXISTS "severity" VARCHAR(1) NOT NULL DEFAULT 'C';

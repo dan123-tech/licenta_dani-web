@@ -103,6 +103,14 @@
     <string name="glovebox_open_rca">Open RCA document</string>
     <string name="glovebox_open_broker">Open broker renewal</string>
     <string name="glovebox_missing_doc">Document not available.</string>
+    <string name="glovebox_open_vignette">Open vignette document</string>
+
+    <string name="offline_showing_cached">Offline — showing last saved data (read-only).</string>
+
+    <string name="widget_description">Next or active car booking</string>
+    <string name="widget_idle_title">Car sharing</string>
+    <string name="widget_idle_subtitle">Open the app to reserve</string>
+    <string name="widget_active_title">Active booking</string>
 
     <!-- Reports -->
     <string name="reports_title">Reports</string>

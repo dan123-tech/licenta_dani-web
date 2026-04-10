@@ -279,6 +279,9 @@ model Car {
   rcaDocumentContentType     String?    @db.VarChar(120)
   rcaLastNotifiedAt          DateTime?
   vignetteExpiresAt          DateTime?
+  vignetteDocumentUrl        String?    @db.Text
+  vignetteDocumentContentType String?   @db.VarChar(120)
+  vignetteLastNotifiedAt     DateTime?
   createdAt                  DateTime   @default(now())
   updatedAt                  DateTime   @updatedAt
 

@@ -29,6 +29,12 @@ export function rcaDocumentUrlForClient(carId, stored) {
   return `/api/cars/${encodeURIComponent(carId)}/glovebox-document`;
 }
 
+/** @param {string} carId @param {string | null | undefined} stored */
+export function vignetteDocumentUrlForClient(carId, stored) {
+  if (stored == null || typeof stored !== "string" || !stored.trim()) return null;
+  return `/api/cars/${encodeURIComponent(carId)}/vignette-document`;
+}
+
 /**
  * Ensure stored ref belongs to this car (path traversal / cross-car).
  * @param {string | null | undefined} stored

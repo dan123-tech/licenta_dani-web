@@ -16,7 +16,9 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.company.carsharing.R;
+import com.company.carsharing.data.OfflineReadCache;
 import com.company.carsharing.data.repository.AuthRepository;
+import com.company.carsharing.widget.BookingWidgetUpdater;
 import com.company.carsharing.databinding.FragmentMyReservationsBinding;
 import com.company.carsharing.models.Car;
 import com.company.carsharing.models.Reservation;
@@ -212,8 +214,11 @@ public class MyReservationsFragment extends Fragment implements ReservationsAdap
             @Override
             public void onResponse(Call<List<Reservation>> call, Response<List<Reservation>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    adapter.setReservations(response.body());
-                    binding.emptyText.setVisibility(response.body().isEmpty() ? View.VISIBLE : View.GONE);
+                    List<Reservation> body = response.body();
+                    OfflineReadCache.saveMyReservations(requireContext(), body);
+                    BookingWidgetUpdater.updateFromReservations(requireContext(), body);
+                    adapter.setReservations(body);
+                    binding.emptyText.setVisibility(body.isEmpty() ? View.VISIBLE : View.GONE);
                     if (Build.VERSION.SDK_INT >= 33
                             && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                         requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1001);
@@ -221,13 +226,22 @@ public class MyReservationsFragment extends Fragment implements ReservationsAdap
                     AuthRepository repo = new AuthRepository(requireContext());
                     User u = repo.getSessionPreferences().getUser();
                     if (u != null && u.getId() != null) {
-                        ReservationAlarmScheduler.schedule(requireContext(), response.body(), u.getId());
+                        ReservationAlarmScheduler.schedule(requireContext(), body, u.getId());
                     }
                 }
             }
             @Override
             public void onFailure(Call<List<Reservation>> call, Throwable t) {
-                if (getActivity() != null) Toast.makeText(requireContext(), getString(R.string.network_error), Toast.LENGTH_SHORT).show();
+                if (getActivity() == null) return;
+                List<Reservation> cached = OfflineReadCache.loadMyReservations(requireContext());
+                if (!cached.isEmpty()) {
+                    adapter.setReservations(cached);
+                    binding.emptyText.setVisibility(cached.isEmpty() ? View.VISIBLE : View.GONE);
+                    BookingWidgetUpdater.updateFromReservations(requireContext(), cached);
+                    Toast.makeText(requireContext(), getString(R.string.offline_showing_cached), Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Toast.makeText(requireContext(), getString(R.string.network_error), Toast.LENGTH_SHORT).show();
             }
         });
     }
