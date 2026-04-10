@@ -29,11 +29,16 @@ public final class FileOpenUtil {
     }
 
     public static void openPdf(Context ctx, File file) {
+        openFile(ctx, file, "application/pdf", "Open PDF");
+    }
+
+    public static void openFile(Context ctx, File file, String mimeType, String chooserTitle) {
+        String mime = (mimeType == null || mimeType.trim().isEmpty()) ? "*/*" : mimeType.trim();
         Uri uri = FileProvider.getUriForFile(ctx, ctx.getPackageName() + ".fileprovider", file);
         Intent i = new Intent(Intent.ACTION_VIEW);
-        i.setDataAndType(uri, "application/pdf");
+        i.setDataAndType(uri, mime);
         i.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        ctx.startActivity(Intent.createChooser(i, "Open PDF"));
+        ctx.startActivity(Intent.createChooser(i, chooserTitle != null ? chooserTitle : "Open file"));
     }
 }
 

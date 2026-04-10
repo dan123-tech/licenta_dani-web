@@ -18,7 +18,11 @@ import com.company.carsharing.databinding.FragmentGloveboxBinding;
 import com.company.carsharing.models.GloveboxActiveResponse;
 import com.company.carsharing.network.ApiService;
 import com.company.carsharing.network.RetrofitClient;
+import com.company.carsharing.util.FileOpenUtil;
 
+import java.io.File;
+
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -133,7 +137,47 @@ public class GloveboxFragment extends Fragment {
         }
         String base = CarSharingApplication.getApiBaseUrl();
         String abs = rel.startsWith("/") ? base.replaceAll("/+$", "") + rel : base + rel;
-        openUrl(abs);
+
+        binding.gloveboxOpenRca.setEnabled(false);
+        api().downloadFile(abs).enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(@NonNull Call<ResponseBody> call, @NonNull Response<ResponseBody> response) {
+                if (!isAdded()) return;
+                binding.gloveboxOpenRca.setEnabled(true);
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                String mime = null;
+                try {
+                    mime = response.headers().get("Content-Type");
+                } catch (Exception ignored) {
+                }
+                if (mime == null || mime.trim().isEmpty()) {
+                    mime = last.getCar().getRcaDocumentContentType();
+                }
+
+                String ext = (mime != null && mime.toLowerCase().contains("pdf")) ? ".pdf" : "";
+                String carId = last.getCar().getId() != null ? last.getCar().getId() : "car";
+                String filename = "rca-" + carId + ext;
+
+                try {
+                    File f = FileOpenUtil.writeResponseBodyToCache(requireContext(), response.body(), filename);
+                    FileOpenUtil.openFile(requireContext(), f, mime, "Open document");
+                } catch (Exception e) {
+                    Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
+                if (!isAdded()) return;
+                binding.gloveboxOpenRca.setEnabled(true);
+                Toast.makeText(requireContext(), getString(R.string.reports_download_failed), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void openBroker() {

@@ -31,6 +31,7 @@ import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.Url;
 
 public interface ApiService {
 
@@ -141,4 +142,8 @@ public interface ApiService {
     // Glovebox (digital documents for active reservation)
     @GET("api/glovebox/active")
     Call<GloveboxActiveResponse> getGloveboxActive();
+
+    /** Download an authenticated file (absolute URL). */
+    @GET
+    Call<ResponseBody> downloadFile(@Url String url);
 }
