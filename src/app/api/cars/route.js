@@ -19,13 +19,20 @@ import { writeAuditLog } from "@/lib/audit";
 import { rcaDocumentUrlForClient } from "@/lib/glovebox-ref";
 
 const FUEL_TYPES = ["Benzine", "Diesel", "Electric", "Hybrid"];
-const VEHICLE_CATEGORIES = ["Sedan", "Suv", "Hatchback", "Wagon", "Coupe", "Van", "Truck", "Other"];
+const VEHICLE_CATEGORIES = [
+  "AM", "A1", "A2", "A",
+  "B1", "B", "BE",
+  "C1", "C", "C1E", "CE",
+  "D1", "D", "D1E", "DE",
+  "TR", "TB", "TV",
+  "OTHER",
+];
 const YEAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const postSchema = z.object({
   brand: z.string().min(1).max(100),
   model: z.string().max(100).optional().nullable(),
   registrationNumber: z.string().min(1).max(50).transform((s) => s.trim().toUpperCase()),
-  vehicleCategory: z.enum(VEHICLE_CATEGORIES).optional().default("Other"),
+  vehicleCategory: z.enum(VEHICLE_CATEGORIES).optional().default("OTHER"),
   km: z.number().int().min(0).optional().default(0),
   status: z.enum(["AVAILABLE", "RESERVED", "IN_MAINTENANCE"]).optional().default("AVAILABLE"),
   fuelType: z.enum(FUEL_TYPES).optional().default("Benzine"),
@@ -75,7 +82,7 @@ export async function GET(request) {
           brand: c.brand,
           model: c.model,
           registrationNumber: c.registrationNumber,
-          vehicleCategory: c.vehicleCategory ?? "Other",
+          vehicleCategory: c.vehicleCategory ?? "OTHER",
           km: c.km,
           status: c.status,
           fuelType: c.fuelType ?? "Benzine",
@@ -108,7 +115,7 @@ export async function GET(request) {
         brand: c.brand,
         model: c.model,
         registrationNumber: c.registrationNumber,
-        vehicleCategory: c.vehicleCategory ?? "Other",
+        vehicleCategory: c.vehicleCategory ?? "OTHER",
         km: c.km,
         status: c.status,
         fuelType: c.fuelType ?? "Benzine",

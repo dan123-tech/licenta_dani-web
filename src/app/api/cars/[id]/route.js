@@ -22,7 +22,14 @@ import { rcaDocumentUrlForClient } from "@/lib/glovebox-ref";
 import { sendItpExpiryAdminEmail, sendRcaExpiryAdminEmail } from "@/lib/email";
 
 const FUEL_TYPES = ["Benzine", "Diesel", "Electric", "Hybrid"];
-const VEHICLE_CATEGORIES = ["Sedan", "Suv", "Hatchback", "Wagon", "Coupe", "Van", "Truck", "Other"];
+const VEHICLE_CATEGORIES = [
+  "AM", "A1", "A2", "A",
+  "B1", "B", "BE",
+  "C1", "C", "C1E", "CE",
+  "D1", "D", "D1E", "DE",
+  "TR", "TB", "TV",
+  "OTHER",
+];
 const YEAR_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const patchSchema = z.object({
   brand: z.string().min(1).max(100).optional(),
@@ -82,7 +89,7 @@ export async function GET(_request, { params }) {
         brand: car.brand,
         model: car.model,
         registrationNumber: car.registrationNumber,
-        vehicleCategory: car.vehicleCategory ?? "Other",
+        vehicleCategory: car.vehicleCategory ?? "OTHER",
         km: car.km,
         status: car.status,
         fuelType: car.fuelType ?? "Benzine",

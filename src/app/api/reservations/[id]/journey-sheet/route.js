@@ -66,7 +66,7 @@ export async function GET(request, { params }) {
     driverEmail: reservation.user?.email || "—",
     vehicleLabel,
     registrationNumber: reservation.car?.registrationNumber || "—",
-    vehicleCategory: reservation.car?.vehicleCategory || "Other",
+    vehicleCategory: reservation.car?.vehicleCategory || "OTHER",
     purpose: reservation.purpose || "",
     startDate: reservation.startDate,
     endDate: displayEndDate,

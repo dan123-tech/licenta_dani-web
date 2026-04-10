@@ -196,7 +196,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
   const [addCarKm, setAddCarKm] = useState(0);
   const [addCarStatus, setAddCarStatus] = useState("AVAILABLE");
   const [addCarFuelType, setAddCarFuelType] = useState("Benzine");
-  const [addCarVehicleCategory, setAddCarVehicleCategory] = useState("Other");
+  const [addCarVehicleCategory, setAddCarVehicleCategory] = useState("OTHER");
   const [addCarConsumption, setAddCarConsumption] = useState("");
   const [addCarConsumptionKwh, setAddCarConsumptionKwh] = useState("");
   const [addCarBatteryLevel, setAddCarBatteryLevel] = useState("");
@@ -918,7 +918,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
       setAddCarKm(0);
       setAddCarStatus("AVAILABLE");
       setAddCarFuelType("Benzine");
-      setAddCarVehicleCategory("Other");
+      setAddCarVehicleCategory("OTHER");
       setAddCarConsumption("");
       setAddCarConsumptionKwh("");
       setAddCarBatteryLevel("");
@@ -1477,14 +1477,25 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                         onChange={(e) => setAddCarVehicleCategory(e.target.value)}
                         className="px-3 py-2 border border-slate-200 rounded-xl focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-ring)] outline-none"
                       >
-                        <option value="Sedan">Sedan</option>
-                        <option value="Suv">SUV</option>
-                        <option value="Hatchback">Hatchback</option>
-                        <option value="Wagon">Wagon</option>
-                        <option value="Coupe">Coupe</option>
-                        <option value="Van">Van</option>
-                        <option value="Truck">Truck</option>
-                        <option value="Other">Other</option>
+                        <option value="AM">AM</option>
+                        <option value="A1">A1</option>
+                        <option value="A2">A2</option>
+                        <option value="A">A</option>
+                        <option value="B1">B1</option>
+                        <option value="B">B</option>
+                        <option value="BE">BE</option>
+                        <option value="C1">C1</option>
+                        <option value="C">C</option>
+                        <option value="C1E">C1E</option>
+                        <option value="CE">CE</option>
+                        <option value="D1">D1</option>
+                        <option value="D">D</option>
+                        <option value="D1E">D1E</option>
+                        <option value="DE">DE</option>
+                        <option value="TR">Tr</option>
+                        <option value="TB">Tb</option>
+                        <option value="TV">Tv</option>
+                        <option value="OTHER">Other</option>
                       </select>
                     </div>
                   </div>

@@ -47,7 +47,7 @@ export async function GET() {
       id: c.id,
       label: [c.brand, c.model, c.registrationNumber].filter(Boolean).join(" "),
       registrationNumber: c.registrationNumber,
-      vehicleCategory: c.vehicleCategory ?? "Other",
+      vehicleCategory: c.vehicleCategory ?? "OTHER",
       itpExpiresAt: c.itpExpiresAt,
       rcaExpiresAt: c.rcaExpiresAt,
       rcaDocumentUrl: rcaDocumentUrlForClient(c.id, c.rcaDocumentUrl),
