@@ -107,7 +107,11 @@ public class GloveboxFragment extends Fragment {
 
     private void render(GloveboxActiveResponse data) {
         GloveboxActiveResponse.GloveboxCar c = data.getCar();
-        binding.gloveboxVehicleValue.setText(c.getLabel() != null ? c.getLabel() : "—");
+        String label = c.getLabel() != null ? c.getLabel() : "—";
+        String cat = c.getVehicleCategory() != null && !c.getVehicleCategory().trim().isEmpty()
+                ? c.getVehicleCategory().trim()
+                : null;
+        binding.gloveboxVehicleValue.setText(cat != null ? (label + " · " + cat) : label);
 
         String itp = getString(R.string.glovebox_itp_expires) + ": " + (c.getItpExpiresAt() != null ? c.getItpExpiresAt() : "—");
         String rca = getString(R.string.glovebox_rca_expires) + ": " + (c.getRcaExpiresAt() != null ? c.getRcaExpiresAt() : "—");

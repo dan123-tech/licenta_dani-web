@@ -47,7 +47,12 @@ public class AvailableCarsAdapter extends BaseAdapter {
         }
         Car car = cars.get(position);
         String title = car.getBrand() + (car.getModel() != null && !car.getModel().isEmpty() ? " " + car.getModel() : "");
-        String sub = (car.getRegistrationNumber() != null ? car.getRegistrationNumber() : "") + " · " + car.getKm() + " km";
+        String cat = car.getVehicleCategory() != null && !car.getVehicleCategory().trim().isEmpty()
+                ? car.getVehicleCategory().trim()
+                : null;
+        String sub = (car.getRegistrationNumber() != null ? car.getRegistrationNumber() : "");
+        if (cat != null) sub += " · " + cat;
+        sub += " · " + car.getKm() + " km";
         if (car.getAverageConsumptionL100km() != null) sub += " · " + car.getAverageConsumptionL100km() + " L/100km";
         ((TextView) convertView.findViewById(R.id.item_title)).setText(title);
         ((TextView) convertView.findViewById(R.id.item_subtitle)).setText(sub + " · Tap to reserve (now or schedule)");

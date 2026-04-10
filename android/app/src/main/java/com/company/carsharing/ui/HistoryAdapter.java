@@ -49,7 +49,16 @@ public class HistoryAdapter extends BaseAdapter {
             convertView = LayoutInflater.from(context).inflate(R.layout.item_history, parent, false);
         }
         Reservation r = list.get(position);
-        String car = r.getCar() != null ? r.getCar().getBrand() + " " + (r.getCar().getRegistrationNumber() != null ? r.getCar().getRegistrationNumber() : "") : context.getString(R.string.history_fallback_car);
+        String car;
+        if (r.getCar() != null) {
+            String cat = r.getCar().getVehicleCategory() != null && !r.getCar().getVehicleCategory().trim().isEmpty()
+                    ? r.getCar().getVehicleCategory().trim()
+                    : null;
+            car = r.getCar().getBrand() + " " + (r.getCar().getRegistrationNumber() != null ? r.getCar().getRegistrationNumber() : "");
+            if (cat != null) car += " · " + cat;
+        } else {
+            car = context.getString(R.string.history_fallback_car);
+        }
         ((TextView) convertView.findViewById(R.id.history_car)).setText(car);
         String statusPart = I18n.reservationStatus(context, r.getStatus() != null ? r.getStatus() : "");
         String statusKm = statusPart + (r.getReleasedKmUsed() != null ? " · " + context.getString(R.string.km_suffix_fmt, r.getReleasedKmUsed()) : "");

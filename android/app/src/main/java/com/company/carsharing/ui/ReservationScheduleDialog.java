@@ -175,9 +175,13 @@ public final class ReservationScheduleDialog {
 
         if (fixedCar != null) {
             carSection.setVisibility(View.GONE);
+            String cat = fixedCar.getVehicleCategory() != null && !fixedCar.getVehicleCategory().trim().isEmpty()
+                    ? fixedCar.getVehicleCategory().trim()
+                    : null;
             String carLabel = fixedCar.getBrand()
                     + (fixedCar.getModel() != null && !fixedCar.getModel().isEmpty() ? " " + fixedCar.getModel() : "")
-                    + (fixedCar.getRegistrationNumber() != null ? " · " + fixedCar.getRegistrationNumber() : "");
+                    + (fixedCar.getRegistrationNumber() != null ? " · " + fixedCar.getRegistrationNumber() : "")
+                    + (cat != null ? " · " + cat : "");
             titleTv.setText(ctx.getString(R.string.reserve_car_title_fmt, carLabel));
             carSpinner.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_dropdown_item,
                     Collections.singletonList(carLabel)));
@@ -200,7 +204,14 @@ public final class ReservationScheduleDialog {
                         }
                         List<String> labels = new ArrayList<>();
                         for (Car c : cars) {
-                            labels.add(c.getBrand() + " " + (c.getRegistrationNumber() != null ? c.getRegistrationNumber() : c.getId()));
+                            String cat = c.getVehicleCategory() != null && !c.getVehicleCategory().trim().isEmpty()
+                                    ? c.getVehicleCategory().trim()
+                                    : null;
+                            labels.add(
+                                    c.getBrand() + " " +
+                                            (c.getRegistrationNumber() != null ? c.getRegistrationNumber() : c.getId()) +
+                                            (cat != null ? " · " + cat : "")
+                            );
                         }
                         carSpinner.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_dropdown_item, labels));
                         openDialogWithCars(fragment, dialogView, cars, errorTv, cancelBtn, saveBtn, purposeEt, startMs, endMs, onSuccess);
