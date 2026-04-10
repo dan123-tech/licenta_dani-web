@@ -36,11 +36,14 @@ export function middleware(request) {
 
   if (process.env.NODE_ENV !== "production") return res;
 
-  const csp = [
+  /** Same-origin iframe (e.g. /glovebox/rca) must be allowed to embed this PDF/image stream. */
+  const isGloveboxDocumentRoute = /^\/api\/cars\/[^/]+\/glovebox-document$/.test(pathname);
+
+  const cspBase = [
     "default-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    isGloveboxDocumentRoute ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
     "object-src 'none'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data: https:",
@@ -51,10 +54,10 @@ export function middleware(request) {
   ].join("; ");
 
   res.headers.set("X-Content-Type-Options", "nosniff");
-  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Frame-Options", isGloveboxDocumentRoute ? "SAMEORIGIN" : "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
-  res.headers.set("Content-Security-Policy", csp);
+  res.headers.set("Content-Security-Policy", cspBase);
   res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
 

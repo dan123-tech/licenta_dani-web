@@ -21,6 +21,8 @@ const nextConfig = {
       "upgrade-insecure-requests",
     ].join("; ");
 
+    const cspGloveboxFrame = csp.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
+
     const securityHeaders = [
       {
         key: "Referrer-Policy",
@@ -66,6 +68,14 @@ const nextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      // Allow /glovebox/rca to iframe this API (global CSP uses frame-ancestors 'none').
+      {
+        source: "/api/cars/:id/glovebox-document",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: cspGloveboxFrame },
+        ],
       },
       {
         source: "/",

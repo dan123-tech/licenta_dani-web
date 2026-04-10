@@ -141,8 +141,8 @@ export async function createReservation(userId, carId, startDate, endDate, purpo
   );
 }
 
-/** One year in ms – used for "until released" end date for instant reservations */
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+/** 1 hour in ms – default duration for instant reservations (can be extended when releasing) */
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 /**
  * Create an instant reservation (now until released). Car must have no ACTIVE reservation.
@@ -162,10 +162,11 @@ export async function createInstantReservation(userId, carId, purpose, companyId
   return tenant.$transaction(
     async (tx) => {
       const nextScheduledStart = await getNextActiveReservationStartAfter(tx, carId, now);
+      const defaultEnd = new Date(now.getTime() + ONE_HOUR_MS);
       const endUntilRelease =
-        nextScheduledStart != null && nextScheduledStart.getTime() > now.getTime()
+        nextScheduledStart != null && nextScheduledStart.getTime() > now.getTime() && nextScheduledStart < defaultEnd
           ? nextScheduledStart
-          : new Date(now.getTime() + ONE_YEAR_MS);
+          : defaultEnd;
 
       if (endUntilRelease.getTime() <= now.getTime()) {
         throw new Error("Car is not available for an instant booking right now (next reservation starts immediately).");

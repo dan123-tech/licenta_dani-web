@@ -251,7 +251,6 @@ export function buildJourneySheetPdf(p) {
       [t.vehicleLabel, p.vehicleLabel || "\u2014"],
       [t.regNumber, p.registrationNumber || "\u2014"],
       [t.purpose, p.purpose || "\u2014"],
-      [t.reservationId, p.reservationId || "\u2014"],
     ],
     theme: "plain",
     styles: {
@@ -278,7 +277,6 @@ export function buildJourneySheetPdf(p) {
     body: [
       [t.plannedDep, fmtDt(p.startDate, tz), hasActualTimes ? fmtDt(p.pickedUpAt, tz) : "\u2014"],
       [t.plannedRet, fmtDt(p.endDate, tz), hasActualTimes ? fmtDt(p.releasedAt, tz) : "\u2014"],
-      [t.plannedDur, fmtDuration(p.startDate, p.endDate), hasActualTimes ? fmtDuration(p.pickedUpAt, p.releasedAt) : "\u2014"],
     ],
     theme: "grid",
     headStyles: {
