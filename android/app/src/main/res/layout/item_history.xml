@@ -32,5 +32,15 @@
             android:textSize="13sp"
             android:alpha="0.9"
             android:textColor="@color/on_surface_variant" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/history_download_journey"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/reports_journey_sheet"
+            android:textColor="@color/primary"
+            app:backgroundTint="@android:color/transparent" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -7,6 +7,7 @@
         <item android:id="@+id/nav_users" android:title="@string/nav_users" />
         <item android:id="@+id/nav_invites" android:title="@string/nav_invites" />
         <item android:id="@+id/nav_history" android:title="@string/nav_history" />
+        <item android:id="@+id/nav_maintenance" android:title="@string/nav_maintenance" />
         <item android:id="@+id/nav_company_settings" android:title="@string/nav_company_settings" />
         <item android:id="@+id/nav_statistics" android:title="@string/nav_statistics" />
         <item android:id="@+id/nav_audit_logs" android:title="@string/nav_audit_logs" />
@@ -15,6 +16,7 @@
     <item android:id="@+id/nav_available_cars" android:title="@string/nav_available_cars" />
     <item android:id="@+id/nav_my_reservations" android:title="@string/nav_my_reservations" />
     <item android:id="@+id/nav_glovebox" android:title="@string/nav_glovebox" />
+    <item android:id="@+id/nav_reports" android:title="@string/nav_reports" />
     <item android:id="@+id/nav_incidents" android:title="@string/nav_incidents" />
     <item android:id="@+id/nav_booking_calendar" android:title="@string/nav_booking_calendar" />
     <item android:id="@+id/nav_driving_licence" android:title="@string/nav_driving_licence" />

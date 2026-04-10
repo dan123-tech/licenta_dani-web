@@ -84,9 +84,11 @@
     <string name="nav_available_cars">Mașini disponibile</string>
     <string name="nav_my_reservations">Rezervările mele</string>
     <string name="nav_glovebox">Glovebox</string>
+    <string name="nav_reports">Rapoarte</string>
     <string name="nav_incidents">Incidente</string>
     <string name="nav_booking_calendar">Calendar rezervări</string>
     <string name="nav_driving_licence">Profil / permis</string>
+    <string name="nav_maintenance">Jurnal mentenanță</string>
 
     <string name="glovebox_title">Glovebox</string>
     <string name="glovebox_loading">Se încarcă glovebox…</string>
@@ -98,6 +100,17 @@
     <string name="glovebox_open_rca">Deschide document RCA</string>
     <string name="glovebox_open_broker">Deschide broker (reînnoire)</string>
     <string name="glovebox_missing_doc">Document indisponibil.</string>
+
+    <string name="reports_title">Rapoarte</string>
+    <string name="reports_journey_sheet">Foaie parcurs (PDF)</string>
+    <string name="reports_open_statistics">Deschide statistici</string>
+    <string name="reports_no_completed">Nu există rezervări finalizate încă.</string>
+    <string name="reports_download_failed">Nu s-a putut descărca foaia de parcurs</string>
+    <string name="reports_journey_not_ready">Foaia de parcurs este disponibilă doar după finalizarea cursei.</string>
+
+    <string name="maintenance_title">Jurnal mentenanță</string>
+    <string name="maintenance_empty">Nu există evenimente de mentenanță.</string>
+    <string name="maintenance_load_failed">Nu s-au putut încărca evenimentele de mentenanță.</string>
 
     <string name="brand_name">FleetShare</string>
     <string name="brand_word_fleet">Fleet</string>

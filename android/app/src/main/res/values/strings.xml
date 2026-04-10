@@ -85,9 +85,11 @@
     <string name="nav_available_cars">Available Cars</string>
     <string name="nav_my_reservations">My Reservations</string>
     <string name="nav_glovebox">Glovebox</string>
+    <string name="nav_reports">Reports</string>
     <string name="nav_incidents">Incidents</string>
     <string name="nav_booking_calendar">Booking calendar</string>
     <string name="nav_driving_licence">Profile / Driving licence</string>
+    <string name="nav_maintenance">Maintenance logs</string>
 
     <!-- Glovebox -->
     <string name="glovebox_title">Glovebox</string>
@@ -100,6 +102,19 @@
     <string name="glovebox_open_rca">Open RCA document</string>
     <string name="glovebox_open_broker">Open broker renewal</string>
     <string name="glovebox_missing_doc">Document not available.</string>
+
+    <!-- Reports -->
+    <string name="reports_title">Reports</string>
+    <string name="reports_journey_sheet">Journey sheet (PDF)</string>
+    <string name="reports_open_statistics">Open statistics</string>
+    <string name="reports_no_completed">No completed reservations yet.</string>
+    <string name="reports_download_failed">Could not download journey sheet</string>
+    <string name="reports_journey_not_ready">Journey sheet is available only after trip is completed.</string>
+
+    <!-- Maintenance -->
+    <string name="maintenance_title">Maintenance logs</string>
+    <string name="maintenance_empty">No maintenance events yet.</string>
+    <string name="maintenance_load_failed">Could not load maintenance events.</string>
 
     <!-- Brand / auth -->
     <string name="brand_name">FleetShare</string>

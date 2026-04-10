@@ -14,6 +14,7 @@ import com.company.carsharing.data.repository.AuthRepository;
 import com.company.carsharing.databinding.FragmentHistoryBinding;
 import com.company.carsharing.models.Reservation;
 import com.company.carsharing.network.RetrofitClient;
+import com.company.carsharing.util.JourneySheetUtil;
 
 import java.util.List;
 
@@ -21,7 +22,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class HistoryFragment extends Fragment {
+public class HistoryFragment extends Fragment implements HistoryAdapter.OnHistoryActionListener {
     private FragmentHistoryBinding binding;
     private HistoryAdapter adapter;
 
@@ -29,7 +30,7 @@ public class HistoryFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentHistoryBinding.inflate(inflater, container, false);
         if (getActivity() instanceof MainActivity) ((MainActivity) getActivity()).setToolbarTitle(getString(R.string.history_screen_title));
-        adapter = new HistoryAdapter(requireContext());
+        adapter = new HistoryAdapter(requireContext(), this);
         binding.historyList.setAdapter(adapter);
         loadHistory();
         return binding.getRoot();
@@ -54,6 +55,17 @@ public class HistoryFragment extends Fragment {
                 }
             }
         });
+    }
+
+    @Override
+    public void onDownloadJourneySheet(Reservation r) {
+        if (r == null) return;
+        JourneySheetUtil.downloadAndOpen(
+                requireContext(),
+                RetrofitClient.getApiService(new AuthRepository(requireContext()).getSessionPreferences()),
+                r.getId(),
+                r.getStatus()
+        );
     }
 
     @Override

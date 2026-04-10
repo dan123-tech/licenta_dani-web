@@ -19,9 +19,15 @@ import java.util.Locale;
 public class HistoryAdapter extends BaseAdapter {
     private final Context context;
     private final List<Reservation> list = new ArrayList<>();
+    private final OnHistoryActionListener listener;
 
-    public HistoryAdapter(Context context) {
+    public interface OnHistoryActionListener {
+        void onDownloadJourneySheet(Reservation r);
+    }
+
+    public HistoryAdapter(Context context, OnHistoryActionListener listener) {
         this.context = context;
+        this.listener = listener;
     }
 
     public void setReservations(List<Reservation> reservations) {
@@ -60,6 +66,14 @@ public class HistoryAdapter extends BaseAdapter {
             dates = end;
         }
         ((TextView) convertView.findViewById(R.id.history_dates)).setText(dates);
+
+        View download = convertView.findViewById(R.id.history_download_journey);
+        boolean completed = "COMPLETED".equalsIgnoreCase(r.getStatus());
+        download.setEnabled(completed);
+        download.setAlpha(completed ? 1f : 0.5f);
+        download.setOnClickListener(v -> {
+            if (listener != null) listener.onDownloadJourneySheet(r);
+        });
         return convertView;
     }
 }

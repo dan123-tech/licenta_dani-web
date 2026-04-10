@@ -13,11 +13,13 @@ import com.company.carsharing.models.Reservation;
 import com.company.carsharing.models.SessionResponse;
 import com.company.carsharing.models.IncidentReport;
 import com.company.carsharing.models.GloveboxActiveResponse;
+import com.company.carsharing.models.MaintenanceEvent;
 
 import java.util.List;
 import java.util.Map;
 
 import okhttp3.MultipartBody;
+import okhttp3.ResponseBody;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -93,6 +95,12 @@ public interface ApiService {
     Call<List<Reservation>> getReservations(@Query("status") String status, @Query("mine") String mine);
     @GET("api/reservations/history")
     Call<List<Reservation>> getReservationHistory();
+    @GET("api/reservations/{id}/journey-sheet")
+    Call<ResponseBody> downloadJourneySheet(
+            @Path("id") String id,
+            @Query("lang") String lang,
+            @Query("tz") String tz
+    );
     @POST("api/reservations")
     Call<Reservation> createReservation(@Body Map<String, Object> body);
     @PATCH("api/reservations/{id}")
@@ -101,6 +109,10 @@ public interface ApiService {
     Call<List<Reservation>> getPendingExceededApprovals();
     @POST("api/reservations/verify-pickup-code")
     Call<Map<String, Object>> verifyPickupCode(@Body Map<String, Object> body);
+
+    // Maintenance (admin/company)
+    @GET("api/maintenance")
+    Call<List<MaintenanceEvent>> getMaintenance(@Query("carId") String carId);
 
     // Audit logs (admin only)
     @GET("api/audit-logs")
