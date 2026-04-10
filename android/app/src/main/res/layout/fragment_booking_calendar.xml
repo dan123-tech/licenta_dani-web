@@ -19,21 +19,20 @@
             android:textColor="?android:attr/textColorSecondary"
             tools:text="Subtitle" />
 
-        <TextView
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="@string/calendar_vehicle_label"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="?android:attr/textColorSecondary" />
-
-        <Spinner
-            android:id="@+id/calendar_car_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:minHeight="48dp" />
+            android:hint="@string/calendar_vehicle_label">
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/calendar_car_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="none"
+                android:focusable="false"
+                android:focusableInTouchMode="false" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:id="@+id/calendar_empty"

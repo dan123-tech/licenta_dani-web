@@ -163,20 +163,8 @@ public class MyReservationsFragment extends Fragment implements ReservationsAdap
                         loadReservations();
                         Toast.makeText(requireContext(), getString(R.string.codes_updated), Toast.LENGTH_SHORT).show();
                     } else {
-                        String msg = getString(R.string.could_not_get_codes);
-                        try {
-                            if (response.errorBody() != null) {
-                                String body = response.errorBody().string();
-                                if (body != null && body.contains("error")) {
-                                    int i = body.indexOf("\"error\":\"");
-                                    if (i >= 0) {
-                                        int j = body.indexOf("\"", i + 9);
-                                        if (j > i + 9) msg = body.substring(i + 9, j);
-                                    }
-                                }
-                            }
-                        } catch (Exception ignored) { }
-                        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
+                        String apiErr = parseApiErrorMessage(response);
+                        Toast.makeText(requireContext(), apiErr != null ? apiErr : getString(R.string.could_not_get_codes), Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -238,7 +226,9 @@ public class MyReservationsFragment extends Fragment implements ReservationsAdap
                 }
             }
             @Override
-            public void onFailure(Call<List<Reservation>> call, Throwable t) { }
+            public void onFailure(Call<List<Reservation>> call, Throwable t) {
+                if (getActivity() != null) Toast.makeText(requireContext(), getString(R.string.network_error), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }

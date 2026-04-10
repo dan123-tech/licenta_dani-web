@@ -8,8 +8,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -57,7 +58,7 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
         View dialogView = LayoutInflater.from(requireContext()).inflate(com.company.carsharing.R.layout.dialog_add_car, null);
         com.google.android.material.textfield.TextInputEditText brandEt = dialogView.findViewById(com.company.carsharing.R.id.dialog_brand_et);
         com.google.android.material.textfield.TextInputEditText regEt = dialogView.findViewById(com.company.carsharing.R.id.dialog_reg_et);
-        Spinner fuelSpinner = dialogView.findViewById(com.company.carsharing.R.id.dialog_fuel_type);
+        MaterialAutoCompleteTextView fuelDropdown = dialogView.findViewById(com.company.carsharing.R.id.dialog_fuel_type);
         com.google.android.material.textfield.TextInputEditText kmEt = dialogView.findViewById(com.company.carsharing.R.id.dialog_km_et);
         com.google.android.material.textfield.TextInputEditText consumptionEt = dialogView.findViewById(com.company.carsharing.R.id.dialog_consumption_et);
         String[] fuelApi = getResources().getStringArray(R.array.fuel_type_api);
@@ -67,7 +68,8 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
                 getString(R.string.fuel_type_electric),
                 getString(R.string.fuel_type_hybrid)
         };
-        fuelSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, fuelLabels));
+        fuelDropdown.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, fuelLabels));
+        fuelDropdown.setText(fuelLabels[0], false);
         regEt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -114,7 +116,9 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
             if (!consumptionStr.isEmpty()) {
                 try { consumption = Double.parseDouble(consumptionStr.replace(",", ".")); } catch (NumberFormatException ignored) { }
             }
-            int fuelPos = fuelSpinner.getSelectedItemPosition();
+            String fuelText = fuelDropdown.getText() != null ? fuelDropdown.getText().toString() : "";
+            int fuelPos = 0;
+            for (int fi = 0; fi < fuelLabels.length; fi++) { if (fuelLabels[fi].equals(fuelText)) { fuelPos = fi; break; } }
             String fuelType = fuelApi[fuelPos >= 0 && fuelPos < fuelApi.length ? fuelPos : 0];
             Map<String, Object> body = new HashMap<>();
             body.put("brand", brand);
@@ -154,7 +158,7 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
         View dialogView = LayoutInflater.from(requireContext()).inflate(com.company.carsharing.R.layout.dialog_edit_car, null);
         com.google.android.material.textfield.TextInputEditText kmEt = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_km_et);
         com.google.android.material.textfield.TextInputEditText consumptionEt = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_consumption_et);
-        Spinner statusSpinner = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_status);
+        MaterialAutoCompleteTextView statusDropdown = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_status);
         TextView errorTv = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_car_error);
         View cancelBtn = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_cancel);
         View saveBtn = dialogView.findViewById(com.company.carsharing.R.id.dialog_edit_save);
@@ -167,10 +171,11 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
                 getString(R.string.car_status_reserved),
                 getString(R.string.car_status_maintenance)
         };
-        statusSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, statusLabels));
+        statusDropdown.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, statusLabels));
         for (int i = 0; i < statusApi.length; i++) {
-            if (statusApi[i].equals(car.getStatus())) { statusSpinner.setSelection(i); break; }
+            if (statusApi[i].equals(car.getStatus())) { statusDropdown.setText(statusLabels[i], false); break; }
         }
+        if (statusDropdown.getText() == null || statusDropdown.getText().length() == 0) statusDropdown.setText(statusLabels[0], false);
 
         AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).setCancelable(true).create();
         cancelBtn.setOnClickListener(v -> dialog.dismiss());
@@ -184,7 +189,9 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
             if (!consumptionStr.isEmpty()) {
                 try { consumption = Double.parseDouble(consumptionStr.replace(",", ".")); } catch (NumberFormatException ignored) { }
             }
-            int stPos = statusSpinner.getSelectedItemPosition();
+            String stText = statusDropdown.getText() != null ? statusDropdown.getText().toString() : "";
+            int stPos = 0;
+            for (int si = 0; si < statusLabels.length; si++) { if (statusLabels[si].equals(stText)) { stPos = si; break; } }
             String status = statusApi[stPos >= 0 && stPos < statusApi.length ? stPos : 0];
             Map<String, Object> body = new HashMap<>();
             body.put("km", km);
@@ -258,7 +265,9 @@ public class CarsFragment extends Fragment implements CarsAdapter.OnCarActionLis
                 }
             }
             @Override
-            public void onFailure(Call<List<Car>> call, Throwable t) { }
+            public void onFailure(Call<List<Car>> call, Throwable t) {
+                if (getActivity() != null) Toast.makeText(requireContext(), getString(R.string.network_error), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }

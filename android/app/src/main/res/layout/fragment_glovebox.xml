@@ -77,21 +77,27 @@
                                 android:id="@+id/glovebox_itp"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="—" />
+                                android:text="—"
+                                android:textSize="16sp"
+                                android:textAppearance="?attr/textAppearanceBodyLarge" />
 
                             <TextView
                                 android:id="@+id/glovebox_rca"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="—" />
+                                android:layout_marginTop="6dp"
+                                android:text="—"
+                                android:textSize="16sp"
+                                android:textAppearance="?attr/textAppearanceBodyLarge" />
 
                             <TextView
                                 android:id="@+id/glovebox_vignette"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:text="—" />
+                                android:layout_marginTop="6dp"
+                                android:text="—"
+                                android:textSize="16sp"
+                                android:textAppearance="?attr/textAppearanceBodyLarge" />
                         </LinearLayout>
 
                         <com.google.android.material.button.MaterialButton

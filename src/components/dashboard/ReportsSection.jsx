@@ -9,6 +9,7 @@ import {
   FileDown,
   Loader2,
   Info,
+  BarChart2,
 } from "lucide-react";
 import { apiMaintenanceList, apiIncidentsList } from "@/lib/api";
 import {
@@ -59,7 +60,7 @@ function carDisplayLabel(car) {
   return car.registrationNumber ? `${bm} · ${car.registrationNumber}` : bm;
 }
 
-export default function ReportsSection({ cars = [], reservations = [], users = [], company }) {
+export default function ReportsSection({ cars = [], reservations = [], users = [], company, onNavigateToStatistics }) {
   const { formatCurrency, locale } = useI18n();
 
   const [reportType, setReportType] = useState("per-car");
@@ -178,12 +179,24 @@ export default function ReportsSection({ cars = [], reservations = [], users = [
             Generate detailed PDF reports for any vehicle, period or the full fleet.
           </p>
         </div>
-        {dataLoading && (
-          <div className="flex items-center gap-1.5 text-sm text-slate-500">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Loading fleet data…
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {dataLoading && (
+            <div className="flex items-center gap-1.5 text-sm text-slate-500">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Loading fleet data…
+            </div>
+          )}
+          {onNavigateToStatistics && (
+            <button
+              type="button"
+              onClick={onNavigateToStatistics}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm transition-colors"
+            >
+              <BarChart2 className="w-4 h-4" />
+              Open Statistics
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 max-w-3xl">

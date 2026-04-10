@@ -90,7 +90,7 @@ public class IncidentsFragment extends Fragment {
         items.add(getString(R.string.incident_severity_a));
         items.add(getString(R.string.incident_severity_b));
         items.add(getString(R.string.incident_severity_c));
-        ArrayAdapter<String> ad = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, items);
+        ArrayAdapter<String> ad = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, items);
         binding.incSeverity.setAdapter(ad);
         binding.incSeverity.setThreshold(0);
         binding.incSeverity.setText(items.get(2), false);
@@ -133,7 +133,7 @@ public class IncidentsFragment extends Fragment {
                             labels.add(label);
                             carLabelToId.put(label, c.getId());
                         }
-                        ArrayAdapter<String> ad = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, labels);
+                        ArrayAdapter<String> ad = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, labels);
                         binding.incVehicle.setAdapter(ad);
                         binding.incVehicle.setThreshold(0);
                         binding.incVehicle.setOnItemClickListener((parent, view, position, id) -> {

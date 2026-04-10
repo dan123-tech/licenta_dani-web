@@ -5,8 +5,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -53,19 +54,20 @@ public class UsersFragment extends Fragment implements UsersAdapter.OnUserAction
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_invite_user, null);
         com.google.android.material.textfield.TextInputEditText emailEt = dialogView.findViewById(R.id.dialog_invite_email_et);
         com.google.android.material.textfield.TextInputEditText nameEt = dialogView.findViewById(R.id.dialog_invite_name_et);
-        Spinner roleSpinner = dialogView.findViewById(R.id.dialog_invite_role);
+        MaterialAutoCompleteTextView roleDropdown = dialogView.findViewById(R.id.dialog_invite_role);
         TextView errorTv = dialogView.findViewById(R.id.dialog_invite_error);
         View cancelBtn = dialogView.findViewById(R.id.dialog_invite_cancel);
         View saveBtn = dialogView.findViewById(R.id.dialog_invite_save);
 
-        roleSpinner.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, new String[]{"USER", "ADMIN"}));
+        roleDropdown.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, new String[]{"USER", "ADMIN"}));
+        roleDropdown.setText("USER", false);
         AlertDialog dialog = new AlertDialog.Builder(requireContext()).setView(dialogView).setCancelable(true).create();
         cancelBtn.setOnClickListener(v -> dialog.dismiss());
         saveBtn.setOnClickListener(v -> {
             errorTv.setVisibility(View.GONE);
             String email = emailEt.getText() != null ? emailEt.getText().toString().trim() : "";
             String name = nameEt.getText() != null ? nameEt.getText().toString().trim() : "";
-            String role = (String) roleSpinner.getSelectedItem();
+            String role = roleDropdown.getText() != null ? roleDropdown.getText().toString() : "USER";
             if (email.isEmpty()) {
                 errorTv.setText(getString(R.string.email_required));
                 errorTv.setVisibility(View.VISIBLE);
@@ -226,7 +228,9 @@ public class UsersFragment extends Fragment implements UsersAdapter.OnUserAction
                 }
             }
             @Override
-            public void onFailure(Call<List<Member>> call, Throwable t) { }
+            public void onFailure(Call<List<Member>> call, Throwable t) {
+                if (getActivity() != null) Toast.makeText(requireContext(), getString(R.string.network_error), Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }

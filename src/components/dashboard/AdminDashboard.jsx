@@ -1306,6 +1306,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
             reservations={reservations}
             users={users}
             company={company}
+            onNavigateToStatistics={() => setSection("statistics")}
           />
         )}
 

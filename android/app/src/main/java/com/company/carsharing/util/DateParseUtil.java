@@ -97,6 +97,31 @@ public final class DateParseUtil {
     }
 
     /**
+     * Formats an API ISO string showing only the date portion in the device's local timezone.
+     * Useful for expiry dates (ITP, RCA, vignette) that are stored as UTC datetimes.
+     */
+    public static String formatDateOnlyFromIso(String iso, Locale locale) {
+        if (iso == null || iso.trim().isEmpty()) return "";
+        String t = iso.trim();
+        Locale loc = locale != null ? locale : Locale.getDefault();
+
+        // Date-only: no timezone conversion needed
+        if (t.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return formatIsoForDisplay(t, locale);
+        }
+
+        // Datetime: parse to millis, then display as date-only in local timezone
+        long ms = parseIsoToMillis(t);
+        if (ms < 0) {
+            // Fallback: extract date part
+            return formatIsoForDisplay(t.length() >= 10 ? t.substring(0, 10) : t, locale);
+        }
+        DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM, loc);
+        // Uses device default (local) timezone
+        return df.format(new Date(ms));
+    }
+
+    /**
      * Formats an API ISO string for UI. Date-only values use the calendar day (no timezone shift).
      * Date-times use the device locale and local timezone.
      */

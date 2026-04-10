@@ -64,9 +64,22 @@ const USER_PAGE_META_KEYS = {
   glovebox: "userGlovebox",
 };
 
+const USER_TZ = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "Europe/Bucharest"; }
+})();
+
 function formatDate(d) {
+  if (!d) return "—";
   const x = new Date(d);
-  return x.toLocaleString();
+  if (Number.isNaN(x.getTime())) return "—";
+  return x.toLocaleString("ro-RO", { dateStyle: "short", timeStyle: "short", timeZone: USER_TZ });
+}
+
+function formatDateOnly(d) {
+  if (!d) return "—";
+  const x = new Date(d);
+  if (Number.isNaN(x.getTime())) return "—";
+  return x.toLocaleDateString("ro-RO", { timeZone: USER_TZ });
 }
 
 const PICKUP_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
@@ -1382,36 +1395,30 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                 <ul className="text-sm text-slate-700 space-y-1">
                   <li>
                     <span className="text-slate-500">ITP: </span>
-                    {glovebox.car?.itpExpiresAt
-                      ? new Date(glovebox.car.itpExpiresAt).toLocaleDateString()
-                      : "—"}
+                    {formatDateOnly(glovebox.car?.itpExpiresAt)}
                   </li>
                   <li>
                     <span className="text-slate-500">RCA: </span>
-                    {glovebox.car?.rcaExpiresAt
-                      ? new Date(glovebox.car.rcaExpiresAt).toLocaleDateString()
-                      : "—"}
+                    {formatDateOnly(glovebox.car?.rcaExpiresAt)}
                   </li>
                   <li>
-                    <span className="text-slate-500">Rovinietă: </span>
-                    {glovebox.car?.vignetteExpiresAt
-                      ? new Date(glovebox.car.vignetteExpiresAt).toLocaleDateString()
-                      : "—"}
+                    <span className="text-slate-500">Rovinieta: </span>
+                    {formatDateOnly(glovebox.car?.vignetteExpiresAt)}
                   </li>
                 </ul>
                 {glovebox.car?.rcaDocumentUrl ? (
                   <div>
-                    <p className="text-xs font-semibold text-slate-600 mb-2">RCA document</p>
+                    <p className="text-xs font-semibold text-slate-600 mb-2">RCA Document</p>
                     <Link
                       href="/glovebox/rca"
                       className="inline-flex items-center justify-center gap-2 w-full max-w-sm px-4 py-3 rounded-xl text-sm font-semibold text-white bg-[var(--primary)] hover:bg-[var(--primary-hover)] shadow-sm"
                     >
                       <FileText className="w-4 h-4 shrink-0" aria-hidden />
-                      Open RCA (PDF / image)
+                      View RCA Document
                     </Link>
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">No RCA file on file for this vehicle yet.</p>
+                  <p className="text-sm text-slate-500">No RCA document uploaded for this vehicle.</p>
                 )}
                 {glovebox.brokerRenewalUrl ? (
                   <a
@@ -1430,7 +1437,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
 
         {section === "incidents" && (
           <section className="w-full min-w-0 space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 max-w-3xl">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-4 sm:p-6 max-w-3xl overflow-hidden">
               <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2">I had an incident</h2>
               <p className="text-sm text-slate-500 mb-4">
                 Step-by-step: add photos in the suggested order, then details. Admins are notified automatically. For a road collision, complete an amicable finding (constatare amiabilă) with the other driver when safe to do so, or follow police instructions.
@@ -1449,13 +1456,13 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
               </div>
 
               {incidentStep === 0 && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                <div className="flex flex-col gap-3">
+                  <label className="block text-xs font-medium text-slate-600">
                     Vehicle
                     <select
                       value={incidentCarId}
                       onChange={(e) => setIncidentCarId(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm bg-white"
                     >
                       <option value="">—</option>
                       {cars.map((c) => (
@@ -1465,7 +1472,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                       ))}
                     </select>
                   </label>
-                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                  <label className="block text-xs font-medium text-slate-600">
                     Severity
                     <select
                       value={incidentSeverity}
@@ -1477,7 +1484,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                       <option value="C">C — Low / cosmetic</option>
                     </select>
                   </label>
-                  <div className="sm:col-span-2 flex justify-end">
+                  <div className="flex justify-end">
                     <button
                       type="button"
                       onClick={() => {
@@ -1563,7 +1570,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
 
               {incidentStep === 2 && (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block text-xs font-medium text-slate-600">
+                  <label className="col-span-full block text-xs font-medium text-slate-600">
                     When (optional)
                     <input
                       type="datetime-local"
@@ -1572,7 +1579,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                       className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
                     />
                   </label>
-                  <label className="block text-xs font-medium text-slate-600 sm:col-span-2">
+                  <label className="col-span-full block text-xs font-medium text-slate-600">
                     Location (optional)
                     <input
                       type="text"
@@ -1582,7 +1589,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                       placeholder="Address, landmark, parking…"
                     />
                   </label>
-                  <div className="sm:col-span-2 flex justify-between">
+                  <div className="col-span-full flex justify-between">
                     <button
                       type="button"
                       onClick={() => setIncidentStep(1)}
@@ -1602,8 +1609,8 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
               )}
 
               {incidentStep === 3 && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                <div className="flex flex-col gap-3">
+                  <label className="block text-xs font-medium text-slate-600">
                     Short title
                     <input
                       type="text"
@@ -1613,7 +1620,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                       placeholder="e.g. Rear bumper scratch in parking"
                     />
                   </label>
-                  <label className="sm:col-span-2 block text-xs font-medium text-slate-600">
+                  <label className="block text-xs font-medium text-slate-600">
                     What happened? (optional)
                     <textarea
                       value={incidentDescription}
@@ -1623,10 +1630,10 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                       placeholder="Other party, injuries, police, towing…"
                     />
                   </label>
-                  <div className="sm:col-span-2 rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600">
-                    <strong className="text-slate-800">Amicable finding:</strong> in Romania, minor crashes are often documented with a constatare amiabilă agreed with the other driver. If anyone is hurt, traffic is blocked, or you are unsure, call emergency services and follow their instructions.
+                  <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 break-words">
+                    <strong className="text-slate-800">Amicable finding:</strong> in Romania, minor crashes are often documented with a constatare amiabila agreed with the other driver. If anyone is hurt, traffic is blocked, or you are unsure, call emergency services and follow their instructions.
                   </div>
-                  <div className="sm:col-span-2 flex justify-between flex-wrap gap-2">
+                  <div className="flex justify-between flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setIncidentStep(2)}
@@ -1707,7 +1714,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                     <tbody className="text-sm text-slate-800">
                       {incidents.map((r) => (
                         <tr key={r.id} className="border-t border-slate-100">
-                          <td className="py-3 pr-3 whitespace-nowrap">{new Date(r.occurredAt || r.createdAt).toLocaleString()}</td>
+                          <td className="py-3 pr-3 whitespace-nowrap">{formatDate(r.occurredAt || r.createdAt)}</td>
                           <td className="py-3 pr-3 whitespace-nowrap">
                             {[r.car?.brand, r.car?.registrationNumber, r.car?.vehicleCategory ? `(${r.car.vehicleCategory})` : null].filter(Boolean).join(" ")}
                           </td>

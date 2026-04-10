@@ -5,8 +5,9 @@ import android.app.TimePickerDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -142,7 +143,7 @@ public final class ReservationScheduleDialog {
         View dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_create_reservation, null);
         TextView titleTv = dialogView.findViewById(R.id.dialog_res_title);
         View carSection = dialogView.findViewById(R.id.dialog_res_car_section);
-        Spinner carSpinner = dialogView.findViewById(R.id.dialog_res_car);
+        MaterialAutoCompleteTextView carDropdown = dialogView.findViewById(R.id.dialog_res_car);
         com.google.android.material.textfield.TextInputEditText purposeEt = dialogView.findViewById(R.id.dialog_res_purpose_et);
         com.google.android.material.textfield.TextInputEditText startEt = dialogView.findViewById(R.id.dialog_res_start);
         com.google.android.material.textfield.TextInputEditText endEt = dialogView.findViewById(R.id.dialog_res_end);
@@ -183,8 +184,9 @@ public final class ReservationScheduleDialog {
                     + (fixedCar.getRegistrationNumber() != null ? " · " + fixedCar.getRegistrationNumber() : "")
                     + (cat != null ? " · " + cat : "");
             titleTv.setText(ctx.getString(R.string.reserve_car_title_fmt, carLabel));
-            carSpinner.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_dropdown_item,
+            carDropdown.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_dropdown_item_1line,
                     Collections.singletonList(carLabel)));
+            carDropdown.setText(carLabel, false);
             openDialogWithCars(fragment, dialogView, Collections.singletonList(fixedCar), errorTv, cancelBtn, saveBtn,
                     purposeEt, startMs, endMs, onSuccess);
             return;
@@ -213,7 +215,8 @@ public final class ReservationScheduleDialog {
                                             (cat != null ? " · " + cat : "")
                             );
                         }
-                        carSpinner.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_dropdown_item, labels));
+                        carDropdown.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_dropdown_item_1line, labels));
+                        if (!labels.isEmpty()) carDropdown.setText(labels.get(0), false);
                         openDialogWithCars(fragment, dialogView, cars, errorTv, cancelBtn, saveBtn, purposeEt, startMs, endMs, onSuccess);
                     }
 
@@ -231,12 +234,21 @@ public final class ReservationScheduleDialog {
             com.google.android.material.textfield.TextInputEditText purposeEt,
             long[] startMs, long[] endMs, Runnable onSuccess) {
         android.content.Context ctx = fragment.requireContext();
-        Spinner carSpinner = dialogView.findViewById(R.id.dialog_res_car);
+        MaterialAutoCompleteTextView carDropdown2 = dialogView.findViewById(R.id.dialog_res_car);
         AlertDialog dialog = new AlertDialog.Builder(ctx).setView(dialogView).setCancelable(true).create();
         cancelBtn.setOnClickListener(v -> dialog.dismiss());
         saveBtn.setOnClickListener(v -> {
             errorTv.setVisibility(View.GONE);
-            int pos = carSpinner.getSelectedItemPosition();
+            String selectedText = carDropdown2 != null && carDropdown2.getText() != null ? carDropdown2.getText().toString() : "";
+            // resolve car by matching adapter text
+            ArrayAdapter<String> ad = carDropdown2 != null ? (ArrayAdapter<String>) carDropdown2.getAdapter() : null;
+            int pos = -1;
+            if (ad != null) {
+                for (int i = 0; i < ad.getCount(); i++) {
+                    if (selectedText.equals(ad.getItem(i))) { pos = i; break; }
+                }
+            }
+            if (pos < 0 && !cars.isEmpty()) pos = 0;
             if (pos < 0 || pos >= cars.size()) {
                 errorTv.setText(ctx.getString(R.string.select_a_car));
                 errorTv.setVisibility(View.VISIBLE);

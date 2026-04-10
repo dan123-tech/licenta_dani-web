@@ -177,6 +177,8 @@
     <string name="company_settings_subtitle">Default km and fuel prices (admin)</string>
     <string name="could_not_save_settings">Could not save settings</string>
     <string name="could_not_open_share">Could not open share</string>
+    <string name="could_not_open_link">Could not open link</string>
+    <string name="open_document">Open document</string>
 
     <!-- Company settings fragment -->
     <string name="enter_km_range">Enter a value between 1 and 10000</string>

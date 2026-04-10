@@ -4,11 +4,11 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -47,7 +47,7 @@ public class BookingCalendarFragment extends Fragment {
     private ListView listView;
     private TextView emptyView;
     private TextView subtitleView;
-    private Spinner carSpinner;
+    private MaterialAutoCompleteTextView carSpinner;
 
     private final List<String> spinnerLabels = new ArrayList<>();
     private final List<String> spinnerCarIds = new ArrayList<>();
@@ -96,20 +96,13 @@ public class BookingCalendarFragment extends Fragment {
 
         refreshLayout.setOnRefreshListener(this::loadData);
 
-        carSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position >= 0 && position < spinnerCarIds.size()) {
-                    selectedCarId = spinnerCarIds.get(position) != null ? spinnerCarIds.get(position) : "";
-                } else {
-                    selectedCarId = "";
-                }
-                applyFilterAndSort();
+        carSpinner.setOnItemClickListener((parent, view, position, id) -> {
+            if (position >= 0 && position < spinnerCarIds.size()) {
+                selectedCarId = spinnerCarIds.get(position) != null ? spinnerCarIds.get(position) : "";
+            } else {
+                selectedCarId = "";
             }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            applyFilterAndSort();
         });
 
         loadData();
@@ -202,7 +195,7 @@ public class BookingCalendarFragment extends Fragment {
             if (idx >= 0) restore = idx;
             else selectedCarId = "";
         }
-        carSpinner.setSelection(restore, false);
+        carSpinner.setText(spinnerLabels.get(restore), false);
         if (restore < spinnerCarIds.size()) {
             selectedCarId = spinnerCarIds.get(restore) != null ? spinnerCarIds.get(restore) : "";
         }
