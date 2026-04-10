@@ -57,7 +57,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "concurrently": "^9.2.1",
-    "eslint": "^9",
+    "eslint": "^10",
     "eslint-config-next": "16.1.6",
     "javascript-obfuscator": "^5.4.1",
     "prisma": "^6.19.3",
