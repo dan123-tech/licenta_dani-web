@@ -192,6 +192,7 @@ export async function createInstantReservation(userId, carId, purpose, companyId
           pickup_code,
           code_valid_from,
           release_code: null,
+          pickedUpAt: now, // instant reservation — pickup time = now
         },
         include: { car: true, user: { select: { id: true, name: true, email: true } } },
       });
@@ -288,7 +289,7 @@ export async function cancelReservation(reservationId) {
  */
 export async function completeReservation(reservationId, data = {}) {
   const release_code = generateSixDigitCode();
-  const update = { status: "COMPLETED", release_code };
+  const update = { status: "COMPLETED", release_code, releasedAt: new Date() };
   if (data.releasedKmUsed != null) update.releasedKmUsed = data.releasedKmUsed;
   if (data.releasedOdometerStart != null) update.releasedOdometerStart = data.releasedOdometerStart;
   if (data.releasedOdometerEnd != null) update.releasedOdometerEnd = data.releasedOdometerEnd;

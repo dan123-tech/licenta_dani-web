@@ -47,6 +47,8 @@ export async function GET(_request, { params }) {
     purpose: reservation.purpose || "",
     startDate: reservation.startDate,
     endDate: reservation.endDate,
+    pickedUpAt: reservation.pickedUpAt,
+    releasedAt: reservation.releasedAt,
     releasedKmUsed: reservation.releasedKmUsed,
     releasedOdometerStart: reservation.releasedOdometerStart,
     releasedOdometerEnd: reservation.releasedOdometerEnd,

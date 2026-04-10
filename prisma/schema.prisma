@@ -351,6 +351,8 @@ model Reservation {
   pickup_code             String?              // 6-digit code for pickup verification
   code_valid_from         DateTime?            // when set (e.g. admin refresh), 30-min pickup window starts here
   release_code            String?              // 6-digit code for release verification
+  pickedUpAt                 DateTime?            // actual time user pressed Reserve Now / verified pickup code
+  releasedAt                 DateTime?            // actual time user pressed Release
   releasedKmUsed             Int?                 // km driven when released
   releasedOdometerStart      Int?                 // odometer (km) before trip end / at handover (RO journey sheet)
   releasedOdometerEnd        Int?                 // odometer (km) when vehicle returned

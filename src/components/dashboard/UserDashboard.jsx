@@ -155,6 +155,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
   const [incidentOwnFiles, setIncidentOwnFiles] = useState([]);
   const [incidentOtherFiles, setIncidentOtherFiles] = useState([]);
   const [incidentPlateFiles, setIncidentPlateFiles] = useState([]);
+  const [incidentDocFiles, setIncidentDocFiles] = useState([]);
   const [glovebox, setGlovebox] = useState(null);
   const [gloveboxLoading, setGloveboxLoading] = useState(false);
   const [journeyPdfLoadingId, setJourneyPdfLoadingId] = useState(null);
@@ -1492,11 +1493,12 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                     Add photos when it is safe. None are required, but scene + plates help a lot.
                   </p>
                   {[
-                    ["Scene / context", incidentSceneFiles, setIncidentSceneFiles, "image/*"],
-                    ["Your vehicle damage", incidentOwnFiles, setIncidentOwnFiles, "image/*"],
-                    ["Other vehicle (if any)", incidentOtherFiles, setIncidentOtherFiles, "image/*"],
-                    ["Licence plates", incidentPlateFiles, setIncidentPlateFiles, "image/*"],
-                  ].map(([label, files, setFiles, accept]) => (
+                    ["Scene / context", incidentSceneFiles, setIncidentSceneFiles, "image/*", false],
+                    ["Your vehicle damage", incidentOwnFiles, setIncidentOwnFiles, "image/*", false],
+                    ["Other vehicle (if any)", incidentOtherFiles, setIncidentOtherFiles, "image/*", false],
+                    ["Licence plates", incidentPlateFiles, setIncidentPlateFiles, "image/*", false],
+                    ["Documents (PDF / DOC / DOCX)", incidentDocFiles, setIncidentDocFiles, ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document", true],
+                  ].map(([label, files, setFiles, accept, isDoc]) => (
                     <div key={label} className="rounded-lg border border-slate-200 p-3">
                       <p className="text-xs font-semibold text-slate-700 mb-2">{label}</p>
                       <label className="inline-flex items-center gap-2 text-xs text-sky-700 font-medium cursor-pointer">
@@ -1511,7 +1513,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                             if (picked.length) setFiles((prev) => [...prev, ...picked]);
                           }}
                         />
-                        + Add photos
+                        {isDoc ? "+ Add documents" : "+ Add photos"}
                       </label>
                       {files.length > 0 && (
                         <ul className="mt-2 space-y-1">
@@ -1645,6 +1647,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                           for (const f of incidentOwnFiles) form.append("file_own", f);
                           for (const f of incidentOtherFiles) form.append("file_other", f);
                           for (const f of incidentPlateFiles) form.append("file_plate", f);
+                          for (const f of incidentDocFiles) form.append("files", f);
                           await apiIncidentCreate(form);
                           setIncidentStep(0);
                           setIncidentTitle("");
@@ -1656,6 +1659,7 @@ export default function UserDashboard({ user, company, onUserUpdated, viewAs, se
                           setIncidentOwnFiles([]);
                           setIncidentOtherFiles([]);
                           setIncidentPlateFiles([]);
+                          setIncidentDocFiles([]);
                           await loadIncidents();
                         } catch (err) {
                           setError(err.message || "Failed to submit incident");

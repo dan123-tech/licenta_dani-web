@@ -19,15 +19,14 @@ export function rcaDocumentStoredNeedsProxy(stored) {
 
 /**
  * URL safe for <iframe> / <img> with cookies (same origin).
+ * Always routes through the proxy API to avoid cross-origin iframe issues
+ * (e.g. URLs pointing to old/external domains like companyfleetshare.com).
  * @param {string} carId
  * @param {string | null | undefined} stored
  */
 export function rcaDocumentUrlForClient(carId, stored) {
   if (stored == null || typeof stored !== "string" || !stored.trim()) return null;
-  if (rcaDocumentStoredNeedsProxy(stored)) {
-    return `/api/cars/${encodeURIComponent(carId)}/glovebox-document`;
-  }
-  return stored;
+  return `/api/cars/${encodeURIComponent(carId)}/glovebox-document`;
 }
 
 /**

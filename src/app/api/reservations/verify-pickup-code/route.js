@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getActiveReservationByPickupCode, verifyPickupCodeTimeWindow } from "@/lib/reservations";
 import { requireCompany, jsonResponse, errorResponse } from "@/lib/api-helpers";
 import { isCompanyAdmin } from "@/lib/companies";
+import { prisma } from "@/lib/db";
 
 const bodySchema = z.object({
   pickup_code: z.string().min(1).max(20),
@@ -31,6 +32,18 @@ export async function POST(request) {
 
   if (!result.valid) {
     return errorResponse(result.error, 400);
+  }
+
+  // Record the actual pickup time (best-effort, only if not already set).
+  try {
+    if (!result.reservation.pickedUpAt) {
+      await prisma.reservation.update({
+        where: { id: result.reservation.id },
+        data: { pickedUpAt: new Date() },
+      });
+    }
+  } catch (e) {
+    console.warn("[verify-pickup] could not set pickedUpAt:", e?.message);
   }
 
   return jsonResponse({

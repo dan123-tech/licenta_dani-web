@@ -179,6 +179,17 @@ export async function PATCH(request, { params }) {
     return errorResponse(err?.message || "Failed to update car", 500);
   }
 
+  // If admin is setting a new ITP date in the future and car is IN_MAINTENANCE, auto-restore to AVAILABLE.
+  if (parsed.data.itpExpiresAt !== undefined && parsed.data.itpExpiresAt != null) {
+    const newItp = new Date(parsed.data.itpExpiresAt);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isFuture = !Number.isNaN(newItp.getTime()) && newItp.getTime() > today.getTime();
+    if (isFuture && carBefore?.status === "IN_MAINTENANCE" && data.status === undefined) {
+      data.status = "AVAILABLE";
+    }
+  }
+
   const result = await updateCar(id, out.session.companyId, data);
   if (result.count === 0) return errorResponse("Car not found", 404);
   const car = await getCarById(id, out.session.companyId);
