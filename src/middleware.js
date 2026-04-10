@@ -33,6 +33,16 @@ export function middleware(request) {
   if (corsOrigin) {
     applyCorsHeaders(res, corsOrigin);
   }
+  // Never allow platform/proxy to accidentally expose wildcard CORS on HTML/pages.
+  // CORS is only intended for /api/* with an explicit allow-list.
+  if (!isApi) {
+    res.headers.delete("Access-Control-Allow-Origin");
+    res.headers.delete("Access-Control-Allow-Credentials");
+    res.headers.delete("Access-Control-Allow-Headers");
+    res.headers.delete("Access-Control-Allow-Methods");
+    res.headers.delete("Access-Control-Max-Age");
+    res.headers.delete("Vary");
+  }
 
   if (process.env.NODE_ENV !== "production") return res;
 
@@ -60,7 +70,10 @@ export function middleware(request) {
   res.headers.set("X-Frame-Options", isGloveboxDocumentRoute ? "SAMEORIGIN" : "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(self), microphone=(), geolocation=()");
-  res.headers.set("Content-Security-Policy", cspBase);
+  const reportOnly = process.env.CSP_REPORT_ONLY === "1";
+  const reportUri = (process.env.CSP_REPORT_URI || "/api/csp-report").trim();
+  const withReporting = reportUri ? `${cspBase}; report-uri ${reportUri}` : cspBase;
+  res.headers.set(reportOnly ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy", withReporting);
   res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
 

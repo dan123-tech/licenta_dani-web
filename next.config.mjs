@@ -7,24 +7,6 @@ const isProduction = process.env.NODE_ENV === "production";
 const nextConfig = {
   poweredByHeader: false,
   async headers() {
-    const csp = [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      "frame-src 'self' https:",
-      "worker-src 'self'",
-      "object-src 'none'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data: https:",
-      "style-src 'self' 'unsafe-inline' https:",
-      "script-src 'self' 'unsafe-inline' https:",
-      "connect-src 'self' https: wss:",
-      "upgrade-insecure-requests",
-    ].join("; ");
-
-    const cspGloveboxFrame = csp.replace("frame-ancestors 'none'", "frame-ancestors 'self'");
-
     const securityHeaders = [
       {
         key: "Referrer-Policy",
@@ -54,10 +36,6 @@ const nextConfig = {
         key: "Cross-Origin-Resource-Policy",
         value: "same-origin",
       },
-      {
-        key: "Content-Security-Policy",
-        value: csp,
-      },
     ];
     if (isProduction) {
       securityHeaders.push({
@@ -70,14 +48,6 @@ const nextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
-      },
-      // Allow /glovebox/rca to iframe this API (global CSP uses frame-ancestors 'none').
-      {
-        source: "/api/cars/:id/glovebox-document",
-        headers: [
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "Content-Security-Policy", value: cspGloveboxFrame },
-        ],
       },
       {
         source: "/",
