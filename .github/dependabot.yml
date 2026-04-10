@@ -9,3 +9,15 @@ updates:
       all-npm-deps:
         patterns:
           - "*"
+    ignore:
+      # Keep major upgrades out of the single grouped PR (they often require manual code changes).
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-major"]
