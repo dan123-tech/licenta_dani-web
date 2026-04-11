@@ -63,9 +63,10 @@ export function Sidebar({ user, children, mobileOpen, onClose, viewAs, setViewAs
         className={`
           fleet-sidebar
           w-[min(280px,85vw)] min-w-0 max-w-[85vw] md:w-[240px] md:min-w-[240px] md:max-w-none
-          h-[100dvh] md:h-screen flex flex-col pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 text-white shrink-0 overflow-x-hidden
+          h-[100dvh] md:h-screen min-h-0 flex flex-col overflow-hidden
+          pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:pb-3 text-white shrink-0
           fixed md:relative left-0 top-0 z-[140] md:z-auto
-          transform transition-transform duration-200 ease-out touch-pan-y
+          transform transition-transform duration-200 ease-out
           ${mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
         `}
         style={{
@@ -144,15 +145,18 @@ export function Sidebar({ user, children, mobileOpen, onClose, viewAs, setViewAs
           )}
         </div>
 
-        {/* ── Nav */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 min-w-0 flex flex-col py-1">
+        {/* ── Nav (scrolls); footer below stays pinned like desktop */}
+        <nav className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-y-contain flex flex-col py-1 [-webkit-overflow-scrolling:touch]">
           {children}
         </nav>
 
-        {/* ── User footer */}
+        {/* ── User footer (pinned to bottom of drawer / column) */}
         <div
-          className="shrink-0 pt-2 px-3 min-w-0"
-          style={{ borderTop: "1px solid var(--sidebar-border)" }}
+          className="shrink-0 pt-2 px-3 min-w-0 mt-auto max-md:shadow-[0_-10px_28px_-8px_rgba(0,0,0,0.5)] md:shadow-none"
+          style={{
+            borderTop: "1px solid var(--sidebar-border)",
+            backgroundColor: "var(--sidebar-bg)",
+          }}
         >
           <div
             className="flex items-center gap-2.5 px-2 py-2 rounded-lg"
@@ -175,7 +179,7 @@ export function Sidebar({ user, children, mobileOpen, onClose, viewAs, setViewAs
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2 py-1.5 md:px-1.5 md:py-1.5 rounded-md transition-colors shrink-0 min-h-[40px] md:min-h-0"
+              className="p-1.5 rounded-md transition-colors shrink-0 min-h-[40px] min-w-[40px] md:min-h-0 md:min-w-0 flex items-center justify-center"
               style={{ color: "rgba(255,255,255,0.35)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#fca5a5";
@@ -188,8 +192,7 @@ export function Sidebar({ user, children, mobileOpen, onClose, viewAs, setViewAs
               title={t("sidebar.logout")}
               aria-label={t("sidebar.logout")}
             >
-              <LogOut className="w-3.5 h-3.5 shrink-0" />
-              <span className="text-[11px] font-semibold md:hidden">{t("sidebar.logout")}</span>
+              <LogOut className="w-4 h-4 md:w-3.5 md:h-3.5 shrink-0" />
             </button>
           </div>
         </div>
