@@ -29,7 +29,8 @@
       "mobileTitle": "Mobile app",
       "mobileSub": "Aplicație mobilă",
       "prices": "Prices",
-      "contact": "Contact"
+      "contact": "Contact",
+      "menuTitle": "Menu"
     },
     "sections": {
       "webTitle": "Web platform",

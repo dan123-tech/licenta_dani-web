@@ -12,7 +12,7 @@ export default function LandingSiteFooter() {
       style={{ borderColor: "rgba(255,255,255,0.07)" }}
     >
       <div
-        className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs"
+        className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-xs break-words px-1"
         style={{ color: "rgba(255,255,255,0.25)" }}
       >
         <span>{t("common.copyright")}</span>

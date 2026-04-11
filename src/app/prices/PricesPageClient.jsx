@@ -152,7 +152,7 @@ const FAQS = [
 
 export default function PricesPageClient() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: COL.base }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: COL.base }}>
       <LandingSiteHeader />
 
       <main className="flex-1 w-full">
@@ -163,9 +163,9 @@ export default function PricesPageClient() {
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-20"
               style={{ background: "radial-gradient(ellipse, #185fa5 0%, transparent 70%)" }} />
           </div>
-          <div className="relative max-w-3xl mx-auto px-5 pt-14 pb-12 text-center">
+          <div className="relative max-w-3xl mx-auto px-4 sm:px-5 pt-12 sm:pt-14 pb-10 sm:pb-12 text-center">
             <Badge>Pricing</Badge>
-            <h1 className="mt-5 text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+            <h1 className="mt-5 text-2xl min-[400px]:text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4 text-balance px-1">
               Simple, transparent pricing
             </h1>
             <p className="text-base max-w-lg mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
@@ -175,7 +175,7 @@ export default function PricesPageClient() {
         </section>
 
         {/* ── PLANS ── */}
-        <section className="max-w-6xl mx-auto px-5 pb-16">
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {PLANS.map((plan) => {
               const Icon = plan.icon;
@@ -242,13 +242,16 @@ export default function PricesPageClient() {
 
         {/* ── COMPARISON TABLE ── */}
         <section style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
-          <div className="max-w-5xl mx-auto px-5 py-14">
+          <div className="max-w-5xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
             <h2 className="text-2xl font-bold text-white text-center mb-2">Feature comparison</h2>
             <p className="text-sm text-center mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
               A full breakdown of what is included in each plan.
             </p>
-            <div className="overflow-x-auto rounded-2xl border" style={{ borderColor: "rgba(255,255,255,0.09)" }}>
-              <table className="w-full text-sm">
+            <div
+              className="-mx-1 overflow-x-auto rounded-2xl border px-1 pb-1 sm:mx-0 sm:px-0 sm:pb-0 touch-pan-x"
+              style={{ borderColor: "rgba(255,255,255,0.09)" }}
+            >
+              <table className="w-full min-w-[34rem] text-xs sm:text-sm">
                 <thead>
                   <tr style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
                     <th className="text-left py-4 px-5 font-semibold text-white/70">Feature</th>
@@ -278,7 +281,7 @@ export default function PricesPageClient() {
         </section>
 
         {/* ── FAQ ── */}
-        <section className="max-w-3xl mx-auto px-5 py-14">
+        <section className="max-w-3xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
           <h2 className="text-2xl font-bold text-center mb-8" style={{ color: "#ffffff" }}>Frequently asked questions</h2>
           <div className="flex flex-col gap-4">
             {FAQS.map((faq) => (
@@ -297,8 +300,8 @@ export default function PricesPageClient() {
         </section>
 
         {/* ── CTA ── */}
-        <section className="max-w-6xl mx-auto px-5 pb-16">
-          <div className="relative overflow-hidden rounded-2xl p-8 sm:p-12 text-center"
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
+          <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 md:p-12 text-center"
             style={{ background: "linear-gradient(135deg, rgba(24,95,165,0.3) 0%, rgba(29,78,216,0.2) 100%)", border: "1px solid rgba(24,95,165,0.4)" }}>
             <h2 className="text-2xl font-bold mb-3" style={{ color: "#ffffff" }}>Still have questions?</h2>
             <p className="text-sm mb-7 max-w-md mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>

@@ -110,7 +110,7 @@ const STATS = [
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function HomePageClient() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: BASE }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: BASE }}>
       <LandingSiteHeader logoPriority />
 
       <main className="flex-1 w-full">
@@ -128,7 +128,7 @@ export default function HomePageClient() {
           <div className="relative max-w-6xl mx-auto px-4 sm:px-5 pt-12 pb-16 text-center">
             <Badge>Fleet Management</Badge>
 
-            <h1 className="mt-5 text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-[1.15] mb-4">
+            <h1 className="mt-5 text-xl min-[380px]:text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight leading-[1.15] mb-4 text-balance px-1 sm:px-0">
               <span style={{ color: COL.accent }}>Manage</span>
               <span className="text-white"> your entire fleet</span>
               <br />
@@ -275,7 +275,7 @@ export default function HomePageClient() {
 
         {/* ── EXPLORE LINKS ── */}
         <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-12 sm:pb-16">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { href: "/products/mobile", label: "Android App",  hint: "Features, download link and technical specs for the native mobile app." },
               { href: "/prices",          label: "Pricing",       hint: "Transparent plans for teams of every size, plus self-hosted options." },

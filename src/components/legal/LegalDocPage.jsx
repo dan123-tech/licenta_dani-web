@@ -67,7 +67,7 @@ export default function LegalDocPage({ prefix }) {
   const updated   = t(`${prefix}.updated`);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: BASE }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: BASE }}>
       <LandingSiteHeader />
 
       {/* ── Hero banner ── */}

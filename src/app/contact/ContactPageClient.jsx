@@ -113,7 +113,7 @@ export default function ContactPageClient() {
   }, [firstName, lastName, email, subject, message, t]);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: COL.base }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: COL.base }}>
       <LandingSiteHeader />
 
       <main className="flex-1 w-full">
@@ -124,9 +124,9 @@ export default function ContactPageClient() {
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[280px] rounded-full opacity-20"
               style={{ background: "radial-gradient(ellipse, #185fa5 0%, transparent 70%)" }} />
           </div>
-          <div className="relative max-w-3xl mx-auto px-5 pt-14 pb-12 text-center">
+          <div className="relative max-w-3xl mx-auto px-4 sm:px-5 pt-12 sm:pt-14 pb-10 sm:pb-12 text-center">
             <Badge>Contact us</Badge>
-            <h1 className="mt-5 text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3">
+            <h1 className="mt-5 text-2xl min-[400px]:text-3xl sm:text-4xl font-bold text-white tracking-tight mb-3 text-balance px-1">
               Let's talk
             </h1>
             <p className="text-base max-w-lg mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
@@ -136,7 +136,7 @@ export default function ContactPageClient() {
         </section>
 
         {/* ── MAIN ── */}
-        <section className="max-w-6xl mx-auto px-5 pb-16">
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
           <div className="grid lg:grid-cols-5 gap-8 items-start">
 
             {/* ── LEFT: info ── */}
@@ -203,7 +203,7 @@ export default function ContactPageClient() {
 
             {/* ── RIGHT: form ── */}
             <div className="lg:col-span-3">
-              <div className="rounded-2xl border p-6 sm:p-8"
+              <div className="rounded-2xl border p-4 sm:p-8"
                 style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
                 <h2 className="font-bold text-white text-lg mb-6">Send us a message</h2>
 

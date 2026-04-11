@@ -139,7 +139,7 @@ export default function MobileAppPageClient() {
   const { t } = useI18n();
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: COL.base }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: COL.base }}>
       <LandingSiteHeader />
 
       <main className="flex-1 w-full">
@@ -150,9 +150,9 @@ export default function MobileAppPageClient() {
             <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[320px] rounded-full opacity-20"
               style={{ background: "radial-gradient(ellipse, #185fa5 0%, transparent 70%)" }} />
           </div>
-          <div className="relative max-w-4xl mx-auto px-5 pt-14 pb-16 text-center">
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-5 pt-12 sm:pt-14 pb-12 sm:pb-16 text-center">
             <Badge>Android Application</Badge>
-            <h1 className="mt-5 text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.1] mb-4">
+            <h1 className="mt-5 text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.12] mb-4 text-balance px-1">
               Fleet management{" "}
               <span style={{ color: "#86efac" }}>in your pocket</span>
             </h1>
@@ -176,7 +176,7 @@ export default function MobileAppPageClient() {
 
         {/* ── WHAT MAKES IT STAND OUT ── */}
         <section style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
-          <div className="max-w-5xl mx-auto px-5 py-12">
+          <div className="max-w-5xl mx-auto px-4 sm:px-5 py-10 sm:py-12">
             <div className="grid sm:grid-cols-3 gap-6">
               {[
                 { icon: Zap,       title: "Material Design 3",  desc: "Built with the latest Android design system — smooth transitions, adaptive layouts and accessible components." },
@@ -197,7 +197,7 @@ export default function MobileAppPageClient() {
         </section>
 
         {/* ── ALL FEATURES ── */}
-        <section className="max-w-6xl mx-auto px-5 py-16">
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 py-12 sm:py-16">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: "#ffffff" }}>Everything in one app</h2>
             <p className="text-sm max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.5)" }}>
@@ -211,7 +211,7 @@ export default function MobileAppPageClient() {
 
         {/* ── REQUIREMENTS ── */}
         <section style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="max-w-4xl mx-auto px-5 py-12">
+          <div className="max-w-4xl mx-auto px-4 sm:px-5 py-10 sm:py-12">
             <div className="grid sm:grid-cols-2 gap-8">
               <div>
                 <h3 className="font-semibold text-white mb-4">Requirements</h3>
@@ -240,8 +240,8 @@ export default function MobileAppPageClient() {
         </section>
 
         {/* ── CTA ── */}
-        <section className="max-w-6xl mx-auto px-5 pb-16">
-          <div className="relative overflow-hidden rounded-2xl p-8 sm:p-12 text-center"
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
+          <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 md:p-12 text-center"
             style={{ background: "linear-gradient(135deg, rgba(134,239,172,0.12) 0%, rgba(24,95,165,0.25) 100%)", border: "1px solid rgba(134,239,172,0.2)" }}>
             <h2 className="text-2xl font-bold text-white mb-3">Ready to install?</h2>
             <p className="text-sm mb-7 max-w-lg mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
