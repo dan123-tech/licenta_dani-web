@@ -25,11 +25,13 @@ const LANGUAGE_SELECT_LIGHT =
  * @param {"light"|"dark"|"landing"} variant
  * @param {boolean} [showLanguage=true]
  * @param {boolean} [showCurrency=false] — e.g. only on admin Statistics (in-page)
+ * @param {string} [idSuffix=""] — append to select ids (e.g. "-drawer") when two instances exist on one page
  */
 export default function LanguageCurrencySwitcher({
   variant = "light",
   showCurrency = false,
   showLanguage = true,
+  idSuffix = "",
 }) {
   const { locale, setLocale, currency, setCurrency, t, currencies, locales } = useI18n();
 
@@ -64,11 +66,11 @@ export default function LanguageCurrencySwitcher({
     >
       {languageVisible && (
         <div className={`flex flex-col ${isLanding ? "gap-0" : "gap-1"}`}>
-          <label htmlFor="app-locale" className={labelClass}>
+          <label htmlFor={`app-locale${idSuffix}`} className={labelClass}>
             {t("i18n.language")}
           </label>
           <select
-            id="app-locale"
+            id={`app-locale${idSuffix}`}
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
             className={languageSelectClass}
@@ -84,11 +86,11 @@ export default function LanguageCurrencySwitcher({
       )}
       {currencyVisible && (
         <div className="flex flex-col gap-1">
-          <label htmlFor="app-currency" className={labelClass}>
+          <label htmlFor={`app-currency${idSuffix}`} className={labelClass}>
             {t("i18n.currency")}
           </label>
           <select
-            id="app-currency"
+            id={`app-currency${idSuffix}`}
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
             className={currencySelectClass}

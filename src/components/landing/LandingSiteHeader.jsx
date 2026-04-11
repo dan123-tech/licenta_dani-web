@@ -142,27 +142,25 @@ export default function LandingSiteHeader({ logoPriority = false }) {
       {mobileOpen && (
         <div
           id="landing-mobile-nav"
-          className="fixed inset-0 z-[100] md:hidden flex flex-col"
+          className="fixed inset-0 z-[100] md:hidden isolate"
           role="dialog"
           aria-modal="true"
           aria-label={t("landing.nav.menuTitle")}
         >
           <button
             type="button"
-            className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+            className="absolute inset-0 z-0 bg-black/70"
             aria-label={t("sidebar.closeMenu")}
             onClick={closeMobile}
           />
           <div
-            className="relative ml-auto flex h-full w-[min(100%,20rem)] max-w-full flex-col border-l shadow-2xl"
-            style={{
-              borderColor: "rgba(255,255,255,0.1)",
-              background: "rgba(12, 18, 32, 0.98)",
-              backdropFilter: "blur(14px)",
-              paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-            }}
+            className="relative z-10 ml-auto flex h-full min-h-0 max-h-[100dvh] w-[min(100%,20rem)] max-w-full flex-col overflow-hidden border-l shadow-2xl bg-[#0c1220]"
+            style={{ borderColor: "rgba(255,255,255,0.1)" }}
           >
-            <div className="flex items-center justify-between border-b px-4 py-3" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+            <div
+              className="flex shrink-0 items-center justify-between border-b px-4 py-3"
+              style={{ borderColor: "rgba(255,255,255,0.08)" }}
+            >
               <span className="text-sm font-semibold tracking-wide text-white/90">{t("landing.nav.menuTitle")}</span>
               <button
                 type="button"
@@ -174,7 +172,10 @@ export default function LandingSiteHeader({ logoPriority = false }) {
               </button>
             </div>
 
-            <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 py-3" aria-label="Primary">
+            <nav
+              className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 py-3"
+              aria-label="Primary"
+            >
               <Link href="/" className={mobileNavRow} style={navMuted} onClick={closeMobile}>
                 {t("landing.nav.home")}
               </Link>
@@ -196,10 +197,12 @@ export default function LandingSiteHeader({ logoPriority = false }) {
             </nav>
 
             <div
-              className="shrink-0 space-y-3 border-t px-4 py-4"
+              className="shrink-0 space-y-3 border-t bg-[#0c1220] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
               style={{ borderColor: "rgba(255,255,255,0.08)" }}
             >
-              <LanguageCurrencySwitcher variant="landing" showCurrency={false} />
+              <div className="w-full min-w-0 max-w-full [&_.landing-locale-select]:w-full [&_.landing-locale-select]:min-w-0">
+                <LanguageCurrencySwitcher variant="landing" showCurrency={false} idSuffix="-drawer" />
+              </div>
               <div className="flex flex-col gap-2">
                 <Link
                   href="/login"
