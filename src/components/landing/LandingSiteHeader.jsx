@@ -38,7 +38,7 @@ export default function LandingSiteHeader({ logoPriority = false }) {
         </Link>
 
         <nav
-          className="flex flex-1 min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 sm:gap-x-1"
+          className="flex flex-1 min-w-0 flex-wrap items-center gap-x-0.5 gap-y-1 sm:gap-x-1 ml-4 sm:ml-8 md:ml-10"
           aria-label="Primary"
         >
           <Link href="/" className={navLinkClass} style={navMuted}>
