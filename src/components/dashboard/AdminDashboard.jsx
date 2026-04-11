@@ -27,6 +27,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { fetchLogoDataUrl, drawPdfHeader, finalizePdfFooters, addSectionTitle, checkPageBreak } from "@/lib/pdf-report";
 import { Sidebar, NavItem, NavSection, NavLabel } from "./Sidebar";
+import DashboardLogoutButton from "./DashboardLogoutButton";
 import FleetBookingCalendar from "./FleetBookingCalendar";
 import AccessCodeQRButton, { ACCESS_CODE_SLOT_CLASS } from "./AccessCodeQRButton";
 import StatisticsDashboard from "./StatisticsDashboard";
@@ -1109,7 +1110,8 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
               <p className="text-xs text-slate-500 mt-0.5 truncate">{pageSub}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 min-w-0 basis-full md:basis-auto justify-start md:justify-end">
+            <DashboardLogoutButton />
             <LanguageCurrencySwitcher variant="light" />
             {company?.joinCode && (
               <span className="join-badge-pill font-medium hidden sm:inline">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { apiCreateCompany, apiJoinCompany } from "@/lib/api";
 import { useI18n } from "@/i18n/I18nProvider";
+import DashboardLogoutButton from "./DashboardLogoutButton";
 
 export default function NoCompanyView({ onJoined }) {
   const { t } = useI18n();
@@ -50,6 +51,9 @@ export default function NoCompanyView({ onJoined }) {
 
   return (
     <div className="max-w-2xl mx-auto py-12 px-6 sm:px-8">
+      <div className="flex flex-wrap items-center justify-end gap-2 mb-6">
+        <DashboardLogoutButton mobileOnly={false} />
+      </div>
       <h1 className="text-2xl font-bold text-slate-800 mb-2">{t("noCompany.title")}</h1>
       <p className="text-slate-500 mb-8">{t("noCompany.subtitle")}</p>
 

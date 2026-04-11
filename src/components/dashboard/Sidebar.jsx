@@ -161,7 +161,7 @@ export function Sidebar({ user, children, mobileOpen, onClose, viewAs, setViewAs
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 rounded-md transition-colors shrink-0"
+              className="flex items-center gap-1.5 px-2 py-1.5 md:px-1.5 md:py-1.5 rounded-md transition-colors shrink-0 min-h-[40px] md:min-h-0"
               style={{ color: "rgba(255,255,255,0.35)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#fca5a5";
@@ -174,7 +174,8 @@ export function Sidebar({ user, children, mobileOpen, onClose, viewAs, setViewAs
               title={t("sidebar.logout")}
               aria-label={t("sidebar.logout")}
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3.5 h-3.5 shrink-0" />
+              <span className="text-[11px] font-semibold md:hidden">{t("sidebar.logout")}</span>
             </button>
           </div>
         </div>
