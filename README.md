@@ -43,46 +43,17 @@ Local URLs:
 
 ## Security
 
-This section is the **operator-facing summary** for what ships in this repo. Implementation details live under `src/middleware.js` and `src/lib/security/`.
+The complete security inventory (secrets, cookies, MFA, rate limits, lockout, CSRF, CORS, CSP/HSTS, cron, client idle logout, audit, supply chain, how to report issues) is in **[SECURITY.md](SECURITY.md)**.
 
-### Secrets and environment variables
+Quick reminders:
 
-- **Never put secrets in `NEXT_PUBLIC_*` variables.** They are exposed in client bundles. Use server-only variables for `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, API keys, and webhook-style tokens.
-- **Rotate `AUTH_SECRET`** if it may have leaked (e.g. committed, pasted in chat). Generate a new value (for example `openssl rand -base64 32`), update the env var everywhere, redeploy, and expect users to sign in again.
-- **Rotate database credentials** after incidents or team changes; update `DATABASE_URL` / `DIRECT_URL` in each environment.
-- **Least privilege:** where your host allows, use a migration-capable DB role only in CI / `prisma migrate`, and a narrower runtime user for the app.
-
-### Authentication hardening
-
-| Control | Behaviour |
-| --- | --- |
-| **Auth rate limits** | `POST /api/auth/login` (failed attempts), `POST /api/auth/register`, `POST /api/auth/mfa-verify` (failed codes). Prefer Cloudflare **KV** binding `RATE_LIMIT_KV` on Workers; otherwise counters use the control-plane `AuthRateLimit` table (run migrations). Tune with `AUTH_RATE_LIMIT_*` in `.env.example`; set `AUTH_RATE_LIMIT_ENABLED=0` to disable. |
-| **Account lockout** | After repeated failed passwords (defaults in `.env.example`: `LOGIN_LOCKOUT_MAX_ATTEMPTS`, `LOGIN_LOCKOUT_MINUTES`), sign-in is blocked temporarily. Uses `User.loginFailedAttempts` / `User.loginLockedUntil` on the control DB. |
-| **Dashboard idle sign-out** | Inactivity on `/dashboard` triggers logout (`NEXT_PUBLIC_WEB_IDLE_LOGOUT_MINUTES`, default 30). |
-
-### API and request integrity
-
-- **Broad API rate limit:** middleware applies a per-IP fixed window on `/api/*` (except `OPTIONS`), default **120 req/min** in production (`API_RATE_LIMIT_PER_MINUTE`, `API_RATE_LIMIT_ENABLED`). Counts are **per serverless isolate**; pair with a CDN/WAF or shared store if you need strict global caps.
-- **CSRF / origin checks:** cookie-authenticated `POST` / `PATCH` / `DELETE` routes use trusted-origin checks (`requireTrustedOriginForMutation` / `assertTrustedRequestOrigin` in `src/lib/security/`). Cron-style routes use bearer secrets instead.
-
-### HTTP headers and browser policy
-
-- **CSP**, **X-Frame-Options**, **X-Content-Type-Options**, **Referrer-Policy**, **Permissions-Policy**, and related headers are set in **`src/middleware.js`** for matched routes. **HSTS** is applied for HTTPS requests unless `DISABLE_HSTS` is set (useful for local HTTP testing).
-- **`next.config.mjs`** may set overlapping baseline headers; middleware CSP is authoritative for app routes where configured.
-- **CSP violation reports:** when reporting is enabled in middleware, browsers may `POST` JSON to `/api/csp-report` (see `src/middleware.js` and `src/app/api/csp-report/route.js`).
-
-### Supply chain and dependencies
-
-- **Dependabot** is configured in `.github/dependabot.yml` (grouped npm updates).
-- **CI:** `.github/workflows/security-audit.yml` runs `npm audit --audit-level=critical`. Treat critical findings before merging.
-
-### Reporting issues
-
-If you discover a vulnerability in this project, open a **private** advisory or contact the maintainers through the channels you use for production support. Do not post exploit details in public issues before a fix is available.
+- Do not put secrets in **`NEXT_PUBLIC_*`**.
+- Rotate **`AUTH_SECRET`** and DB credentials if they may have leaked.
+- Tune limits and headers via **`.env.example`** and **`src/middleware.js`**.
 
 ## Documentation
 
-Extended runbooks, thesis drafts, and local credential notes are **not tracked** in this repository (see `.gitignore`). Keep private copies on your machine if you use them. This README plus `src/lib/security/` and `.env.example` are the canonical in-repo references for security-related configuration.
+Extended runbooks, thesis drafts, and local credential notes are **not tracked** in this repository (see `.gitignore`). Keep private copies on your machine if you use them. For security, prefer **[SECURITY.md](SECURITY.md)** plus **`src/lib/security/`** and **`.env.example`**.
 
 ## Required Environment Variables
 
