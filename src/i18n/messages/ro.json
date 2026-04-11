@@ -65,10 +65,7 @@
       "sending": "Se trimite…",
       "success": "Mulțumim — mesajul a fost trimis.",
       "errorGeneric": "A apărut o problemă. Încearcă din nou mai târziu.",
-      "errorConfig": "Formularul de contact nu este configurat pe acest server (inbox email).",
-      "errorCaptcha": "Te rugăm să confirmi că nu ești robot.",
-      "captchaDisabled": "Formularul nu este disponibil până la configurarea reCAPTCHA (administrator site).",
-      "recaptchaAria": "Verificare anti-spam"
+      "errorConfig": "Formularul de contact nu este configurat pe acest server (inbox email)."
     },
     "mobileApp": {
       "title": "FleetShare pentru Android",
@@ -89,7 +86,7 @@
     "pricesPage": {
       "title": "Prețuri & server companie",
       "subtitle": "Găzduire și oferte",
-      "body": "Nu publicăm aici liste de prețuri fixe. Dacă ești interesat de FleetShare pe un server propriu al companiei — infrastructura ta, datele tale — contactează suportul pentru dimensionare, opțiuni de instalare și o ofertă personalizată.",
+      "body": "Dacă ești interesat de FleetShare pe un server propriu al companiei — infrastructura ta, datele tale — contactează suportul pentru dimensionare, opțiuni de instalare și o ofertă personalizată.",
       "supportLead": "Echipa poate explica instalarea pe bază de Docker, securitatea și mentenanța continuă.",
       "supportCta": "Deschide centrul de suport",
       "contactCta": "Contactează-ne"

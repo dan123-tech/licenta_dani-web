@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Car, Users, BarChart2, Shield, Server, Download, ArrowRight } from "lucide-react";
+import { Car, Users, BarChart2, Shield, Server, ArrowRight } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import LandingSiteHeader from "@/components/landing/LandingSiteHeader";
 import LandingSiteFooter from "@/components/landing/LandingSiteFooter";
@@ -87,37 +87,23 @@ export default function HomePageClient() {
             {t("landing.heroSub")}
           </p>
 
-          <div className="flex flex-col items-center gap-2.5 sm:gap-3 mb-2 sm:mb-4">
-            <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 justify-center w-full sm:w-auto">
-              <Link
-                href="/register"
-                className="flex items-center justify-center h-12 px-6 rounded-xl text-white font-semibold text-sm transition-colors bg-[#185fa5] hover:bg-[#1d4ed8] shadow-[0_2px_10px_rgba(24,95,165,0.4)]"
-              >
-                {t("landing.ctaPrimary")}
-              </Link>
-              <Link
-                href="/login"
-                className="flex items-center justify-center h-12 px-6 rounded-xl font-semibold text-sm transition-all hover:border-white/20"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "rgba(255,255,255,0.7)",
-                  background: "rgba(255,255,255,0.04)",
-                }}
-              >
-                {t("landing.ctaSecondary")}
-              </Link>
-            </div>
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 justify-center items-center mb-2 sm:mb-4">
             <Link
-              href="/download"
-              className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl font-semibold text-sm transition-all hover:border-white/20 w-full sm:w-auto sm:min-w-[200px]"
+              href="/register"
+              className="flex items-center justify-center h-12 px-6 rounded-xl text-white font-semibold text-sm transition-colors bg-[#185fa5] hover:bg-[#1d4ed8] shadow-[0_2px_10px_rgba(24,95,165,0.4)] w-full sm:w-auto"
+            >
+              {t("landing.ctaPrimary")}
+            </Link>
+            <Link
+              href="/login"
+              className="flex items-center justify-center h-12 px-6 rounded-xl font-semibold text-sm transition-all hover:border-white/20 w-full sm:w-auto"
               style={{
-                border: "1px solid rgba(245, 166, 35, 0.35)",
-                color: "rgba(255,255,255,0.85)",
-                background: "rgba(245, 166, 35, 0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.7)",
+                background: "rgba(255,255,255,0.04)",
               }}
             >
-              <Download className="w-4 h-4 shrink-0" style={{ color: COL.accent }} strokeWidth={2} aria-hidden />
-              {t("landing.ctaDownload")}
+              {t("landing.ctaSecondary")}
             </Link>
           </div>
         </div>

@@ -7,24 +7,8 @@ function isValidEmail(s) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s).trim());
 }
 
-async function verifyRecaptcha(token) {
-  const secret = process.env.RECAPTCHA_SECRET_KEY?.trim();
-  if (!secret) return { ok: false, error: "captcha_not_configured" };
-  if (!token || typeof token !== "string") return { ok: false, error: "captcha_missing" };
-  const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ secret, response: token }),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!data.success) {
-    return { ok: false, error: "captcha_failed", codes: data["error-codes"] };
-  }
-  return { ok: true };
-}
-
 /**
- * POST /api/contact — public contact form (reCAPTCHA v2 + Resend).
+ * POST /api/contact — public contact form (Resend).
  */
 export async function POST(request) {
   let body;
@@ -38,7 +22,6 @@ export async function POST(request) {
   const lastName = String(body?.lastName ?? "").trim();
   const email = String(body?.email ?? "").trim();
   const message = String(body?.message ?? "").trim();
-  const recaptchaToken = typeof body?.recaptchaToken === "string" ? body.recaptchaToken : "";
 
   if (!firstName || !lastName || !email || !message) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
@@ -51,12 +34,6 @@ export async function POST(request) {
   }
   if (message.length > LIMITS.message) {
     return NextResponse.json({ error: "message_too_long" }, { status: 400 });
-  }
-
-  const captcha = await verifyRecaptcha(recaptchaToken);
-  if (!captcha.ok) {
-    const status = captcha.error === "captcha_not_configured" ? 503 : 400;
-    return NextResponse.json({ error: captcha.error }, { status });
   }
 
   const to = process.env.CONTACT_FORM_TO?.trim();

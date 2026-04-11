@@ -65,10 +65,7 @@
       "sending": "Sending…",
       "success": "Thank you — your message was sent.",
       "errorGeneric": "Something went wrong. Please try again later.",
-      "errorConfig": "The contact form is not configured on this server (email inbox).",
-      "errorCaptcha": "Please confirm you are not a robot.",
-      "captchaDisabled": "The contact form is not available until reCAPTCHA is configured (see site administrator).",
-      "recaptchaAria": "Anti-spam verification"
+      "errorConfig": "The contact form is not configured on this server (email inbox)."
     },
     "mobileApp": {
       "title": "FleetShare for Android",
@@ -89,7 +86,7 @@
     "pricesPage": {
       "title": "Prices & company server",
       "subtitle": "Hosting and quotes",
-      "body": "Public pricing tables are not published here. If you are interested in running FleetShare on a self-hosted company server — your infrastructure, your data — please contact support for sizing, deployment options, and a tailored quote.",
+      "body": "If you are interested in running FleetShare on a self-hosted company server — your infrastructure, your data — please contact support for sizing, deployment options, and a tailored quote.",
       "supportLead": "Our team can walk you through Docker-based deployment, security, and ongoing maintenance.",
       "supportCta": "Open support centre",
       "contactCta": "Contact us"
