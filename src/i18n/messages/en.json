@@ -21,6 +21,30 @@
     "preferences": "Language & currency"
   },
   "landing": {
+    "nav": {
+      "home": "Home",
+      "products": "Products",
+      "webTitle": "Web platform",
+      "webSub": "Platformă web",
+      "mobileTitle": "Mobile app",
+      "mobileSub": "Aplicație mobilă",
+      "prices": "Prices",
+      "contact": "Contact"
+    },
+    "sections": {
+      "webTitle": "Web platform",
+      "webBody": "Use FleetShare in your browser: register your company, invite drivers, and manage reservations from the dashboard. No install required on desktop.",
+      "webCta": "Open web app",
+      "mobileTitle": "Mobile app",
+      "mobileBody": "Install the FleetShare Android client on company phones for reservations, digital glovebox, and notifications on the go.",
+      "mobileCta": "Download Android app",
+      "pricesTitle": "Prices",
+      "pricesBody": "Plans depend on fleet size and hosting (cloud or self‑hosted). Contact us for a quote tailored to your organisation.",
+      "pricesCta": "Request pricing",
+      "contactTitle": "Contact",
+      "contactBody": "Questions, demos, or technical support — we are here to help.",
+      "contactSupport": "Support centre"
+    },
     "signIn": "Sign in",
     "getStarted": "Get started",
     "eyebrow": "Company Car Sharing Platform",

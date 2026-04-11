@@ -21,6 +21,30 @@
     "preferences": "Limbă și monedă"
   },
   "landing": {
+    "nav": {
+      "home": "Acasă",
+      "products": "Produse",
+      "webTitle": "Platformă web",
+      "webSub": "Web platform",
+      "mobileTitle": "Aplicație mobilă",
+      "mobileSub": "Mobile app",
+      "prices": "Prețuri",
+      "contact": "Contact"
+    },
+    "sections": {
+      "webTitle": "Platformă web",
+      "webBody": "Folosește FleetShare în browser: înregistrează compania, invită șoferii și gestionează rezervările din panou. Fără instalare pe desktop.",
+      "webCta": "Deschide platforma web",
+      "mobileTitle": "Aplicație mobilă",
+      "mobileBody": "Instalează clientul Android FleetShare pe telefoanele companiei pentru rezervări, torpedou digital și notificări.",
+      "mobileCta": "Descarcă aplicația Android",
+      "pricesTitle": "Prețuri",
+      "pricesBody": "Planurile depind de mărimea flotei și de găzduire (cloud sau proprie). Contactează-ne pentru o ofertă adaptată organizației tale.",
+      "pricesCta": "Solicită ofertă",
+      "contactTitle": "Contact",
+      "contactBody": "Întrebări, demo sau suport tehnic — suntem aici să ajutăm.",
+      "contactSupport": "Centru suport"
+    },
     "signIn": "Autentificare",
     "getStarted": "Începe acum",
     "eyebrow": "Platformă de car sharing",
