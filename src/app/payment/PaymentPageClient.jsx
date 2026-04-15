@@ -18,6 +18,7 @@ export default function PaymentPageClient() {
   const planId = String(sp.get("plan") || "").trim();
   const [status, setStatus] = React.useState("idle"); // idle | starting | error
   const [error, setError] = React.useState("");
+  const [details, setDetails] = React.useState("");
 
   React.useEffect(() => {
     let alive = true;
@@ -35,6 +36,7 @@ export default function PaymentPageClient() {
         if (!alive) return;
         setStatus("error");
         setError("Stripe is not configured for this plan yet (missing Price ID).");
+        setDetails(`Missing env var for plan: ${planId}`);
         return;
       }
 
@@ -49,12 +51,17 @@ export default function PaymentPageClient() {
           body: JSON.stringify({ priceId, mode: "payment", planId }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.url) throw new Error(data?.error || "checkout_failed");
+        if (!res.ok || !data?.url) {
+          const stripeMsg = data?.stripeMessage ? ` — ${data.stripeMessage}` : "";
+          const code = data?.stripeCode ? ` (${data.stripeCode})` : "";
+          throw new Error(`${data?.error || "checkout_failed"}${code}${stripeMsg}`);
+        }
         window.location.href = data.url;
-      } catch {
+      } catch (e) {
         if (!alive) return;
         setStatus("error");
         setError("Could not start checkout. Please try again.");
+        setDetails(String(e?.message || ""));
       }
     }
 
@@ -89,7 +96,12 @@ export default function PaymentPageClient() {
           </div>
         ) : status === "error" ? (
           <div className="text-sm" style={{ color: "rgba(255,200,200,0.9)" }}>
-            {error || "Something went wrong."}
+            <div>{error || "Something went wrong."}</div>
+            {details ? (
+              <div className="mt-2 text-xs" style={{ color: "rgba(255,200,200,0.75)" }}>
+                {details}
+              </div>
+            ) : null}
           </div>
         ) : (
           <div className="text-sm" style={{ color: "rgba(255,255,255,0.75)" }}>

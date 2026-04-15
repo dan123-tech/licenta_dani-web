@@ -49,13 +49,27 @@ export async function POST(request) {
 
   const appUrl = getAppUrl(request);
 
-  const session = await stripe.checkout.sessions.create({
-    mode,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/billing/cancel`,
-    metadata: planId ? { planId } : undefined,
-  });
+  let session;
+  try {
+    session = await stripe.checkout.sessions.create({
+      mode,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/billing/cancel`,
+      metadata: planId ? { planId } : undefined,
+    });
+  } catch (e) {
+    const status = Number(e?.statusCode) || 502;
+    return NextResponse.json(
+      {
+        error: "stripe_error",
+        stripeMessage: String(e?.message || ""),
+        stripeType: String(e?.type || ""),
+        stripeCode: String(e?.code || ""),
+      },
+      { status }
+    );
+  }
 
   return NextResponse.json({ url: session.url });
 }
