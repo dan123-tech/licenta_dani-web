@@ -10,8 +10,10 @@ import { LANDING_COL } from "@/components/landing/landingTheme";
 const COL = LANDING_COL;
 
 function getStripePriceId(planId) {
-  if (planId === "professional") return process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "";
-  if (planId === "enterprise") return process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "";
+  if (planId === "starter") return process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
+  if (planId === "starter_plus") return process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_PLUS || "";
+  if (planId === "premium") return process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM || "";
+  if (planId === "corporate") return process.env.NEXT_PUBLIC_STRIPE_PRICE_CORPORATE || "";
   return "";
 }
 
@@ -27,16 +29,16 @@ function Badge({ children }) {
 
 const PLANS = [
   {
-    id: "starter",
+    id: "free",
     icon: Zap,
-    name: "Starter",
+    name: "Free",
     price: "Free",
     priceSub: "forever",
     accent: "#7ec0ea",
     accentBg: "rgba(24,95,165,0.15)",
     accentBorder: "rgba(24,95,165,0.3)",
     highlight: false,
-    description: "Perfect for small teams getting started with fleet management.",
+    description: "Try FleetShare with the core workflow for small fleets.",
     cta: "Get Started Free",
     ctaHref: "/register",
     ctaStyle: "outline",
@@ -54,34 +56,94 @@ const PLANS = [
     ],
   },
   {
-    id: "professional",
+    id: "starter",
     icon: Building2,
-    name: "Professional",
-    price: "Custom",
-    priceSub: "contact us for pricing",
+    name: "Starter",
+    price: "Paid",
+    priceSub: "via checkout",
     accent: "#f5a623",
     accentBg: "rgba(245,166,35,0.12)",
     accentBorder: "rgba(245,166,35,0.35)",
     highlight: true,
-    description: "For growing fleets that need advanced analytics and full reporting.",
-    cta: "Contact Sales",
-    ctaHref: "/contact",
+    description: "More capacity for small businesses ready to scale.",
+    cta: "Buy Starter",
+    ctaHref: "/prices",
     ctaStyle: "primary",
-    badge: "Most popular",
+    badge: "Popular",
     features: [
-      "Unlimited vehicles",
+      "Up to 25 vehicles",
       "Unlimited drivers",
+      "Everything in Free, plus:",
+      "Maintenance scheduling & alerts",
+      "Excel / CSV export",
+      "Priority email support",
+    ],
+  },
+  {
+    id: "starter_plus",
+    icon: Building2,
+    name: "Starter Plus",
+    price: "Paid",
+    priceSub: "via checkout",
+    accent: "#93c5fd",
+    accentBg: "rgba(147,197,253,0.12)",
+    accentBorder: "rgba(147,197,253,0.3)",
+    highlight: false,
+    description: "Advanced reporting and controls for mid-size fleets.",
+    cta: "Buy Starter Plus",
+    ctaHref: "/prices",
+    ctaStyle: "outline",
+    features: [
+      "Up to 100 vehicles",
       "Everything in Starter, plus:",
-      "AI-powered driving licence verification",
       "Advanced analytics & cost tracking",
       "Monthly cost reports (PDF)",
-      "Excel / CSV data export",
-      "KM heatmap & top-driver rankings",
-      "Maintenance scheduling & alerts",
       "Full audit log",
-      "Multi-currency support (EUR, RON, USD, GBP)",
+      "Chat support",
+    ],
+  },
+  {
+    id: "premium",
+    icon: Building2,
+    name: "Premium",
+    price: "Paid",
+    priceSub: "via checkout",
+    accent: "#f472b6",
+    accentBg: "rgba(244,114,182,0.12)",
+    accentBorder: "rgba(244,114,182,0.28)",
+    highlight: false,
+    description: "For larger fleets that need deeper insights and automation.",
+    cta: "Buy Premium",
+    ctaHref: "/prices",
+    ctaStyle: "outline",
+    features: [
+      "Unlimited vehicles",
+      "Everything in Starter Plus, plus:",
+      "KM heatmap & top-driver rankings",
+      "Incident workflow improvements",
+      "Priority chat support",
+    ],
+  },
+  {
+    id: "corporate",
+    icon: Building2,
+    name: "Corporate",
+    price: "Paid",
+    priceSub: "via checkout",
+    accent: "#a78bfa",
+    accentBg: "rgba(167,139,250,0.12)",
+    accentBorder: "rgba(167,139,250,0.28)",
+    highlight: false,
+    description: "For enterprises that need governance, controls, and support.",
+    cta: "Buy Corporate",
+    ctaHref: "/prices",
+    ctaStyle: "outline",
+    features: [
+      "Unlimited vehicles",
+      "Everything in Premium, plus:",
       "Bilingual interface (EN / RO)",
-      "Priority email & chat support",
+      "Multi-currency support",
+      "SLA-backed support",
     ],
   },
   {
@@ -95,11 +157,11 @@ const PLANS = [
     accentBorder: "rgba(134,239,172,0.25)",
     highlight: false,
     description: "Run FleetShare on your own infrastructure with full data sovereignty.",
-    cta: "Talk to Us",
+    cta: "Contact Sales",
     ctaHref: "/contact",
     ctaStyle: "outline",
     features: [
-      "Everything in Professional, plus:",
+      "Everything in Corporate, plus:",
       "Deploy on your own server or VPS",
       "Docker-based setup",
       "PostgreSQL database — your data",
@@ -112,36 +174,16 @@ const PLANS = [
   },
 ];
 
-const COMPARISON = [
-  { feature: "Vehicles",                  starter: "Up to 5",   pro: "Unlimited",    enterprise: "Unlimited" },
-  { feature: "Drivers",                   starter: "Unlimited", pro: "Unlimited",    enterprise: "Unlimited" },
-  { feature: "Reservations",              starter: "✓",         pro: "✓",            enterprise: "✓" },
-  { feature: "Journey sheet PDF",         starter: "✓",         pro: "✓",            enterprise: "✓" },
-  { feature: "Android app",              starter: "✓",         pro: "✓",            enterprise: "✓" },
-  { feature: "Digital Glovebox",          starter: "✓",         pro: "✓",            enterprise: "✓" },
-  { feature: "Incident reporting",        starter: "✓",         pro: "✓",            enterprise: "✓" },
-  { feature: "AI licence verification",   starter: "—",         pro: "✓",            enterprise: "✓" },
-  { feature: "Advanced analytics",        starter: "—",         pro: "✓",            enterprise: "✓" },
-  { feature: "Excel / PDF export",        starter: "—",         pro: "✓",            enterprise: "✓" },
-  { feature: "Monthly cost reports",      starter: "—",         pro: "✓",            enterprise: "✓" },
-  { feature: "Full audit log",            starter: "—",         pro: "✓",            enterprise: "✓" },
-  { feature: "Self-hosted deployment",    starter: "—",         pro: "—",            enterprise: "✓" },
-  { feature: "White-label branding",      starter: "—",         pro: "—",            enterprise: "✓" },
-  { feature: "SLA support",              starter: "—",         pro: "—",            enterprise: "✓" },
-];
+const COMPARISON = null;
 
 const FAQS = [
   {
-    q: "Is the Starter plan really free forever?",
-    a: "Yes. The Starter plan is free with no time limit. It is designed for small organisations with up to 5 vehicles that need the core features.",
+    q: "Is the Free plan really free forever?",
+    a: "Yes. The Free plan is free with no time limit. It is designed for small organisations with up to 5 vehicles that need the core features.",
   },
   {
-    q: "What happens if I exceed 5 vehicles on Starter?",
-    a: "You will need to upgrade to the Professional plan. Contact us and we will help you migrate with zero data loss.",
-  },
-  {
-    q: "Can I try Professional features before paying?",
-    a: "Yes — contact us for a free trial period. We will enable Professional features on your account so you can evaluate them with your real fleet data.",
+    q: "What happens if I exceed the vehicle limit?",
+    a: "You can upgrade at any time. Your data stays intact and you keep the same account.",
   },
   {
     q: "What does 'self-hosted' mean exactly?",
@@ -224,7 +266,7 @@ export default function PricesPageClient() {
             {PLANS.map((plan) => {
               const Icon = plan.icon;
               const stripePriceId = getStripePriceId(plan.id);
-              const canBuyWithStripe = Boolean(stripePriceId) && plan.id !== "starter";
+              const canBuyWithStripe = Boolean(stripePriceId) && plan.id !== "free" && plan.id !== "enterprise";
               return (
                 <div key={plan.id}
                   className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
@@ -313,44 +355,46 @@ export default function PricesPageClient() {
         </section>
 
         {/* ── COMPARISON TABLE ── */}
-        <section style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
-          <div className="max-w-5xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
-            <h2 className="text-2xl font-bold text-white text-center mb-2">Feature comparison</h2>
-            <p className="text-sm text-center mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
-              A full breakdown of what is included in each plan.
-            </p>
-            <div
-              className="-mx-1 overflow-x-auto rounded-2xl border px-1 pb-1 sm:mx-0 sm:px-0 sm:pb-0 touch-pan-x"
-              style={{ borderColor: "rgba(255,255,255,0.09)" }}
-            >
-              <table className="w-full min-w-[34rem] text-xs sm:text-sm">
-                <thead>
-                  <tr style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                    <th className="text-left py-4 px-5 font-semibold text-white/70">Feature</th>
-                    {["Starter", "Professional", "Enterprise"].map((h) => (
-                      <th key={h} className="text-center py-4 px-4 font-bold text-white">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPARISON.map((row, i) => (
-                    <tr key={row.feature}
-                      style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
-                      <td className="py-3 px-5 text-white/70">{row.feature}</td>
-                      {[row.starter, row.pro, row.enterprise].map((val, j) => (
-                        <td key={j} className="py-3 px-4 text-center">
-                          <span style={{ color: val === "—" ? "rgba(255,255,255,0.25)" : val === "✓" ? "#86efac" : "rgba(255,255,255,0.8)", fontWeight: val !== "—" && val !== "✓" ? 600 : undefined, fontSize: val === "✓" ? 16 : undefined }}>
-                            {val}
-                          </span>
-                        </td>
+        {COMPARISON ? (
+          <section style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
+            <div className="max-w-5xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
+              <h2 className="text-2xl font-bold text-white text-center mb-2">Feature comparison</h2>
+              <p className="text-sm text-center mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
+                A full breakdown of what is included in each plan.
+              </p>
+              <div
+                className="-mx-1 overflow-x-auto rounded-2xl border px-1 pb-1 sm:mx-0 sm:px-0 sm:pb-0 touch-pan-x"
+                style={{ borderColor: "rgba(255,255,255,0.09)" }}
+              >
+                <table className="w-full min-w-[34rem] text-xs sm:text-sm">
+                  <thead>
+                    <tr style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                      <th className="text-left py-4 px-5 font-semibold text-white/70">Feature</th>
+                      {["Starter", "Professional", "Enterprise"].map((h) => (
+                        <th key={h} className="text-center py-4 px-4 font-bold text-white">{h}</th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {COMPARISON.map((row, i) => (
+                      <tr key={row.feature}
+                        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                        <td className="py-3 px-5 text-white/70">{row.feature}</td>
+                        {[row.starter, row.pro, row.enterprise].map((val, j) => (
+                          <td key={j} className="py-3 px-4 text-center">
+                            <span style={{ color: val === "—" ? "rgba(255,255,255,0.25)" : val === "✓" ? "#86efac" : "rgba(255,255,255,0.8)", fontWeight: val !== "—" && val !== "✓" ? 600 : undefined, fontSize: val === "✓" ? 16 : undefined }}>
+                              {val}
+                            </span>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         {/* ── FAQ ── */}
         <section className="max-w-3xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
