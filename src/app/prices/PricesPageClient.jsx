@@ -18,6 +18,132 @@ function Badge({ children }) {
   );
 }
 
+/* ── Per-plan SVG illustrations ── */
+function StarterIllustration() {
+  const c = "#7ec0ea";
+  return (
+    <div className="w-full h-[96px] rounded-xl overflow-hidden flex items-center justify-center mb-5"
+      style={{ background: "rgba(24,95,165,0.07)", border: "1px solid rgba(126,192,234,0.1)" }}>
+      <svg viewBox="0 0 220 80" fill="none" className="w-full h-full px-2">
+        {/* road */}
+        <rect x="0" y="58" width="220" height="10" rx="5" fill="rgba(126,192,234,0.07)" />
+        <line x1="30" y1="63" x2="50" y2="63" stroke="rgba(126,192,234,0.25)" strokeWidth="2" strokeLinecap="round" />
+        <line x1="80" y1="63" x2="100" y2="63" stroke="rgba(126,192,234,0.25)" strokeWidth="2" strokeLinecap="round" />
+        <line x1="130" y1="63" x2="150" y2="63" stroke="rgba(126,192,234,0.25)" strokeWidth="2" strokeLinecap="round" />
+        <line x1="180" y1="63" x2="200" y2="63" stroke="rgba(126,192,234,0.25)" strokeWidth="2" strokeLinecap="round" />
+        {/* car 1 */}
+        <rect x="12" y="36" width="54" height="22" rx="6" fill="rgba(126,192,234,0.18)" stroke={c} strokeWidth="1.4" />
+        <rect x="22" y="26" width="32" height="16" rx="4" fill="rgba(126,192,234,0.12)" stroke={c} strokeWidth="1.2" />
+        <rect x="25" y="29" width="12" height="9" rx="2" fill="rgba(126,192,234,0.3)" />
+        <rect x="39" y="29" width="12" height="9" rx="2" fill="rgba(126,192,234,0.3)" />
+        <circle cx="25" cy="59" r="7" fill="rgba(126,192,234,0.15)" stroke={c} strokeWidth="1.4" />
+        <circle cx="25" cy="59" r="3" fill={c} />
+        <circle cx="52" cy="59" r="7" fill="rgba(126,192,234,0.15)" stroke={c} strokeWidth="1.4" />
+        <circle cx="52" cy="59" r="3" fill={c} />
+        {/* car 2 */}
+        <rect x="83" y="39" width="46" height="19" rx="5" fill="rgba(126,192,234,0.1)" stroke="rgba(126,192,234,0.5)" strokeWidth="1.2" />
+        <rect x="91" y="30" width="28" height="14" rx="3" fill="rgba(126,192,234,0.07)" stroke="rgba(126,192,234,0.4)" strokeWidth="1" />
+        <circle cx="95" cy="59" r="6" fill="rgba(126,192,234,0.1)" stroke="rgba(126,192,234,0.5)" strokeWidth="1.2" />
+        <circle cx="95" cy="59" r="2.5" fill="rgba(126,192,234,0.6)" />
+        <circle cx="118" cy="59" r="6" fill="rgba(126,192,234,0.1)" stroke="rgba(126,192,234,0.5)" strokeWidth="1.2" />
+        <circle cx="118" cy="59" r="2.5" fill="rgba(126,192,234,0.6)" />
+        {/* car 3 */}
+        <rect x="148" y="42" width="38" height="16" rx="4" fill="rgba(126,192,234,0.07)" stroke="rgba(126,192,234,0.3)" strokeWidth="1" />
+        <rect x="155" y="34" width="22" height="12" rx="3" fill="rgba(126,192,234,0.05)" stroke="rgba(126,192,234,0.25)" strokeWidth="1" />
+        <circle cx="158" cy="59" r="5" fill="rgba(126,192,234,0.07)" stroke="rgba(126,192,234,0.3)" strokeWidth="1" />
+        <circle cx="158" cy="59" r="2" fill="rgba(126,192,234,0.4)" />
+        <circle cx="178" cy="59" r="5" fill="rgba(126,192,234,0.07)" stroke="rgba(126,192,234,0.3)" strokeWidth="1" />
+        <circle cx="178" cy="59" r="2" fill="rgba(126,192,234,0.4)" />
+        {/* label */}
+        <text x="10" y="18" fill="rgba(126,192,234,0.55)" fontSize="9" fontFamily="sans-serif" fontWeight="600" letterSpacing="1">UP TO 5 VEHICLES</text>
+      </svg>
+    </div>
+  );
+}
+
+function ProfessionalIllustration() {
+  const c = "#f5a623";
+  const bars = [28, 42, 35, 56, 48, 68, 58, 76];
+  return (
+    <div className="w-full h-[96px] rounded-xl overflow-hidden flex items-center justify-center mb-5"
+      style={{ background: "rgba(245,166,35,0.06)", border: "1px solid rgba(245,166,35,0.12)" }}>
+      <svg viewBox="0 0 220 80" fill="none" className="w-full h-full px-2">
+        {/* grid lines */}
+        {[20, 36, 52].map((y) => (
+          <line key={y} x1="20" y1={y} x2="210" y2={y} stroke="rgba(245,166,35,0.08)" strokeWidth="1" />
+        ))}
+        {/* bars */}
+        {bars.map((h, i) => (
+          <rect key={i} x={24 + i * 24} y={68 - h} width="14" height={h} rx="3"
+            fill={i === bars.length - 1 ? c : i === bars.length - 2 ? "rgba(245,166,35,0.6)" : "rgba(245,166,35,0.25)"}
+          />
+        ))}
+        {/* trend line */}
+        <polyline
+          points={bars.map((h, i) => `${31 + i * 24},${68 - h}`).join(" ")}
+          stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.8"
+        />
+        {/* data points */}
+        {bars.map((h, i) => (
+          <circle key={i} cx={31 + i * 24} cy={68 - h} r="3"
+            fill={i === bars.length - 1 ? c : "rgba(245,166,35,0.5)"}
+            stroke="rgba(12,18,32,0.8)" strokeWidth="1.5"
+          />
+        ))}
+        {/* top value label */}
+        <rect x="162" y="1" width="44" height="16" rx="4" fill="rgba(245,166,35,0.15)" />
+        <text x="175" y="12" fill={c} fontSize="9" fontFamily="sans-serif" fontWeight="700">+76 km</text>
+        {/* axis */}
+        <line x1="20" y1="68" x2="210" y2="68" stroke="rgba(245,166,35,0.2)" strokeWidth="1" />
+        <text x="10" y="18" fill="rgba(245,166,35,0.5)" fontSize="9" fontFamily="sans-serif" fontWeight="600" letterSpacing="1">ANALYTICS</text>
+      </svg>
+    </div>
+  );
+}
+
+function EnterpriseIllustration() {
+  const c = "#86efac";
+  return (
+    <div className="w-full h-[96px] rounded-xl overflow-hidden flex items-center justify-center mb-5"
+      style={{ background: "rgba(134,239,172,0.05)", border: "1px solid rgba(134,239,172,0.1)" }}>
+      <svg viewBox="0 0 220 80" fill="none" className="w-full h-full px-2">
+        {/* server 1 */}
+        <rect x="18" y="14" width="72" height="18" rx="4" fill="rgba(134,239,172,0.1)" stroke="rgba(134,239,172,0.4)" strokeWidth="1.3" />
+        <circle cx="30" cy="23" r="3.5" fill="rgba(134,239,172,0.6)" />
+        <rect x="38" y="19" width="24" height="3" rx="1.5" fill="rgba(134,239,172,0.25)" />
+        <rect x="38" y="24" width="16" height="3" rx="1.5" fill="rgba(134,239,172,0.15)" />
+        <rect x="78" y="19" width="6" height="3" rx="1.5" fill="rgba(134,239,172,0.35)" />
+        {/* server 2 */}
+        <rect x="18" y="36" width="72" height="18" rx="4" fill="rgba(134,239,172,0.08)" stroke="rgba(134,239,172,0.3)" strokeWidth="1.3" />
+        <circle cx="30" cy="45" r="3.5" fill="rgba(134,239,172,0.4)" />
+        <rect x="38" y="41" width="20" height="3" rx="1.5" fill="rgba(134,239,172,0.2)" />
+        <rect x="38" y="46" width="28" height="3" rx="1.5" fill="rgba(134,239,172,0.12)" />
+        <rect x="78" y="41" width="6" height="3" rx="1.5" fill="rgba(134,239,172,0.25)" />
+        {/* server 3 */}
+        <rect x="18" y="58" width="72" height="14" rx="4" fill="rgba(134,239,172,0.06)" stroke="rgba(134,239,172,0.2)" strokeWidth="1.2" />
+        <circle cx="30" cy="65" r="2.5" fill="rgba(134,239,172,0.3)" />
+        <rect x="38" y="62" width="32" height="2.5" rx="1" fill="rgba(134,239,172,0.15)" />
+        {/* connection lines to shield */}
+        <line x1="90" y1="23" x2="130" y2="38" stroke="rgba(134,239,172,0.2)" strokeWidth="1" strokeDasharray="3 3" />
+        <line x1="90" y1="45" x2="130" y2="45" stroke="rgba(134,239,172,0.2)" strokeWidth="1" strokeDasharray="3 3" />
+        <line x1="90" y1="65" x2="130" y2="52" stroke="rgba(134,239,172,0.2)" strokeWidth="1" strokeDasharray="3 3" />
+        {/* shield */}
+        <path d="M148 18 L168 18 L174 24 L174 44 C174 52 158 60 158 60 C158 60 142 52 142 44 L142 24 Z"
+          fill="rgba(134,239,172,0.12)" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M150 36 L155 41 L166 30" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* label */}
+        <text x="10" y="10" fill="rgba(134,239,172,0.5)" fontSize="9" fontFamily="sans-serif" fontWeight="600" letterSpacing="1">SELF-HOSTED</text>
+      </svg>
+    </div>
+  );
+}
+
+const PLAN_GRAPHICS = {
+  starter: StarterIllustration,
+  professional: ProfessionalIllustration,
+  enterprise: EnterpriseIllustration,
+};
+
 const PLANS = [
   {
     id: "starter",
@@ -195,6 +321,9 @@ export default function PricesPageClient() {
                       </span>
                     </div>
                   )}
+
+                  {/* Plan illustration */}
+                  {(() => { const G = PLAN_GRAPHICS[plan.id]; return G ? <G /> : null; })()}
 
                   {/* Plan header */}
                   <div className="flex items-center gap-3 mb-4">
