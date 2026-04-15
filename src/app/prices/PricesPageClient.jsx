@@ -262,14 +262,17 @@ export default function PricesPageClient() {
               {buyError}
             </div>
           ) : null}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div
+            className="-mx-4 sm:mx-0 flex flex-nowrap gap-5 overflow-x-auto px-4 sm:px-0 pb-2 snap-x snap-mandatory"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             {PLANS.map((plan) => {
               const Icon = plan.icon;
               const stripePriceId = getStripePriceId(plan.id);
               const canBuyWithStripe = Boolean(stripePriceId) && plan.id !== "free" && plan.id !== "enterprise";
               return (
                 <div key={plan.id}
-                  className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
+                  className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default snap-start shrink-0 w-[min(92vw,22rem)] md:w-[21rem]"
                   style={{
                     background: plan.highlight ? "rgba(245,166,35,0.06)" : "rgba(255,255,255,0.04)",
                     borderColor: plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)",
