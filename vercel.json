@@ -3,5 +3,5 @@
   "framework": "nextjs",
   "installCommand": "npm ci --legacy-peer-deps",
   "ignoreCommand": "node scripts/vercel-ignore-build.js",
-  "buildCommand": "prisma migrate deploy && npm run build"
+  "buildCommand": "node scripts/vercel-build.js"
 }
