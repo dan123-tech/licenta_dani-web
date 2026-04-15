@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { CheckCircle, ArrowRight, Server, Zap, Building2, HelpCircle } from "lucide-react";
 import LandingSiteHeader from "@/components/landing/LandingSiteHeader";
@@ -7,6 +8,12 @@ import LandingSiteFooter from "@/components/landing/LandingSiteFooter";
 import { LANDING_COL } from "@/components/landing/landingTheme";
 
 const COL = LANDING_COL;
+
+function getStripePriceId(planId) {
+  if (planId === "professional") return process.env.NEXT_PUBLIC_STRIPE_PRICE_PROFESSIONAL || "";
+  if (planId === "enterprise") return process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "";
+  return "";
+}
 
 function Badge({ children }) {
   return (
@@ -17,7 +24,6 @@ function Badge({ children }) {
     </span>
   );
 }
-
 
 const PLANS = [
   {
@@ -152,6 +158,37 @@ const FAQS = [
 ];
 
 export default function PricesPageClient() {
+  const [buying, setBuying] = React.useState({});
+  const [buyError, setBuyError] = React.useState("");
+
+  async function startCheckout(plan) {
+    setBuyError("");
+    setBuying((s) => ({ ...s, [plan.id]: true }));
+    try {
+      const priceId = getStripePriceId(plan.id);
+      if (!priceId) {
+        setBuyError("Stripe is not configured for this plan yet.");
+        return;
+      }
+
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId, mode: "payment", planId: plan.id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.url) {
+        throw new Error(data?.error || "checkout_failed");
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setBuyError("Could not start checkout. Please try again.");
+    } finally {
+      setBuying((s) => ({ ...s, [plan.id]: false }));
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: COL.base }}>
       <LandingSiteHeader />
@@ -177,9 +214,17 @@ export default function PricesPageClient() {
 
         {/* ── PLANS ── */}
         <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
+          {buyError ? (
+            <div className="mb-5 rounded-2xl border px-4 py-3 text-sm"
+              style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.8)" }}>
+              {buyError}
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {PLANS.map((plan) => {
               const Icon = plan.icon;
+              const stripePriceId = getStripePriceId(plan.id);
+              const canBuyWithStripe = Boolean(stripePriceId) && plan.id !== "starter";
               return (
                 <div key={plan.id}
                   className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
@@ -222,15 +267,33 @@ export default function PricesPageClient() {
                     {plan.description}
                   </p>
 
-                  <Link href={plan.ctaHref}
-                    className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all ${
-                      plan.ctaStyle === "primary"
-                        ? "text-[#0c1220] shadow-[0_4px_16px_rgba(245,166,35,0.3)] hover:opacity-90"
-                        : "border text-white/85 hover:bg-white/5"
-                    }`}
-                    style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}55` }}>
-                    {plan.cta} <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  {canBuyWithStripe ? (
+                    <button
+                      type="button"
+                      onClick={() => startCheckout(plan)}
+                      disabled={Boolean(buying[plan.id])}
+                      className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all disabled:opacity-60 disabled:pointer-events-none ${
+                        plan.ctaStyle === "primary"
+                          ? "text-[#0c1220] shadow-[0_4px_16px_rgba(245,166,35,0.3)] hover:opacity-90"
+                          : "border text-white/85 hover:bg-white/5"
+                      }`}
+                      style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}55` }}
+                    >
+                      {buying[plan.id] ? "Redirecting…" : "Buy now"} <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <Link
+                      href={plan.ctaHref}
+                      className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all ${
+                        plan.ctaStyle === "primary"
+                          ? "text-[#0c1220] shadow-[0_4px_16px_rgba(245,166,35,0.3)] hover:opacity-90"
+                          : "border text-white/85 hover:bg-white/5"
+                      }`}
+                      style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}55` }}
+                    >
+                      {plan.cta} <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  )}
 
                   <ul className="space-y-2.5 flex-1">
                     {plan.features.map((f) => (

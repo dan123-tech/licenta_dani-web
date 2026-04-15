@@ -50,6 +50,7 @@
     "react-big-calendar": "^1.19.4",
     "react-dom": "19.2.5",
     "recharts": "^3.7.0",
+    "stripe": "^22.0.1",
     "swagger-ui-react": "^5.32.2",
     "ws": "^8.20.0",
     "xlsx": "^0.18.5",
