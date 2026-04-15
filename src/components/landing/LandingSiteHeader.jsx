@@ -185,7 +185,7 @@ export default function LandingSiteHeader({ logoPriority = false }) {
             </div>
 
             <nav
-              className="flex flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 py-3"
+              className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-3 py-3"
               aria-label="Primary"
             >
               <Link href="/" className={mobileNavRow} style={navMuted} onClick={closeMobile}>

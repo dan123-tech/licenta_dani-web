@@ -285,7 +285,7 @@ export default function PricesPageClient() {
           <h2 className="text-2xl font-bold text-center mb-8" style={{ color: "#ffffff" }}>Frequently asked questions</h2>
           <div className="flex flex-col gap-4">
             {FAQS.map((faq) => (
-              <div key={faq.q} className="p-5 rounded-2xl border"
+              <div key={faq.q} className="p-5 rounded-2xl border transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]"
                 style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
                 <div className="flex items-start gap-3">
                   <HelpCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "#7ec0ea" }} />

@@ -243,7 +243,7 @@ export default function ContactPageClient() {
                     <button
                       type="submit"
                       disabled={status === "sending"}
-                      className="flex items-center justify-center gap-2 h-12 rounded-xl text-white font-semibold text-sm bg-[#185fa5] hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(24,95,165,0.4)] transition-all"
+                      className="flex items-center justify-center gap-2 h-12 rounded-xl text-white font-semibold text-sm bg-[#185fa5] hover:bg-[#1d4ed8] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none shadow-[0_4px_20px_rgba(24,95,165,0.4)] transition-all duration-200"
                     >
                       {status === "sending" ? (
                         <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>

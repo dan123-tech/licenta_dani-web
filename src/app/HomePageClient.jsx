@@ -38,11 +38,11 @@ function SectionLabel({ children }) {
 function FeatureCard({ icon: Icon, title, desc, accent, titleColor }) {
   return (
     <div
-      className="group p-5 rounded-2xl border flex flex-col gap-3 transition-all hover:border-white/20"
+      className="group p-5 rounded-2xl border flex flex-col gap-3 transition-all duration-200 hover:border-white/25 hover:scale-[1.02] hover:shadow-[0_4px_24px_rgba(24,95,165,0.18)]"
       style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.08)" }}
     >
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 group-hover:bg-[rgba(24,95,165,0.35)]"
         style={{ background: "rgba(24,95,165,0.22)", border: "1px solid rgba(24,95,165,0.35)" }}
       >
         <Icon className="w-5 h-5" style={{ color: accent ?? "#7ec0ea" }} strokeWidth={1.7} />
@@ -142,11 +142,11 @@ export default function HomePageClient() {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center mb-10">
               <Link href="/register"
-                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-white font-semibold text-sm bg-[#185fa5] hover:bg-[#1d4ed8] shadow-[0_4px_20px_rgba(24,95,165,0.45)] transition-all">
+                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-white font-semibold text-sm bg-[#185fa5] hover:bg-[#1d4ed8] hover:scale-[1.03] active:scale-[0.98] shadow-[0_4px_20px_rgba(24,95,165,0.45)] transition-all duration-200">
                 Get Started Free <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/prices"
-                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-semibold text-sm transition-all"
+                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-semibold text-sm hover:bg-white/10 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
                 style={{ border: "1px solid rgba(255,255,255,0.14)", color: "rgba(255,255,255,0.85)", background: "rgba(255,255,255,0.05)" }}>
                 View Pricing
               </Link>
