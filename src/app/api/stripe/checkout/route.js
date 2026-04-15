@@ -53,7 +53,7 @@ export async function POST(request) {
     mode,
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/prices`,
+    cancel_url: `${appUrl}/billing/cancel`,
     metadata: planId ? { planId } : undefined,
   });
 

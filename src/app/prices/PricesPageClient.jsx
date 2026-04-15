@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CheckCircle, ArrowRight, Server, Zap, Building2, HelpCircle, Sparkles } from "lucide-react";
 import LandingSiteHeader from "@/components/landing/LandingSiteHeader";
 import LandingSiteFooter from "@/components/landing/LandingSiteFooter";
@@ -32,8 +33,9 @@ const PLANS = [
     id: "free",
     icon: Zap,
     name: "Free",
-    price: "€0",
-    priceSub: "forever",
+    priceMonthly: "€0",
+    priceYearly: "€0",
+    priceSub: "/ car / mo",
     accent: "#7ec0ea",
     accentBg: "rgba(24,95,165,0.15)",
     accentBorder: "rgba(24,95,165,0.3)",
@@ -59,7 +61,8 @@ const PLANS = [
     id: "starter",
     icon: Building2,
     name: "Starter",
-    price: "€19",
+    priceMonthly: "€0.80",
+    priceYearly: "€0.64",
     priceSub: "/ car / mo",
     accent: "#f5a623",
     accentBg: "rgba(245,166,35,0.12)",
@@ -83,7 +86,8 @@ const PLANS = [
     id: "starter_plus",
     icon: Building2,
     name: "Starter Plus",
-    price: "€39",
+    priceMonthly: "€0.65",
+    priceYearly: "€0.52",
     priceSub: "/ car / mo",
     accent: "#93c5fd",
     accentBg: "rgba(147,197,253,0.12)",
@@ -106,7 +110,8 @@ const PLANS = [
     id: "premium",
     icon: Sparkles,
     name: "Premium",
-    price: "€79",
+    priceMonthly: "€0.50",
+    priceYearly: "€0.40",
     priceSub: "/ car / mo",
     accent: "#f472b6",
     accentBg: "rgba(244,114,182,0.12)",
@@ -128,7 +133,8 @@ const PLANS = [
     id: "corporate",
     icon: Building2,
     name: "Corporate",
-    price: "€149",
+    priceMonthly: "€0.35",
+    priceYearly: "€0.28",
     priceSub: "/ car / mo",
     accent: "#a78bfa",
     accentBg: "rgba(167,139,250,0.12)",
@@ -150,7 +156,8 @@ const PLANS = [
     id: "enterprise",
     icon: Server,
     name: "Enterprise",
-    price: "Custom",
+    priceMonthly: "Custom",
+    priceYearly: "Custom",
     priceSub: "self-hosted",
     accent: "#86efac",
     accentBg: "rgba(134,239,172,0.1)",
@@ -201,6 +208,8 @@ const FAQS = [
 ];
 
 export default function PricesPageClient() {
+  const router = useRouter();
+  const [billing, setBilling] = React.useState("monthly");
   const [buying, setBuying] = React.useState({});
   const [buyError, setBuyError] = React.useState("");
 
@@ -213,14 +222,7 @@ export default function PricesPageClient() {
         setBuyError("Stripe is not configured for this plan yet.");
         return;
       }
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, mode: "payment", planId: plan.id }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.url) throw new Error(data?.error || "checkout_failed");
-      window.location.href = data.url;
+      router.push(`/payment?plan=${encodeURIComponent(plan.id)}`);
     } catch {
       setBuyError("Could not start checkout. Please try again.");
     } finally {
@@ -254,6 +256,56 @@ export default function PricesPageClient() {
           </div>
         </section>
 
+        {/* ── BILLING TOGGLE ── */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <button
+            type="button"
+            onClick={() => setBilling("monthly")}
+            className="text-sm font-semibold px-4 py-1.5 rounded-lg transition-all duration-200"
+            style={{
+              background: billing === "monthly" ? "rgba(255,255,255,0.1)" : "transparent",
+              color: billing === "monthly" ? "#ffffff" : "rgba(255,255,255,0.45)",
+            }}
+          >
+            Monthly
+          </button>
+
+          {/* pill toggle */}
+          <button
+            type="button"
+            onClick={() => setBilling(billing === "monthly" ? "yearly" : "monthly")}
+            className="relative w-12 h-6 rounded-full transition-all duration-300 shrink-0"
+            style={{ background: billing === "yearly" ? "#f5a623" : "rgba(255,255,255,0.15)" }}
+            aria-label="Toggle billing period"
+          >
+            <span
+              className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300"
+              style={{ transform: billing === "yearly" ? "translateX(24px)" : "translateX(0)" }}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBilling("yearly")}
+            className="flex items-center gap-2 text-sm font-semibold px-4 py-1.5 rounded-lg transition-all duration-200"
+            style={{
+              background: billing === "yearly" ? "rgba(245,166,35,0.12)" : "transparent",
+              color: billing === "yearly" ? "#f5a623" : "rgba(255,255,255,0.45)",
+            }}
+          >
+            Yearly
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full transition-all duration-200"
+              style={{
+                background: billing === "yearly" ? "#f5a623" : "rgba(255,255,255,0.1)",
+                color: billing === "yearly" ? "#0c1220" : "rgba(255,255,255,0.5)",
+              }}
+            >
+              −20%
+            </span>
+          </button>
+        </div>
+
         {/* ── ERROR BANNER ── */}
         {buyError && (
           <div className="max-w-6xl mx-auto px-4 sm:px-5 mb-2">
@@ -271,8 +323,8 @@ export default function PricesPageClient() {
             <div className="flex gap-4 w-max xl:w-auto xl:grid xl:grid-cols-6 mx-auto"
               style={{ maxWidth: "min(100%, 1440px)" }}>
               {PLANS.map((plan) => (
-                <div key={plan.id} className="w-[220px] sm:w-[230px] xl:w-auto flex">
-                  <PlanCard plan={plan} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />
+                <div key={plan.id} className="w-[220px] sm:w-[230px] xl:w-auto flex relative">
+                  <PlanCard plan={plan} billing={billing} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />
                 </div>
               ))}
             </div>
@@ -328,11 +380,14 @@ export default function PricesPageClient() {
   );
 }
 
-function PlanCard({ plan, buying, canBuy, startCheckout }) {
+function PlanCard({ plan, billing, buying, canBuy, startCheckout }) {
   const Icon = plan.icon;
+  const isYearly = billing === "yearly";
+  const price = isYearly ? plan.priceYearly : plan.priceMonthly;
+  const oldPrice = isYearly && plan.priceMonthly !== plan.priceYearly ? plan.priceMonthly : null;
   return (
     <div
-      className="relative flex flex-col w-full rounded-2xl p-4 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
+      className="relative flex flex-col w-full rounded-2xl p-4 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:z-10 cursor-default"
       style={{
         background: plan.highlight ? "rgba(245,166,35,0.06)" : "rgba(255,255,255,0.04)",
         borderColor: plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)",
@@ -368,10 +423,25 @@ function PlanCard({ plan, buying, canBuy, startCheckout }) {
 
       {/* Price */}
       <div className="mb-1">
-        <span className="text-3xl font-bold" style={{ color: plan.highlight ? plan.accent : "#ffffff" }}>
-          {plan.price}
-        </span>
-        <span className="text-xs ml-2" style={{ color: "rgba(255,255,255,0.45)" }}>{plan.priceSub}</span>
+        <div className="flex items-end gap-2 flex-wrap">
+          <span className="text-3xl font-bold transition-all duration-300" style={{ color: plan.highlight ? plan.accent : "#ffffff" }}>
+            {price}
+          </span>
+          {oldPrice && (
+            <span className="text-sm line-through mb-0.5 transition-all duration-200" style={{ color: "rgba(255,255,255,0.3)" }}>
+              {oldPrice}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>{plan.priceSub}</span>
+          {isYearly && plan.id !== "free" && plan.id !== "enterprise" && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{ background: "rgba(245,166,35,0.2)", color: "#f5a623" }}>
+              −20%
+            </span>
+          )}
+        </div>
       </div>
       <p className="text-[12.5px] mb-6 leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
         {plan.description}
