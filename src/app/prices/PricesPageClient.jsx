@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { CheckCircle, ArrowRight, Server, Zap, Building2, HelpCircle } from "lucide-react";
+import { CheckCircle, ArrowRight, Server, Zap, Building2, HelpCircle, Sparkles } from "lucide-react";
 import LandingSiteHeader from "@/components/landing/LandingSiteHeader";
 import LandingSiteFooter from "@/components/landing/LandingSiteFooter";
 import { LANDING_COL } from "@/components/landing/landingTheme";
@@ -10,10 +10,10 @@ import { LANDING_COL } from "@/components/landing/landingTheme";
 const COL = LANDING_COL;
 
 function getStripePriceId(planId) {
-  if (planId === "starter") return process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
+  if (planId === "starter")      return process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
   if (planId === "starter_plus") return process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_PLUS || "";
-  if (planId === "premium") return process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM || "";
-  if (planId === "corporate") return process.env.NEXT_PUBLIC_STRIPE_PRICE_CORPORATE || "";
+  if (planId === "premium")      return process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM || "";
+  if (planId === "corporate")    return process.env.NEXT_PUBLIC_STRIPE_PRICE_CORPORATE || "";
   return "";
 }
 
@@ -32,13 +32,13 @@ const PLANS = [
     id: "free",
     icon: Zap,
     name: "Free",
-    price: "Free",
+    price: "€0",
     priceSub: "forever",
     accent: "#7ec0ea",
     accentBg: "rgba(24,95,165,0.15)",
     accentBorder: "rgba(24,95,165,0.3)",
     highlight: false,
-    description: "Try FleetShare with the core workflow for small fleets.",
+    description: "Core fleet workflow for small teams getting started.",
     cta: "Get Started Free",
     ctaHref: "/register",
     ctaStyle: "outline",
@@ -59,23 +59,23 @@ const PLANS = [
     id: "starter",
     icon: Building2,
     name: "Starter",
-    price: "Paid",
-    priceSub: "via checkout",
+    price: "€19",
+    priceSub: "/ month",
     accent: "#f5a623",
     accentBg: "rgba(245,166,35,0.12)",
     accentBorder: "rgba(245,166,35,0.35)",
     highlight: true,
-    description: "More capacity for small businesses ready to scale.",
+    description: "More capacity for small businesses ready to grow.",
     cta: "Buy Starter",
     ctaHref: "/prices",
     ctaStyle: "primary",
-    badge: "Popular",
+    badge: "Most popular",
     features: [
       "Up to 25 vehicles",
       "Unlimited drivers",
       "Everything in Free, plus:",
       "Maintenance scheduling & alerts",
-      "Excel / CSV export",
+      "Excel / CSV data export",
       "Priority email support",
     ],
   },
@@ -83,8 +83,8 @@ const PLANS = [
     id: "starter_plus",
     icon: Building2,
     name: "Starter Plus",
-    price: "Paid",
-    priceSub: "via checkout",
+    price: "€39",
+    priceSub: "/ month",
     accent: "#93c5fd",
     accentBg: "rgba(147,197,253,0.12)",
     accentBorder: "rgba(147,197,253,0.3)",
@@ -104,10 +104,10 @@ const PLANS = [
   },
   {
     id: "premium",
-    icon: Building2,
+    icon: Sparkles,
     name: "Premium",
-    price: "Paid",
-    priceSub: "via checkout",
+    price: "€79",
+    priceSub: "/ month",
     accent: "#f472b6",
     accentBg: "rgba(244,114,182,0.12)",
     accentBorder: "rgba(244,114,182,0.28)",
@@ -128,13 +128,13 @@ const PLANS = [
     id: "corporate",
     icon: Building2,
     name: "Corporate",
-    price: "Paid",
-    priceSub: "via checkout",
+    price: "€149",
+    priceSub: "/ month",
     accent: "#a78bfa",
     accentBg: "rgba(167,139,250,0.12)",
     accentBorder: "rgba(167,139,250,0.28)",
     highlight: false,
-    description: "For enterprises that need governance, controls, and support.",
+    description: "Full governance, multi-currency and SLA-backed support.",
     cta: "Buy Corporate",
     ctaHref: "/prices",
     ctaStyle: "outline",
@@ -150,8 +150,8 @@ const PLANS = [
     id: "enterprise",
     icon: Server,
     name: "Enterprise",
-    price: "Self-hosted",
-    priceSub: "one-time or subscription",
+    price: "Custom",
+    priceSub: "self-hosted",
     accent: "#86efac",
     accentBg: "rgba(134,239,172,0.1)",
     accentBorder: "rgba(134,239,172,0.25)",
@@ -163,31 +163,32 @@ const PLANS = [
     features: [
       "Everything in Corporate, plus:",
       "Deploy on your own server or VPS",
-      "Docker-based setup",
+      "Docker Compose setup",
       "PostgreSQL database — your data",
       "White-label branding",
       "Custom domain",
-      "On-premise or cloud deployment",
       "Dedicated setup assistance",
       "SLA-backed support",
     ],
   },
 ];
 
-const COMPARISON = null;
-
 const FAQS = [
   {
     q: "Is the Free plan really free forever?",
-    a: "Yes. The Free plan is free with no time limit. It is designed for small organisations with up to 5 vehicles that need the core features.",
+    a: "Yes. The Free plan has no time limit and is designed for small organisations with up to 5 vehicles that need the core features.",
   },
   {
     q: "What happens if I exceed the vehicle limit?",
-    a: "You can upgrade at any time. Your data stays intact and you keep the same account.",
+    a: "You can upgrade at any time. Your data stays intact and you keep the same account — no migration needed.",
+  },
+  {
+    q: "Can I try paid features before buying?",
+    a: "Yes — contact us for a free trial period. We will enable the plan features on your account so you can evaluate them with your real fleet data.",
   },
   {
     q: "What does 'self-hosted' mean exactly?",
-    a: "You run the entire application — Next.js server, PostgreSQL database and file storage — on infrastructure you control. We provide Docker Compose files and setup guidance.",
+    a: "You run the entire application — Next.js server, PostgreSQL database and file storage — on infrastructure you control. We provide Docker Compose files and full setup guidance.",
   },
   {
     q: "Is the Android app included in all plans?",
@@ -212,24 +213,23 @@ export default function PricesPageClient() {
         setBuyError("Stripe is not configured for this plan yet.");
         return;
       }
-
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId, mode: "payment", planId: plan.id }),
       });
-
       const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.url) {
-        throw new Error(data?.error || "checkout_failed");
-      }
+      if (!res.ok || !data?.url) throw new Error(data?.error || "checkout_failed");
       window.location.href = data.url;
-    } catch (e) {
+    } catch {
       setBuyError("Could not start checkout. Please try again.");
     } finally {
       setBuying((s) => ({ ...s, [plan.id]: false }));
     }
   }
+
+  const canBuy = (plan) =>
+    Boolean(getStripePriceId(plan.id)) && plan.id !== "free" && plan.id !== "enterprise";
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: COL.base }}>
@@ -245,7 +245,7 @@ export default function PricesPageClient() {
           </div>
           <div className="relative max-w-3xl mx-auto px-4 sm:px-5 pt-12 sm:pt-14 pb-10 sm:pb-12 text-center">
             <Badge>Pricing</Badge>
-            <h1 className="mt-5 text-2xl min-[400px]:text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4 text-balance px-1">
+            <h1 className="mt-5 text-2xl min-[400px]:text-3xl sm:text-4xl font-bold tracking-tight mb-4 text-balance px-1" style={{ color: "#ffffff" }}>
               Simple, transparent pricing
             </h1>
             <p className="text-base max-w-lg mx-auto leading-relaxed" style={{ color: "rgba(255,255,255,0.55)" }}>
@@ -254,157 +254,35 @@ export default function PricesPageClient() {
           </div>
         </section>
 
-        {/* ── PLANS ── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
-          {buyError ? (
-            <div className="mb-5 rounded-2xl border px-4 py-3 text-sm"
-              style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.8)" }}>
+        {/* ── ERROR BANNER ── */}
+        {buyError && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-5 mb-2">
+            <div className="rounded-2xl border px-4 py-3 text-sm"
+              style={{ borderColor: "rgba(255,80,80,0.3)", background: "rgba(255,80,80,0.07)", color: "rgba(255,200,200,0.9)" }}>
               {buyError}
             </div>
-          ) : null}
-          <div
-            className="-mx-4 sm:mx-0 flex flex-nowrap gap-5 overflow-x-auto px-4 sm:px-0 pb-2 snap-x snap-mandatory"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            {PLANS.map((plan) => {
-              const Icon = plan.icon;
-              const stripePriceId = getStripePriceId(plan.id);
-              const canBuyWithStripe = Boolean(stripePriceId) && plan.id !== "free" && plan.id !== "enterprise";
-              return (
-                <div key={plan.id}
-                  className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default snap-start shrink-0 w-[min(92vw,22rem)] md:w-[21rem]"
-                  style={{
-                    background: plan.highlight ? "rgba(245,166,35,0.06)" : "rgba(255,255,255,0.04)",
-                    borderColor: plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)",
-                    boxShadow: plan.highlight ? "0 0 40px rgba(245,166,35,0.08)" : "none",
-                    }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.boxShadow = `0 28px 56px rgba(0,0,0,0.5), 0 0 40px ${plan.accentBorder}`;
-                    e.currentTarget.style.borderColor = plan.accentBorder;
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.boxShadow = plan.highlight ? "0 0 40px rgba(245,166,35,0.08)" : "none";
-                    e.currentTarget.style.borderColor = plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)";
-                  }}>
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                      <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest"
-                        style={{ background: plan.accent, color: "#0c1220" }}>
-                        {plan.badge}
-                      </span>
-                    </div>
-                  )}
+          </div>
+        )}
 
-                  {/* Plan header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}` }}>
-                      <Icon className="w-4.5 h-4.5 w-5 h-5" style={{ color: plan.accent }} strokeWidth={1.7} />
-                    </div>
-                    <span className="font-bold text-white text-base">{plan.name}</span>
-                  </div>
-
-                  <div className="mb-2">
-                    <span className="text-3xl font-bold text-white">{plan.price}</span>
-                    <span className="text-xs ml-2" style={{ color: "rgba(255,255,255,0.45)" }}>{plan.priceSub}</span>
-                  </div>
-                  <p className="text-[12.5px] mb-6 leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
-                    {plan.description}
-                  </p>
-
-                  {canBuyWithStripe ? (
-                    <button
-                      type="button"
-                      onClick={() => startCheckout(plan)}
-                      disabled={Boolean(buying[plan.id])}
-                      className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all disabled:opacity-60 disabled:pointer-events-none ${
-                        plan.ctaStyle === "primary"
-                          ? "text-[#0c1220] shadow-[0_4px_16px_rgba(245,166,35,0.3)] hover:opacity-90"
-                          : "border text-white/85 hover:bg-white/5"
-                      }`}
-                      style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}55` }}
-                    >
-                      {buying[plan.id] ? "Redirecting…" : "Buy now"} <ArrowRight className="w-4 h-4" />
-                    </button>
-                  ) : (
-                    <Link
-                      href={plan.ctaHref}
-                      className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all ${
-                        plan.ctaStyle === "primary"
-                          ? "text-[#0c1220] shadow-[0_4px_16px_rgba(245,166,35,0.3)] hover:opacity-90"
-                          : "border text-white/85 hover:bg-white/5"
-                      }`}
-                      style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}55` }}
-                    >
-                      {plan.cta} <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  )}
-
-                  <ul className="space-y-2.5 flex-1">
-                    {plan.features.map((f) => (
-                      <li key={f} className={`flex items-start gap-2 text-[12.5px] leading-snug ${f.endsWith(":") ? "font-semibold text-white/80 mt-3 first:mt-0" : ""}`}
-                        style={{ color: f.endsWith(":") ? undefined : "rgba(255,255,255,0.65)" }}>
-                        {!f.endsWith(":") && (
-                          <CheckCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: plan.accent }} />
-                        )}
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
+        {/* ── PLANS GRID ── */}
+        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
+          {/* Row 1 — Free · Starter (highlighted) · Starter Plus */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
+            {PLANS.slice(0, 3).map((plan) => <PlanCard key={plan.id} plan={plan} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />)}
+          </div>
+          {/* Row 2 — Premium · Corporate · Enterprise */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {PLANS.slice(3).map((plan) => <PlanCard key={plan.id} plan={plan} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />)}
           </div>
         </section>
-
-        {/* ── COMPARISON TABLE ── */}
-        {COMPARISON ? (
-          <section style={{ borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)" }}>
-            <div className="max-w-5xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
-              <h2 className="text-2xl font-bold text-white text-center mb-2">Feature comparison</h2>
-              <p className="text-sm text-center mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
-                A full breakdown of what is included in each plan.
-              </p>
-              <div
-                className="-mx-1 overflow-x-auto rounded-2xl border px-1 pb-1 sm:mx-0 sm:px-0 sm:pb-0 touch-pan-x"
-                style={{ borderColor: "rgba(255,255,255,0.09)" }}
-              >
-                <table className="w-full min-w-[34rem] text-xs sm:text-sm">
-                  <thead>
-                    <tr style={{ background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                      <th className="text-left py-4 px-5 font-semibold text-white/70">Feature</th>
-                      {["Starter", "Professional", "Enterprise"].map((h) => (
-                        <th key={h} className="text-center py-4 px-4 font-bold text-white">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {COMPARISON.map((row, i) => (
-                      <tr key={row.feature}
-                        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
-                        <td className="py-3 px-5 text-white/70">{row.feature}</td>
-                        {[row.starter, row.pro, row.enterprise].map((val, j) => (
-                          <td key={j} className="py-3 px-4 text-center">
-                            <span style={{ color: val === "—" ? "rgba(255,255,255,0.25)" : val === "✓" ? "#86efac" : "rgba(255,255,255,0.8)", fontWeight: val !== "—" && val !== "✓" ? 600 : undefined, fontSize: val === "✓" ? 16 : undefined }}>
-                              {val}
-                            </span>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        ) : null}
 
         {/* ── FAQ ── */}
         <section className="max-w-3xl mx-auto px-4 sm:px-5 py-12 sm:py-14">
           <h2 className="text-2xl font-bold text-center mb-8" style={{ color: "#ffffff" }}>Frequently asked questions</h2>
           <div className="flex flex-col gap-4">
             {FAQS.map((faq) => (
-              <div key={faq.q} className="p-5 rounded-2xl border transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]"
+              <div key={faq.q}
+                className="p-5 rounded-2xl border transition-all duration-200 hover:border-white/20 hover:bg-white/[0.06]"
                 style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.09)" }}>
                 <div className="flex items-start gap-3">
                   <HelpCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: "#7ec0ea" }} />
@@ -428,11 +306,12 @@ export default function PricesPageClient() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/contact"
-                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-white font-semibold text-sm bg-[#185fa5] hover:bg-[#1d4ed8] transition-all shadow-[0_4px_20px_rgba(24,95,165,0.45)]">
+                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-white font-semibold text-sm bg-[#185fa5] hover:bg-[#1d4ed8] hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shadow-[0_4px_20px_rgba(24,95,165,0.45)]">
                 Contact Sales <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/register"
-                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-semibold text-sm border border-white/15 text-white/80 hover:bg-white/5 transition-all">
+                className="flex items-center justify-center gap-2 h-12 px-7 rounded-xl font-semibold text-sm border border-white/15 hover:bg-white/10 hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
+                style={{ color: "rgba(255,255,255,0.85)" }}>
                 Start Free
               </Link>
             </div>
@@ -442,6 +321,101 @@ export default function PricesPageClient() {
       </main>
 
       <LandingSiteFooter />
+    </div>
+  );
+}
+
+function PlanCard({ plan, buying, canBuy, startCheckout }) {
+  const Icon = plan.icon;
+  return (
+    <div
+      className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
+      style={{
+        background: plan.highlight ? "rgba(245,166,35,0.06)" : "rgba(255,255,255,0.04)",
+        borderColor: plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)",
+        boxShadow: plan.highlight ? `0 0 40px ${plan.accentBorder}` : "none",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = `0 28px 56px rgba(0,0,0,0.5), 0 0 40px ${plan.accentBorder}`;
+        e.currentTarget.style.borderColor = plan.accentBorder;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = plan.highlight ? `0 0 40px ${plan.accentBorder}` : "none";
+        e.currentTarget.style.borderColor = plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)";
+      }}
+    >
+      {/* Popular badge */}
+      {plan.badge && (
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+          <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-widest"
+            style={{ background: plan.accent, color: "#0c1220" }}>
+            {plan.badge}
+          </span>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}` }}>
+          <Icon className="w-5 h-5" style={{ color: plan.accent }} strokeWidth={1.7} />
+        </div>
+        <span className="font-bold text-white text-base">{plan.name}</span>
+      </div>
+
+      {/* Price */}
+      <div className="mb-1">
+        <span className="text-3xl font-bold" style={{ color: plan.highlight ? plan.accent : "#ffffff" }}>
+          {plan.price}
+        </span>
+        <span className="text-xs ml-2" style={{ color: "rgba(255,255,255,0.45)" }}>{plan.priceSub}</span>
+      </div>
+      <p className="text-[12.5px] mb-6 leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+        {plan.description}
+      </p>
+
+      {/* CTA button */}
+      {canBuy(plan) ? (
+        <button
+          type="button"
+          onClick={() => startCheckout(plan)}
+          disabled={Boolean(buying[plan.id])}
+          className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none ${
+            plan.ctaStyle === "primary"
+              ? "text-[#0c1220] hover:opacity-90 shadow-[0_4px_16px_rgba(245,166,35,0.3)]"
+              : "border text-white/85 hover:bg-white/8"
+          }`}
+          style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}66` }}
+        >
+          {buying[plan.id] ? "Redirecting…" : "Buy now"} <ArrowRight className="w-4 h-4" />
+        </button>
+      ) : (
+        <Link
+          href={plan.ctaHref}
+          className={`flex items-center justify-center gap-2 h-11 rounded-xl text-sm font-semibold mb-6 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] ${
+            plan.ctaStyle === "primary"
+              ? "text-[#0c1220] hover:opacity-90 shadow-[0_4px_16px_rgba(245,166,35,0.3)]"
+              : "border text-white/85 hover:bg-white/8"
+          }`}
+          style={plan.ctaStyle === "primary" ? { background: plan.accent } : { borderColor: `${plan.accent}66` }}
+        >
+          {plan.cta} <ArrowRight className="w-4 h-4" />
+        </Link>
+      )}
+
+      {/* Features */}
+      <ul className="space-y-2.5 flex-1">
+        {plan.features.map((f) => (
+          <li key={f}
+            className={`flex items-start gap-2 text-[12.5px] leading-snug ${f.endsWith(":") ? "font-semibold mt-3 first:mt-0" : ""}`}
+            style={{ color: f.endsWith(":") ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.65)" }}>
+            {!f.endsWith(":") && (
+              <CheckCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: plan.accent }} />
+            )}
+            {f}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
