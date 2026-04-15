@@ -40,6 +40,7 @@ export default function LandingSiteHeader({ logoPriority = false }) {
   const closeMobile = () => setMobileOpen(false);
 
   return (
+    <>
     <header
       className="border-b sticky top-0 z-30"
       style={{
@@ -139,27 +140,38 @@ export default function LandingSiteHeader({ logoPriority = false }) {
         </button>
       </div>
 
+    </header>
+
       {mobileOpen && (
         <div
           id="landing-mobile-nav"
-          className="fixed inset-0 z-[100] md:hidden isolate"
+          className="fixed inset-0 z-[200] md:hidden"
+          style={{ top: 0, left: 0, right: 0, bottom: 0 }}
           role="dialog"
           aria-modal="true"
           aria-label={t("landing.nav.menuTitle")}
         >
+          {/* Backdrop */}
           <button
             type="button"
-            className="absolute inset-0 z-0 bg-black/70"
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.75)" }}
             aria-label={t("sidebar.closeMenu")}
             onClick={closeMobile}
           />
+          {/* Drawer panel */}
           <div
-            className="relative z-10 ml-auto flex h-full min-h-0 max-h-[100dvh] w-[min(100%,20rem)] max-w-full flex-col overflow-hidden border-l shadow-2xl bg-[#0c1220]"
-            style={{ borderColor: "rgba(255,255,255,0.1)" }}
+            className="absolute right-0 top-0 bottom-0 flex flex-col overflow-hidden shadow-2xl bg-[#0c1220]"
+            style={{
+              width: "min(100%, 20rem)",
+              borderLeft: "1px solid rgba(255,255,255,0.1)",
+              height: "100%",
+              maxHeight: "100dvh",
+            }}
           >
             <div
-              className="flex shrink-0 items-center justify-between border-b px-4 py-3"
-              style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              className="flex shrink-0 items-center justify-between px-4 py-3"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
             >
               <span className="text-sm font-semibold tracking-wide text-white/90">{t("landing.nav.menuTitle")}</span>
               <button
@@ -173,7 +185,7 @@ export default function LandingSiteHeader({ logoPriority = false }) {
             </div>
 
             <nav
-              className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 py-3"
+              className="flex flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-3 py-3"
               aria-label="Primary"
             >
               <Link href="/" className={mobileNavRow} style={navMuted} onClick={closeMobile}>
@@ -197,8 +209,11 @@ export default function LandingSiteHeader({ logoPriority = false }) {
             </nav>
 
             <div
-              className="shrink-0 space-y-3 border-t bg-[#0c1220] px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
-              style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              className="shrink-0 space-y-3 px-4 py-4"
+              style={{
+                borderTop: "1px solid rgba(255,255,255,0.08)",
+                paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+              }}
             >
               <div className="w-full min-w-0 max-w-full [&_.landing-locale-select]:w-full [&_.landing-locale-select]:min-w-0">
                 <LanguageCurrencySwitcher variant="landing" showCurrency={false} idSuffix="-drawer" />
@@ -224,6 +239,6 @@ export default function LandingSiteHeader({ logoPriority = false }) {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }
