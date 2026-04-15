@@ -60,7 +60,7 @@ const PLANS = [
     icon: Building2,
     name: "Starter",
     price: "€19",
-    priceSub: "/ month",
+    priceSub: "/ car / mo",
     accent: "#f5a623",
     accentBg: "rgba(245,166,35,0.12)",
     accentBorder: "rgba(245,166,35,0.35)",
@@ -84,7 +84,7 @@ const PLANS = [
     icon: Building2,
     name: "Starter Plus",
     price: "€39",
-    priceSub: "/ month",
+    priceSub: "/ car / mo",
     accent: "#93c5fd",
     accentBg: "rgba(147,197,253,0.12)",
     accentBorder: "rgba(147,197,253,0.3)",
@@ -107,7 +107,7 @@ const PLANS = [
     icon: Sparkles,
     name: "Premium",
     price: "€79",
-    priceSub: "/ month",
+    priceSub: "/ car / mo",
     accent: "#f472b6",
     accentBg: "rgba(244,114,182,0.12)",
     accentBorder: "rgba(244,114,182,0.28)",
@@ -129,7 +129,7 @@ const PLANS = [
     icon: Building2,
     name: "Corporate",
     price: "€149",
-    priceSub: "/ month",
+    priceSub: "/ car / mo",
     accent: "#a78bfa",
     accentBg: "rgba(167,139,250,0.12)",
     accentBorder: "rgba(167,139,250,0.28)",
@@ -264,15 +264,18 @@ export default function PricesPageClient() {
           </div>
         )}
 
-        {/* ── PLANS GRID ── */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-5 pb-16">
-          {/* Row 1 — Free · Starter (highlighted) · Starter Plus */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-5">
-            {PLANS.slice(0, 3).map((plan) => <PlanCard key={plan.id} plan={plan} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />)}
-          </div>
-          {/* Row 2 — Premium · Corporate · Enterprise */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {PLANS.slice(3).map((plan) => <PlanCard key={plan.id} plan={plan} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />)}
+        {/* ── PLANS — single row ── */}
+        <section className="w-full pb-16">
+          <div className="overflow-x-auto px-4 sm:px-6 pb-3"
+            style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="flex gap-4 w-max xl:w-auto xl:grid xl:grid-cols-6 mx-auto"
+              style={{ maxWidth: "min(100%, 1440px)" }}>
+              {PLANS.map((plan) => (
+                <div key={plan.id} className="w-[220px] sm:w-[230px] xl:w-auto flex">
+                  <PlanCard plan={plan} buying={buying} canBuy={canBuy} startCheckout={startCheckout} />
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -329,7 +332,7 @@ function PlanCard({ plan, buying, canBuy, startCheckout }) {
   const Icon = plan.icon;
   return (
     <div
-      className="relative flex flex-col rounded-2xl p-6 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
+      className="relative flex flex-col w-full rounded-2xl p-4 border transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] cursor-default"
       style={{
         background: plan.highlight ? "rgba(245,166,35,0.06)" : "rgba(255,255,255,0.04)",
         borderColor: plan.highlight ? plan.accentBorder : "rgba(255,255,255,0.09)",
