@@ -217,11 +217,6 @@ export default function PricesPageClient() {
     setBuyError("");
     setBuying((s) => ({ ...s, [plan.id]: true }));
     try {
-      const priceId = getStripePriceId(plan.id);
-      if (!priceId) {
-        setBuyError("Stripe is not configured for this plan yet.");
-        return;
-      }
       router.push(`/payment?plan=${encodeURIComponent(plan.id)}`);
     } catch {
       setBuyError("Could not start checkout. Please try again.");
@@ -230,8 +225,7 @@ export default function PricesPageClient() {
     }
   }
 
-  const canBuy = (plan) =>
-    Boolean(getStripePriceId(plan.id)) && plan.id !== "free" && plan.id !== "enterprise";
+  const canBuy = (plan) => plan.id !== "free" && plan.id !== "enterprise";
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: COL.base }}>
@@ -318,7 +312,7 @@ export default function PricesPageClient() {
 
         {/* ── PLANS — single row ── */}
         <section className="w-full pb-16">
-          <div className="overflow-x-auto px-4 sm:px-6 pb-3"
+          <div className="overflow-x-auto px-4 sm:px-6 pt-8 pb-8"
             style={{ WebkitOverflowScrolling: "touch" }}>
             <div className="flex gap-4 w-max xl:w-auto xl:grid xl:grid-cols-6 mx-auto"
               style={{ maxWidth: "min(100%, 1440px)" }}>
