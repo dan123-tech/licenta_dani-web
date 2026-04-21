@@ -61,7 +61,29 @@ function Badge({ action }) {
 
 function MetaCell({ meta }) {
   if (!meta) return <span style={{ color: "#94A3B8" }}>—</span>;
-  const entries = Object.entries(meta).filter(([, v]) => v !== null && v !== undefined);
+  function isLikelyIdKey(k) {
+    const key = String(k || "");
+    if (!key) return false;
+    if (key === "id") return true;
+    if (/id$/i.test(key)) return true; // carId, userId, reservationId, entityId
+    if (/_id$/i.test(key)) return true;
+    if (/^id[A-Z_]/.test(key)) return true;
+    return false;
+  }
+
+  function looksLikeInternalId(v) {
+    const s = String(v || "").trim();
+    if (!s) return false;
+    if (/^cm[a-z0-9]{10,}$/i.test(s)) return true; // Prisma CUID-like
+    if (/^(prod|price|cus|sub|pi|ch|evt|cs|acct)_[a-zA-Z0-9]+$/.test(s)) return true; // common external IDs
+    if (/^[0-9a-f]{24}$/i.test(s)) return true; // mongo-ish
+    if (/^[0-9a-f]{32,}$/i.test(s)) return true; // long hex
+    return false;
+  }
+
+  const entries = Object.entries(meta)
+    .filter(([, v]) => v !== null && v !== undefined)
+    .filter(([k, v]) => !isLikelyIdKey(k) && !looksLikeInternalId(v));
   if (!entries.length) return <span style={{ color: "#94A3B8" }}>—</span>;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -269,14 +291,6 @@ export default function AuditLogsSection() {
                   </td>
                   <td style={{ padding: "10px 14px" }}>
                     <span style={{ color: "#0d1526", fontWeight: 500 }}>{log.entityType}</span>
-                    {log.entityId && (
-                      <span
-                        style={{ marginLeft: 4, color: "#94A3B8", fontSize: 11, fontFamily: "monospace" }}
-                        title={log.entityId}
-                      >
-                        {log.entityId.slice(0, 8)}…
-                      </span>
-                    )}
                   </td>
                   <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                     {log.actor ? (

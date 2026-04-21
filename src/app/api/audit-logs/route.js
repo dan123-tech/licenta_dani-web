@@ -31,7 +31,6 @@ export async function GET(request) {
         id: r.id,
         action: r.action,
         entityType: r.entityType,
-        entityId: r.entityId,
         meta: r.meta,
         createdAt: r.createdAt,
         actor: r.actor
