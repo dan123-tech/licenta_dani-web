@@ -1,12 +1,11 @@
 /**
- * Fleet management Excel/CSV export using SheetJS (xlsx).
- * Produces a multi-sheet workbook with:
- *   1. Reservations  – one row per completed reservation
- *   2. Km by Car     – monthly km totals per vehicle
- *   3. Fuel Costs    – estimated cost per reservation
- *   4. Maintenance   – one row per maintenance event
+ * Fleet management Excel/CSV export.
+ *
+ * NOTE: We intentionally avoid the `xlsx` (SheetJS) package due to unresolved
+ * security advisories. This implementation uses `exceljs` for .xlsx export and
+ * a simple CSV generator for reservations.
  */
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -59,11 +58,7 @@ function calcFuelCost(r, car, company) {
   return (km / 100) * l100 * (ft === "Diesel" ? pD : pB);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sheet builders
-// ─────────────────────────────────────────────────────────────────────────────
-
-function buildReservationsSheet(reservations, users, cars) {
+function buildReservationsRows(reservations, users, cars) {
   const userMap = Object.fromEntries((users || []).map((u) => [u.id || u.userId, u]));
   const carMap  = Object.fromEntries((cars  || []).map((c) => [c.id, c]));
 
@@ -96,10 +91,10 @@ function buildReservationsSheet(reservations, users, cars) {
     ];
   });
 
-  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+  return { header, rows };
 }
 
-function buildKmByCarSheet(reservations, cars) {
+function buildKmByCarRows(reservations, cars) {
   const carMap = Object.fromEntries((cars || []).map((c) => [c.id, c]));
 
   // Collect all months present in data
@@ -127,10 +122,10 @@ function buildKmByCarSheet(reservations, cars) {
     return [carLabel(c), c?.registrationNumber || "", c?.fuelType || "", total, ...months.map((m) => mmap[m] ?? 0)];
   }).sort((a, b) => (b[3] ?? 0) - (a[3] ?? 0));
 
-  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+  return { header, rows };
 }
 
-function buildFuelCostsSheet(reservations, cars, company) {
+function buildFuelCostsRows(reservations, cars, company) {
   const carMap = Object.fromEntries((cars || []).map((c) => [c.id, c]));
 
   const header = [
@@ -160,10 +155,10 @@ function buildFuelCostsSheet(reservations, cars, company) {
       ];
     });
 
-  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+  return { header, rows };
 }
 
-function buildMaintenanceSheet(maintenanceEvents, cars) {
+function buildMaintenanceRows(maintenanceEvents, cars) {
   const carMap = Object.fromEntries((cars || []).map((c) => [c.id, c]));
 
   const header = [
@@ -184,27 +179,27 @@ function buildMaintenanceSheet(maintenanceEvents, cars) {
     ];
   });
 
-  return XLSX.utils.aoa_to_sheet([header, ...rows]);
+  return { header, rows };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Apply basic column widths to make the sheet readable
-// ─────────────────────────────────────────────────────────────────────────────
-function autoColWidths(ws) {
-  const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
-  const widths = [];
-  for (let C = range.s.c; C <= range.e.c; C++) {
-    let maxLen = 10;
-    for (let R = range.s.r; R <= range.e.r; R++) {
-      const cell = ws[XLSX.utils.encode_cell({ c: C, r: R })];
-      if (cell && cell.v != null) {
-        const len = String(cell.v).length;
-        if (len > maxLen) maxLen = len;
-      }
-    }
-    widths.push({ wch: Math.min(maxLen + 2, 40) });
-  }
-  ws["!cols"] = widths;
+function addSheet(wb, name, { header, rows }) {
+  const ws = wb.addWorksheet(name);
+
+  ws.addRow(header);
+  ws.getRow(1).font = { bold: true };
+
+  for (const r of rows) ws.addRow(r);
+
+  // Simple auto-width
+  ws.columns.forEach((col) => {
+    let max = 10;
+    col.eachCell({ includeEmpty: true }, (cell) => {
+      const v = cell?.value;
+      const len = v == null ? 0 : String(v).length;
+      if (len > max) max = len;
+    });
+    col.width = Math.min(max + 2, 40);
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -216,27 +211,37 @@ function autoColWidths(ws) {
  *
  * @param {{ reservations, maintenanceEvents, cars, users, company, companyName? }} params
  */
-export function downloadFleetExcel({ reservations, maintenanceEvents, cars, users, company, companyName }) {
-  const wb = XLSX.utils.book_new();
+export async function downloadFleetExcel({ reservations, maintenanceEvents, cars, users, company, companyName }) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "FleetShare";
+  wb.created = new Date();
 
-  const wsRes  = buildReservationsSheet(reservations, users, cars);
-  const wsKm   = buildKmByCarSheet(reservations, cars);
-  const wsFuel = buildFuelCostsSheet(reservations, cars, company);
-  const wsMnt  = buildMaintenanceSheet(maintenanceEvents, cars);
-
-  autoColWidths(wsRes);
-  autoColWidths(wsKm);
-  autoColWidths(wsFuel);
-  autoColWidths(wsMnt);
-
-  XLSX.utils.book_append_sheet(wb, wsRes,  "Reservations");
-  XLSX.utils.book_append_sheet(wb, wsKm,   "Km by Car");
-  XLSX.utils.book_append_sheet(wb, wsFuel, "Fuel Costs");
-  XLSX.utils.book_append_sheet(wb, wsMnt,  "Maintenance");
+  addSheet(wb, "Reservations", buildReservationsRows(reservations, users, cars));
+  addSheet(wb, "Km by Car", buildKmByCarRows(reservations, cars));
+  addSheet(wb, "Fuel Costs", buildFuelCostsRows(reservations, cars, company));
+  addSheet(wb, "Maintenance", buildMaintenanceRows(maintenanceEvents, cars));
 
   const safeCompany = (companyName || "fleet").replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").toLowerCase();
   const date        = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `fleet-export-${safeCompany}-${date}.xlsx`);
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `fleet-export-${safeCompany}-${date}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(s) {
+  const v = String(s ?? "");
+  if (/[",\n]/.test(v)) return `"${v.replace(/"/g, "\"\"")}"`;
+  return v;
 }
 
 /**
@@ -245,8 +250,10 @@ export function downloadFleetExcel({ reservations, maintenanceEvents, cars, user
  * @param {{ reservations, users, cars }} params
  */
 export function downloadFleetCsv({ reservations, users, cars, companyName }) {
-  const ws = buildReservationsSheet(reservations, users, cars);
-  const csv = XLSX.utils.sheet_to_csv(ws);
+  const { header, rows } = buildReservationsRows(reservations, users, cars);
+  const csv = [header, ...rows]
+    .map((r) => r.map(csvEscape).join(","))
+    .join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");

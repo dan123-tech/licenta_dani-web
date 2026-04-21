@@ -2753,7 +2753,7 @@ export default function AdminDashboard({ user, company, onCompanyUpdated, viewAs
                   <FileScan className="w-6 h-6 sm:w-7 sm:h-7 text-cyan-100" strokeWidth={1.75} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-xl font-bold text-cyan-100 mb-1">AI Verification</h2>
+                  <h2 className="text-[20px] font-bold text-cyan-100 mb-1">AI Verification</h2>
                   <p className="text-sm text-slate-200">
                     Filter only: Driving mode shows only driving-licence requests, Face mode shows only face-recognition requests.
                   </p>

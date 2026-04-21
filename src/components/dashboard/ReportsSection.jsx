@@ -186,7 +186,7 @@ export default function ReportsSection({ cars = [], reservations = [], users = [
     setError("");
     try {
       const params = { reservations, maintenanceEvents, cars, users, company, companyName: company?.name };
-      if (format === "xlsx") downloadFleetExcel(params);
+      if (format === "xlsx") await downloadFleetExcel(params);
       else downloadFleetCsv(params);
     } catch (err) {
       console.error("Export failed:", err);
