@@ -299,17 +299,29 @@ export default function StatisticsDashboard({ reservations = [], company, users 
 
   // ── Top drivers by KM ─────────────────────────────────────────────────────
   const topDriversByKm = useMemo(() => {
-    const driverKm = {};
+    const driver = {};
     for (const r of reservations) {
       if (r.status !== "COMPLETED" || !(r.releasedKmUsed > 0)) continue;
       const uid = r.userId || r.user?.id;
       if (!uid) continue;
-      driverKm[uid] = (driverKm[uid] || 0) + r.releasedKmUsed;
+      if (!driver[uid]) driver[uid] = { km: 0, name: "", email: "" };
+      driver[uid].km += r.releasedKmUsed;
+
+      // Prefer the embedded reservation user (most accurate for display)
+      if (!driver[uid].name) driver[uid].name = userDisplayName(r.user) || "";
+      if (!driver[uid].email) driver[uid].email = String(r.user?.email || "").trim();
     }
-    return Object.entries(driverKm)
-      .map(([uid, km]) => {
+    return Object.entries(driver)
+      .map(([uid, info]) => {
         const u = (users || []).find((x) => (x?.id ?? x?.userId ?? x?.uid) === uid);
-        return { uid, name: userDisplayName(u) || String(uid), km };
+        const resolvedName = info?.name || userDisplayName(u) || "";
+        const resolvedEmail = info?.email || String(u?.email || "").trim();
+        return {
+          uid,
+          name: resolvedName || t("stats.unknownUser"),
+          email: resolvedEmail,
+          km: info?.km ?? 0,
+        };
       })
       .sort((a, b) => b.km - a.km)
       .slice(0, 10);
