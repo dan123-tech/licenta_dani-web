@@ -114,6 +114,10 @@ export function computeStatsForPeriod(period, ctx) {
   const locStr = locale === "ro" ? "ro-RO" : "en-GB";
   const { start, end, bucket } = periodWindow(period);
 
+  function carIdOf(c) {
+    return c?.id ?? c?.carId ?? null;
+  }
+
   const active = reservations.filter((r) => (r.status || "").toLowerCase() === "active");
   const completed = reservations.filter((r) => (r.status || "").toLowerCase() === "completed");
   const completedInRange = completed.filter((r) => completedInWindow(r, start, end));
@@ -143,13 +147,13 @@ export function computeStatsForPeriod(period, ctx) {
   });
   const carUsage = cars
     .map((c) => ({
-      id: c.id,
+      id: carIdOf(c),
       name: `${carBrandModel(c)}\n${c.registrationNumber ?? ""}`,
       brandModel: carBrandModel(c),
       plate: c.registrationNumber ?? "—",
       vehicleCategory: c.vehicleCategory ?? "OTHER",
-      km: byCar[c.id] ?? 0,
-      reservations: reservationsForTopUsers.filter((r) => (r.carId || r.car?.id) === c.id).length,
+      km: byCar[carIdOf(c)] ?? 0,
+      reservations: reservationsForTopUsers.filter((r) => (r.carId || r.car?.id) === carIdOf(c)).length,
     }))
     .sort((a, b) => b.km - a.km);
 
@@ -160,14 +164,14 @@ export function computeStatsForPeriod(period, ctx) {
   });
   const efficiencyLeaderboard = cars
     .map((c) => ({
-      id: c.id,
+      id: carIdOf(c),
       brandModel: carBrandModel(c),
       registrationNumber: c.registrationNumber ?? "—",
       vehicleCategory: c.vehicleCategory ?? "OTHER",
       fuelType: c.fuelType ?? "Benzine",
       consumptionDisplay: formatCarConsumption(c, defaultL100, defaultKwh100),
-      km: byCar[c.id] ?? 0,
-      fuelCost: byCarFuelCost[c.id] ?? 0,
+      km: byCar[carIdOf(c)] ?? 0,
+      fuelCost: byCarFuelCost[carIdOf(c)] ?? 0,
       l100: c.averageConsumptionL100km ?? defaultL100,
     }))
     .sort((a, b) => b.fuelCost - a.fuelCost);
@@ -200,7 +204,7 @@ export function computeStatsForPeriod(period, ctx) {
           ? (c.averageConsumptionKwh100km ?? defaultKwh100)
           : (c.averageConsumptionL100km ?? defaultL100);
       return {
-        id: c.id,
+        id: carIdOf(c),
         brandModel: carBrandModel(c),
         registrationNumber: c.registrationNumber ?? "—",
         vehicleCategory: c.vehicleCategory ?? "OTHER",
@@ -246,7 +250,7 @@ export function computeStatsForPeriod(period, ctx) {
       const kwh100 = c.averageConsumptionKwh100km ?? defaultKwh100;
       const range = pct * (100 / kwh100) * cap;
       return {
-        id: c.id,
+        id: carIdOf(c),
         brandModel: carBrandModel(c),
         plate: c.registrationNumber ?? "—",
         fuelType: c.fuelType,
@@ -264,7 +268,7 @@ export function computeStatsForPeriod(period, ctx) {
       return (ft === "hybrid" || ft === "benzine" || ft === "diesel") && km - last > 10000;
     })
     .map((c) => ({
-      id: c.id,
+      id: carIdOf(c),
       brandModel: carBrandModel(c),
       plate: c.registrationNumber ?? "—",
       fuelType: c.fuelType,

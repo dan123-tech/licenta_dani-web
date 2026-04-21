@@ -42,6 +42,17 @@ function carBrandModel(c) {
   return m || c.brand || "—";
 }
 
+function userDisplayName(u) {
+  if (!u) return "";
+  const fullName = String(u.name || u.fullName || "").trim();
+  if (fullName) return fullName;
+  const first = String(u.firstName || "").trim();
+  const last = String(u.lastName || "").trim();
+  const merged = [first, last].filter(Boolean).join(" ").trim();
+  if (merged) return merged;
+  return String(u.email || "").trim();
+}
+
 const STATS_PERIODS = /** @type {const} */ (["7d", "30d", "6m", "1y"]);
 
 export default function StatisticsDashboard({ reservations = [], company, users = [], cars = [] }) {
@@ -69,7 +80,15 @@ export default function StatisticsDashboard({ reservations = [], company, users 
     Boolean(priceBenzine || priceDiesel || priceHybrid || priceElectricity || fuelPrice);
   const defaultL100 = company?.defaultConsumptionL100km ?? 7.5;
   const defaultKwh100 = 20;
-  const carMap = useMemo(() => Object.fromEntries((cars || []).map((c) => [c.id, c])), [cars]);
+  const carMap = useMemo(
+    () =>
+      Object.fromEntries(
+        (cars || [])
+          .map((c) => [c?.id ?? c?.carId, c])
+          .filter(([id]) => Boolean(id)),
+      ),
+    [cars],
+  );
 
   const periodDeps = useMemo(() => {
     function getCar(carId) {
@@ -289,8 +308,8 @@ export default function StatisticsDashboard({ reservations = [], company, users 
     }
     return Object.entries(driverKm)
       .map(([uid, km]) => {
-        const u = (users || []).find((x) => (x.id || x.userId) === uid);
-        return { uid, name: u?.name || u?.email || uid, km };
+        const u = (users || []).find((x) => (x?.id ?? x?.userId ?? x?.uid) === uid);
+        return { uid, name: userDisplayName(u) || String(uid), km };
       })
       .sort((a, b) => b.km - a.km)
       .slice(0, 10);
