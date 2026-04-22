@@ -300,10 +300,10 @@ export default function AiChatBubble() {
       `}</style>
 
       {/* Floating button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-24 right-5 z-40">
         {!open && (
           <span
-            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 opacity-60"
+            className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 opacity-55 blur-[0.5px]"
             style={{ animation: "ai-ping 2s cubic-bezier(0,0,0.2,1) infinite" }}
           />
         )}
@@ -311,18 +311,18 @@ export default function AiChatBubble() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label={t("aiChat.toggleAria")}
-          className={`relative w-14 h-14 rounded-2xl text-white shadow-lg flex items-center justify-center transition-all duration-300 ${
+          className={`relative w-12 h-12 rounded-full text-white shadow-lg flex items-center justify-center transition-all duration-300 border border-white/15 ${
             open
               ? "bg-slate-700 hover:bg-slate-800 rotate-0"
-              : "bg-gradient-to-br from-violet-600 to-blue-500 hover:from-violet-700 hover:to-blue-600 hover:shadow-xl hover:scale-105"
+              : "bg-gradient-to-br from-violet-600 to-blue-500 hover:from-violet-700 hover:to-blue-600 hover:shadow-xl hover:scale-[1.06]"
           } active:scale-95`}
         >
           {open ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-[22px] h-[22px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
               <rect x="4" y="8" width="16" height="12" rx="3" />
               <circle cx="9" cy="14" r="1.5" fill="currentColor" />
               <circle cx="15" cy="14" r="1.5" fill="currentColor" />
@@ -337,7 +337,7 @@ export default function AiChatBubble() {
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-50 w-[360px] sm:w-[420px] max-h-[75vh] bg-white rounded-2xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden"
+          className="fixed bottom-[8.25rem] right-5 z-50 w-[360px] sm:w-[420px] max-h-[75vh] bg-white rounded-2xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden"
           style={{ animation: "ai-slide-in 0.2s ease-out" }}
         >
           {/* Header */}
